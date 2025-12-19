@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./frontend
+      target: deps # Use the deps stage or similar to just get node and installed packages
+    command: sh -c "npx prisma generate && npm run dev"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4001
+      - DATABASE_URL=postgresql://user:password@postgres:5432/ttn_db
+
+  backend:
+    build:
+      context: ./backend
+      target: builder # Or a dev stage if created
+    command: sh -c "npx prisma db push && npm run start:dev"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/ttn_db
+      - JWT_SECRET=super-secret-key
+      - PORT=4000
+    ports:
+      - "4001:4000"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

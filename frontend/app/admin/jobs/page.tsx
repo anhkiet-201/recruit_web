@@ -1,0 +1,221 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { JobService } from "@/services/jobService";
+import { useConfirm } from "@/contexts/ConfirmDialogContext";
+import ImportJobDialog from "@/components/ImportJobDialog";
+import { Card, CardHeader } from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Badge from "@/components/ui/Badge";
+import { 
+    Plus, Search, MapPin, DollarSign, 
+    Trash2, Edit, Eye, Users, Filter, XCircle, Upload, Calendar 
+} from "lucide-react";
+
+export default function ManageJobsPage() {
+    const { confirm } = useConfirm();
+    const [jobs, setJobs] = useState<any[]>([]); 
+    const [loading, setLoading] = useState(true);
+    const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+    const [showImportDialog, setShowImportDialog] = useState(false);
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [locationFilter, setLocationFilter] = useState("all");
+
+    useEffect(() => { loadJobs(); }, []);
+
+    const loadJobs = async () => {
+        setLoading(true);
+        try {
+            const data = await JobService.getAllJobs({ limit: 100 });
+            setJobs(data.items || []);
+        } catch (error) {
+            console.error("Failed to load jobs", error);
+            setJobs([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredJobs = jobs.filter(job => {
+        const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
+        let matchesStatus = true;
+        if (statusFilter === 'active') matchesStatus = job.isActive === true;
+        if (statusFilter === 'draft') matchesStatus = job.isActive === false;
+        if (statusFilter === 'expired') matchesStatus = job.deadline && new Date(job.deadline) < new Date();
+        const matchesLocation = locationFilter === 'all' || job.location === locationFilter;
+        return matchesSearch && matchesStatus && matchesLocation;
+    });
+
+    const uniqueLocations = Array.from(new Set(jobs.map(j => j.location).filter(Boolean)));
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedJobIds(e.target.checked ? filteredJobs.map(job => job.id) : []);
+    };
+
+    const handleSelectJob = (id: string) => {
+        setSelectedJobIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
+    const handleDelete = async (id: string) => {
+        const ok = await confirm({
+            title: "Delete Job",
+            message: "Are you sure? This cannot be undone.",
+            confirmText: "Delete Job",
+            isDanger: true
+        });
+        if (!ok) return;
+        try {
+            await JobService.deleteJob(id);
+            setJobs(prev => prev.filter(job => job.id !== id));
+        } catch (e) { alert("Failed to delete"); }
+    };
+
+    const handleBulkStatus = async (status: boolean) => {
+        try {
+            setJobs(prev => prev.map(job => selectedJobIds.includes(job.id) ? { ...job, isActive: status } : job));
+            await Promise.all(selectedJobIds.map(id => JobService.updateJob(id, { isActive: status })));
+        } catch (e) { loadJobs(); }
+    };
+
+    const handleToggleStatus = async (job: any) => {
+        const newStatus = !job.isActive;
+        const ok = await confirm({
+            title: `${newStatus ? "Activate" : "Deactivate"} Job`,
+            message: `Are you sure you want to ${newStatus ? "activate" : "deactivate"} this job?`,
+            confirmText: newStatus ? "Activate" : "Deactivate",
+            isDanger: !newStatus
+        });
+        if (!ok) return;
+        try {
+            setJobs(jobs.map(j => j.id === job.id ? { ...j, isActive: newStatus } : j));
+            await JobService.updateJob(job.id, { isActive: newStatus });
+        } catch (e) { loadJobs(); }
+    };
+
+    if (loading) return <div className="p-8 text-center text-gray-500">Loading jobs...</div>;
+
+    return (
+        <div className="space-y-8 pb-24">
+            <ImportJobDialog isOpen={showImportDialog} onClose={() => setShowImportDialog(false)} onSuccess={() => { setShowImportDialog(false); loadJobs(); }} />
+
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Manage Jobs</h1>
+                    <p className="text-gray-500 font-medium">Create and manage your recruitment postings</p>
+                </div>
+                <div className="flex gap-3">
+                    <Button variant="outline" icon={Upload} onClick={() => setShowImportDialog(true)}>Import Excel</Button>
+                    <Link href="/admin/jobs/new">
+                        <Button icon={Plus}>Post New Job</Button>
+                    </Link>
+                </div>
+            </div>
+
+            <Card noPadding className="border-none shadow-2xl">
+                <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col md:flex-row gap-4 items-center">
+                    <div className="w-full md:w-96">
+                        <Input 
+                            icon={Search} 
+                            placeholder="Search job title..." 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex gap-3 w-full md:w-auto">
+                        <select 
+                            value={locationFilter} 
+                            onChange={(e) => setLocationFilter(e.target.value)}
+                            className="bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-600 px-4 focus:ring-2 focus:ring-blue-500 shadow-inner"
+                        >
+                            <option value="all">All Locations</option>
+                            {uniqueLocations.map((loc: any) => <option key={loc} value={loc}>{loc}</option>)}
+                        </select>
+                        <select 
+                            value={statusFilter} 
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-600 px-4 focus:ring-2 focus:ring-blue-500 shadow-inner"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="draft">Draft</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                        {(searchTerm || statusFilter !== 'all' || locationFilter !== 'all') && (
+                            <Button variant="ghost" size="sm" icon={XCircle} onClick={() => {setSearchTerm(""); setStatusFilter("all"); setLocationFilter("all");}}>Clear</Button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-100">
+                        <thead>
+                            <tr className="bg-gray-50/30">
+                                <th className="px-8 py-4 text-left"><input type="checkbox" className="rounded-md border-gray-300 text-blue-600" checked={selectedJobIds.length === filteredJobs.length} onChange={handleSelectAll} /></th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Job Information</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Stats</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Deadline</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
+                                <th className="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {filteredJobs.map((job) => (
+                                <tr key={job.id} className={`hover:bg-blue-50/30 transition-colors ${selectedJobIds.includes(job.id) ? "bg-blue-50/50" : ""}`}>
+                                    <td className="px-8 py-5 text-left"><input type="checkbox" className="rounded-md border-gray-300 text-blue-600" checked={selectedJobIds.includes(job.id)} onChange={() => handleSelectJob(job.id)} /></td>
+                                    <td className="px-6 py-5">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-12 w-12 rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative flex-shrink-0">
+                                                <img src={job.imageUrl || "https://placehold.co/100?text=Job"} alt="" className="object-cover h-full w-full" />
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-gray-900 line-clamp-1">{job.title}</p>
+                                                <p className="text-xs text-gray-400 font-bold flex items-center gap-1 mt-0.5 uppercase"><MapPin size={10} /> {job.location}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <div className="flex gap-4">
+                                            <div className="flex items-center gap-1.5 text-blue-600"><Users size={16} /> <span className="text-sm font-black">{job._count?.applications || 0}</span></div>
+                                            <div className="flex items-center gap-1.5 text-gray-400"><Eye size={16} /> <span className="text-sm font-bold">{job.views || 0}</span></div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <p className="text-sm font-bold text-gray-700">{job.deadline ? new Date(job.deadline).toLocaleDateString('en-GB') : 'No Limit'}</p>
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <button onClick={() => handleToggleStatus(job)}>
+                                            <Badge variant={job.isActive ? "green" : "gray"} isDot>{job.isActive ? "Active" : "Draft"}</Badge>
+                                        </button>
+                                    </td>
+                                    <td className="px-8 py-5 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <Link href={`/jobs/${job.id}`} target="_blank"><Button variant="ghost" size="sm" icon={Eye} className="p-2"></Button></Link>
+                                            <Link href={`/admin/jobs/edit/${job.id}`}><Button variant="ghost" size="sm" icon={Edit} className="p-2 text-orange-500 hover:bg-orange-50"></Button></Link>
+                                            <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(job.id)} className="p-2 text-red-500 hover:bg-red-50"></Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+
+            {selectedJobIds.length > 0 && (
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-3xl shadow-2xl p-2.5 pl-6 flex items-center gap-6 animate-in slide-in-from-bottom-10 duration-500">
+                    <span className="text-sm font-black tracking-widest uppercase">{selectedJobIds.length} Selected</span>
+                    <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" className="text-green-400 hover:bg-white/10" onClick={() => handleBulkStatus(true)}>Activate</Button>
+                        <Button variant="ghost" size="sm" className="text-gray-400 hover:bg-white/10" onClick={() => handleBulkStatus(false)}>Draft</Button>
+                        <Button variant="ghost" size="sm" icon={Trash2} className="text-red-400 hover:bg-white/10" onClick={() => handleBulkStatus(false)}>Delete</Button>
+                    </div>
+                    <Button variant="secondary" size="sm" onClick={() => setSelectedJobIds([])} className="bg-white/10 hover:bg-white/20 border-none p-2 rounded-2xl"><X size={18}/></Button>
+                </div>
+            )}
+        </div>
+    );
+}

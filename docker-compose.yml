@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ttn-postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ttn_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ttn-backend
+    ports:
+      - "4001:4000"
+    environment:
+      DATABASE_URL: postgresql://user:password@ttn-postgres:5432/ttn_db
+      JWT_SECRET: super-secret-key
+      MINIO_ENDPOINT: ttn-minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: ttn-bucket
+      MINIO_USE_SSL: "false"
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - app-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: ttn-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - app-network
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/ttn-bucket;
+      /usr/bin/mc anonymous set public myminio/ttn-bucket;
+      exit 0;
+      "
+    networks:
+      - app-network
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ttn-web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4001
+    depends_on:
+      - backend
+      - postgres
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+
+networks:
+  app-network:
+    driver: bridge

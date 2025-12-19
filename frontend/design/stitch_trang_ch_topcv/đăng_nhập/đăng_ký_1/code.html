@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Đăng nhập/Đăng ký</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#00a3ff", "background-light": "#f5f7f8", "background-dark": "#0f1c23"}, fontFamily: {display: "Be Vietnam Pro"}, borderRadius: {DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem"}}}};</script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+</head>
+<body class="font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<div class="flex flex-1 justify-center">
+<div class="layout-content-container flex flex-col w-full flex-1">
+<div class="grid grid-cols-1 md:grid-cols-2 min-h-screen">
+<!-- Left Column: Branding -->
+<div class="hidden md:flex flex-col justify-between p-12 bg-slate-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+<div>
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 4H42V17.3333V30.6667H24V44H6V30.6667V17.3333H24V4Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h2 class="text-2xl font-bold tracking-tight">TopCV.vn</h2>
+</div>
+<h1 class="mt-8 text-4xl font-bold tracking-tighter text-gray-900 dark:text-white">Kết nối tài năng với cơ hội.</h1>
+<p class="mt-4 text-lg text-gray-600 dark:text-gray-400">Nền tảng tuyển dụng hàng đầu Việt Nam.</p>
+</div>
+<div class="space-y-6">
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-1">work</span>
+<div>
+<h3 class="font-semibold text-gray-900 dark:text-white">Tiếp cận hàng ngàn việc làm</h3>
+<p class="text-gray-600 dark:text-gray-400">Khám phá các vị trí công việc tốt nhất từ các công ty hàng đầu.</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-1">description</span>
+<div>
+<h3 class="font-semibold text-gray-900 dark:text-white">Tạo CV chuyên nghiệp miễn phí</h3>
+<p class="text-gray-600 dark:text-gray-400">Sử dụng các mẫu CV ấn tượng và chuyên nghiệp của chúng tôi.</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-1">groups</span>
+<div>
+<h3 class="font-semibold text-gray-900 dark:text-white">Kết nối với nhà tuyển dụng</h3>
+<p class="text-gray-600 dark:text-gray-400">Gây ấn tượng và nhận được lời mời phỏng vấn từ các công ty mơ ước.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Form -->
+<div class="flex items-center justify-center p-6 sm:p-12 bg-background-light dark:bg-background-dark">
+<div class="w-full max-w-md">
+<header class="flex md:hidden items-center justify-between whitespace-nowrap px-4 py-3 mb-8 border-b dark:border-gray-700">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-5">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 4H42V17.3333V30.6667H24V44H6V30.6667V17.3333H24V4Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h2 class="text-xl font-bold">TopCV.vn</h2>
+</div>
+</header>
+<div class="flex px-4 py-3">
+<div class="flex h-12 flex-1 items-center justify-center rounded-lg bg-slate-200 dark:bg-gray-800 p-1">
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-gray-700 has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-gray-900 dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">
+<span class="truncate">Đăng nhập</span>
+<input checked="" class="invisible w-0" name="auth-toggle" type="radio" value="Đăng nhập"/>
+</label>
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-gray-700 has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-gray-900 dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">
+<span class="truncate">Đăng ký</span>
+<input class="invisible w-0" name="auth-toggle" type="radio" value="Đăng ký"/>
+</label>
+</div>
+</div>
+<div class="p-4 space-y-6">
+<h2 class="text-2xl font-bold text-center text-gray-900 dark:text-white">Chào mừng trở lại</h2>
+<div class="flex flex-col space-y-4">
+<label class="flex flex-col min-w-40 flex-1">
+<p class="text-gray-800 dark:text-gray-300 text-sm font-medium leading-normal pb-2">Email/Số điện thoại</p>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-600 bg-background-light dark:bg-gray-800 h-12 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-3 text-base font-normal leading-normal" placeholder="Nhập email hoặc số điện thoại của bạn" value=""/>
+</label>
+<label class="flex flex-col min-w-40 flex-1">
+<p class="text-gray-800 dark:text-gray-300 text-sm font-medium leading-normal pb-2">Mật khẩu</p>
+<div class="flex w-full flex-1 items-stretch">
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-l-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-600 bg-background-light dark:bg-gray-800 h-12 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-3 border-r-0 text-base font-normal leading-normal" placeholder="Nhập mật khẩu của bạn" type="password" value=""/>
+<div class="text-gray-400 flex border border-gray-300 dark:border-gray-600 bg-background-light dark:bg-gray-800 items-center justify-center px-3 rounded-r-lg border-l-0">
+<span class="material-symbols-outlined" style="font-size: 20px;">visibility_off</span>
+</div>
+</div>
+</label>
+</div>
+<div class="flex items-center gap-4 bg-transparent min-h-14 justify-between text-sm">
+<div class="flex items-center gap-2">
+<input class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-primary/50 focus:ring-offset-background-light dark:focus:ring-offset-background-dark" id="remember-me" type="checkbox"/>
+<label class="text-gray-600 dark:text-gray-400 font-normal leading-normal flex-1 truncate" for="remember-me">Lưu thông tin đăng nhập</label>
+</div>
+<div class="shrink-0"><button class="font-medium text-primary hover:underline">Quên mật khẩu?</button></div>
+</div>
+<button class="flex min-w-[84px] max-w-[480px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+<span class="truncate">Đăng nhập</span>
+</button>
+<div class="relative flex items-center py-2">
+<div class="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+<span class="flex-shrink mx-4 text-sm text-gray-500 dark:text-gray-400">Hoặc tiếp tục với</span>
+<div class="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-2 h-11 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors">
+<img class="h-5 w-5" data-alt="Google logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8FFBhiGQvx9JUVdrAdBu-Y_QS8XOx3XHpVsQC7Nare1t01oo3dfFtllNWmvpTzVif8iCsRmpA4G50QhFBcNHSLRaQ838pAkkFE6bDDYbmDjWjlN04jvR0jF6On8WQfUIOpGXms_VVCmCLWluiGDgsQRDFF_19RbQoEC3AgspwI0l9vqjntandmmuHAQ0W48EIwdVinAMeigAhBxnm0RiHC6Vm0zpNg7dYUc70CWohYLQIvAf9QNPLgcdhy7WUQ8OARNaFRlOW6RNw"/>
+<span>Google</span>
+</button>
+<button class="flex items-center justify-center gap-2 h-11 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors">
+<img class="h-5 w-5" data-alt="Facebook logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLhVsSlHgJ-c2Ov09Tksj9p5t_cs_szllJbJfghXgJ6caQjyfrauWOW8g_vkUowTzRCKInTLN5WpgpvetphhNiPKUEk1yb1_voR0krPDw121g5r_4_X8KWGOJ4LN8IUAICp9n3nB4uQplmTNQpx8cfyCqTO6tOk0P3jXpnbVGkZKBFnP09pqIWdDCiUjG_56gbU1tKys5P1gYMaLS09t-lBtgRdIxh5FDSVTnSfwnEdPwr3TegUVZaLOg92hwrUtuMw2U6yywamE0M"/>
+<span>Facebook</span>
+</button>
+</div>
+<p class="text-center text-xs text-gray-500 dark:text-gray-400">Bằng việc tiếp tục, bạn đồng ý với <a class="text-primary hover:underline" href="#">Điều khoản Dịch vụ</a> và <a class="text-primary hover:underline" href="#">Chính sách Bảo mật</a> của chúng tôi.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>
