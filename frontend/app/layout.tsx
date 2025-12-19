@@ -5,7 +5,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ConfirmDialogProvider } from "@/contexts/ConfirmDialogContext";
-import PageTransition from "@/components/ui/PageTransition";
+import AiChatBot from "@/components/AiChatBot";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,17 +22,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-                <AuthProvider>
-                  <ConfirmDialogProvider>
-                    <div className="flex flex-col min-h-screen">
-                      <Navbar />
-                      <main className="flex-grow bg-gray-50/50">
-                        {children}
-                      </main>
-                      <Footer />
-                    </div>
-                  </ConfirmDialogProvider>
-                </AuthProvider>
+        <AuthProvider>
+          <ConfirmDialogProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-grow bg-gray-50/50">
+                {children}
+              </main>
+              <Footer />
+              <AiChatBot />
+            </div>
+          </ConfirmDialogProvider>
+        </AuthProvider>
       </body>
     </html>
   );

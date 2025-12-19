@@ -55,7 +55,18 @@ export default function DashboardPage() {
     const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && profile?.id) {
             const file = e.target.files[0];
-            if (file.size > 10 * 1024 * 1024) return alert("File too large");
+            
+            if (file.type !== 'application/pdf') {
+                alert("Vui lòng chỉ tải lên tệp tin định dạng PDF.");
+                if (cvInputRef.current) cvInputRef.current.value = "";
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert("File is too large. Maximum size is 10MB.");
+                return;
+            }
+
             setCvUploading(true);
             try {
                 await UserService.uploadCV(file);
@@ -178,7 +189,7 @@ export default function DashboardPage() {
                                         <div className="min-w-0"><p className="text-sm font-black text-gray-900 truncate max-w-[200px]">{cvUploading ? "Uploading..." : (profile?.cvUrl ? getFileName(profile.cvUrl) : "No CV Uploaded")}</p><p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">{profile?.cvUrl ? "Verified & Ready" : "Please upload your resume"}</p></div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <input type="file" ref={cvInputRef} className="hidden" accept=".pdf,.doc,.docx" onChange={handleCVUpload} />
+                                        <input type="file" ref={cvInputRef} className="hidden" accept=".pdf" onChange={handleCVUpload} />
                                         {profile?.cvUrl && <a href={profile.cvUrl} target="_blank"><Button variant="ghost" size="sm" icon={ExternalLink} className="bg-white shadow-sm p-3 rounded-2xl"></Button></a>}
                                         <Button variant="outline" size="sm" icon={Upload} onClick={() => cvInputRef.current?.click()}>{profile?.cvUrl ? "Update" : "Upload"}</Button>
                                     </div>

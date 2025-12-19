@@ -15,10 +15,11 @@ export class AuthController {
         return this.authService.login(user);
     }
 
-    @Post('register')
-    async register(@Body() createUserDto: any) {
-        return this.authService.register(createUserDto);
-    }
+  @Post('register')
+  register(@Request() req, @Body() body: any) {
+    const guestId = req.headers['x-guest-id'] as string;
+    return this.authService.register(body.email, body.password, body.name, guestId);
+  }
 
     @UseGuards(AuthGuard('jwt'))
     @UseGuards(AuthGuard('jwt'))

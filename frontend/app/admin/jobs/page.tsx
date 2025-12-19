@@ -11,7 +11,7 @@ import Input from "@/components/ui/Input";
 import Badge from "@/components/ui/Badge";
 import { 
     Plus, Search, MapPin, DollarSign, 
-    Trash2, Edit, Eye, Users, Filter, XCircle, Upload, Calendar 
+    Trash2, Edit, Eye, Users, Filter, XCircle, Upload, Calendar, X
 } from "lucide-react";
 
 export default function ManageJobsPage() {

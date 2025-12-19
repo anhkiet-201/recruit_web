@@ -59,7 +59,13 @@ export default function ApplyJobDialog({ jobId, jobTitle, jobType, isOpen, onClo
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setNewFile(e.target.files[0]);
+            const file = e.target.files[0];
+            if (file.type !== 'application/pdf') {
+                alert("Vui lòng chỉ tải lên tệp tin định dạng PDF.");
+                e.target.value = "";
+                return;
+            }
+            setNewFile(file);
         }
     };
 
@@ -187,7 +193,7 @@ export default function ApplyJobDialog({ jobId, jobTitle, jobType, isOpen, onClo
                                             type="file" 
                                             id="cv-upload" 
                                             className="hidden" 
-                                            accept=".pdf,.doc,.docx" 
+                                            accept=".pdf" 
                                             onChange={handleFileChange}
                                         />
                                         <label 

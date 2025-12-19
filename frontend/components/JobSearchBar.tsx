@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, MapPin } from "lucide-react";
+import { useState } from "react";
+import { Search, MapPin, Sparkles, Wand2, MessageSquare } from "lucide-react";
 import TitleSelector from "./TitleSelector";
 import LocationSelector from "./LocationSelector";
 import { useRouter } from "next/navigation";
@@ -19,43 +20,97 @@ export default function JobSearchBar({
     action = "/jobs"
 }: JobSearchBarProps) {
     const router = useRouter();
+    const [isAiMode, setIsAiMode] = useState(defaultTitle.includes("ai_q") || false);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const title = formData.get("title") as string;
+        const text = formData.get("title") as string;
         const location = formData.get("location") as string;
         const jobType = formData.get("jobType") as string;
 
         const params = new URLSearchParams();
-        if (title) params.append("title", title);
-        if (location) params.append("location", location);
+        if (text) params.append(isAiMode ? "ai_q" : "title", text);
+        
+        // Only add location if not in AI mode
+        if (!isAiMode && location) params.append("location", location);
+        
         if (jobType && jobType !== "all") params.append("jobType", jobType);
 
         router.push(`${action}?${params.toString()}`);
     };
 
     return (
-        <div className="max-w-4xl mx-auto w-full">
+        <div className="max-w-4xl mx-auto w-full space-y-6">
+            {/* Mode Selector - Modern Pill Design */}
+            <div className="flex justify-center">
+                <div className="bg-white/50 backdrop-blur-md p-1.5 rounded-2xl flex gap-1 border border-gray-100 shadow-xl">
+                    <button 
+                        type="button"
+                        onClick={() => setIsAiMode(false)}
+                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${!isAiMode ? "bg-white text-gray-900 shadow-lg shadow-gray-200/50" : "text-gray-400 hover:text-gray-600"}`}
+                    >
+                        Tìm kiếm chuẩn
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setIsAiMode(true)}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${isAiMode ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "text-gray-400 hover:text-gray-600"}`}
+                    >
+                        <Sparkles size={12} className={isAiMode ? "fill-white" : ""} />
+                        AI Semantic
+                    </button>
+                </div>
+            </div>
+
             <form 
                 onSubmit={handleSubmit}
-                className="bg-white/80 backdrop-blur-xl p-2.5 rounded-[2.5rem] shadow-2xl shadow-gray-200/50 border border-gray-100 flex flex-col md:flex-row gap-2 relative z-40 transition-all hover:shadow-[0_32px_80px_-12px_rgba(59,130,246,0.1)]"
+                className={`bg-white/80 backdrop-blur-xl p-2.5 rounded-[2.5rem] shadow-2xl border flex flex-col md:flex-row gap-2 relative z-40 transition-all duration-500 ease-out ${isAiMode ? "border-blue-200 ring-8 ring-blue-500/5 shadow-blue-100" : "border-gray-100 shadow-gray-200/50"}`}
             >
                 <input type="hidden" name="jobType" value={currentJobType} />
                 
-                <TitleSelector defaultValue={defaultTitle} />
-
-                <div className="hidden md:block w-px h-10 bg-gray-200 self-center opacity-30"></div>
-                
-                <LocationSelector defaultValue={defaultValue} />
+                {/* AI Mode: Single Large Input | Normal Mode: Split Inputs */}
+                {isAiMode ? (
+                    <div className="flex-1 relative group animate-in fade-in zoom-in-95 duration-300">
+                        <MessageSquare className="absolute left-5 top-1/2 -translate-y-1/2 text-blue-500" size={20} />
+                        <input 
+                            name="title"
+                            type="text" 
+                            autoComplete="off"
+                            defaultValue={defaultTitle}
+                            placeholder="Mô tả công việc bạn mong muốn (VD: Tôi muốn tìm việc làm lập trình React tại HCM mức lương trên 20tr)..." 
+                            className="w-full pl-14 pr-4 py-4 rounded-[1.8rem] border-none focus:ring-0 text-gray-900 bg-transparent font-bold placeholder:text-gray-300 placeholder:font-medium"
+                        />
+                    </div>
+                ) : (
+                    <>
+                        <TitleSelector defaultValue={defaultTitle} />
+                        <div className="hidden md:block w-px h-10 bg-gray-200 self-center opacity-30"></div>
+                        <LocationSelector defaultValue={defaultValue} />
+                    </>
+                )}
 
                 <button 
                     type="submit" 
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-black px-12 py-4 rounded-[2rem] transition-all active:scale-95 shadow-xl shadow-blue-500/30 whitespace-nowrap"
+                    className={`flex items-center justify-center gap-2 font-black px-12 py-4 rounded-[2rem] transition-all active:scale-95 shadow-xl whitespace-nowrap ${isAiMode ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30" : "bg-gray-900 hover:bg-black text-white"}`}
                 >
-                    Tìm kiếm
+                    {isAiMode ? (
+                        <>
+                            <Wand2 size={18} />
+                            <span>AI Phân tích</span>
+                        </>
+                    ) : (
+                        <span>Tìm ngay</span>
+                    )}
                 </button>
             </form>
+
+            {/* AI Mode Tip */}
+            {isAiMode && (
+                <p className="text-center text-[10px] font-bold text-blue-400 uppercase tracking-widest animate-in slide-in-from-top-2">
+                    Tip: Nhập mong muốn bằng ngôn ngữ tự nhiên để AI gợi ý tốt nhất
+                </p>
+            )}
         </div>
     );
 }

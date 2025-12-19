@@ -38,13 +38,13 @@ export default function Input({
                 <Component
                     className={`
                         block w-full bg-white text-gray-900 text-sm font-medium
-                        rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/50
+                        rounded-2xl border-none shadow-xl shadow-gray-100/50
                         px-5 py-4 transition-all duration-300
                         placeholder:text-gray-300 placeholder:font-bold
-                        focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-200 focus:shadow-2xl focus:shadow-blue-100/50
+                        focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white focus:shadow-2xl focus:shadow-blue-100/50
                         ${Icon ? "pl-14" : ""} 
-                        ${error ? "border-red-200 ring-4 ring-red-500/5 shadow-red-50" : ""}
-                        ${props.readOnly ? "bg-gray-50/50 border-transparent shadow-none cursor-default" : ""}
+                        ${error ? "ring-4 ring-red-500/5 shadow-red-50" : ""}
+                        ${props.readOnly ? "bg-gray-50/50 shadow-none cursor-default" : ""}
                     `}
                     {...(props as any)}
                 />

@@ -9,6 +9,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { TagsModule } from './tags/tags.module';
 import { UploadModule } from './upload/upload.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { UploadModule } from './upload/upload.module';
     JobsModule, 
     ApplicationsModule, 
     TagsModule, 
-    UploadModule
+    UploadModule,
+    AiModule
   ],
   controllers: [AppController],
   providers: [AppService],

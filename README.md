@@ -1,50 +1,46 @@
-# RecruitWeb - Modern Recruitment Platform
+# RecruitWeb - Nền tảng Tuyển dụng Thông minh thế hệ mới
 
-RecruitWeb là một nền tảng tuyển dụng hiện đại, được thiết kế với trải nghiệm người dùng cao cấp (Premium UI/UX) và kiến trúc hệ thống mạnh mẽ. Dự án cung cấp giải pháp toàn diện cho cả Nhà tuyển dụng và Ứng viên.
+RecruitWeb là một nền tảng tuyển dụng hiện đại, được thiết kế với trải nghiệm người dùng cao cấp (Premium UI/UX) và tích hợp sâu rộng Trí tuệ nhân tạo (AI) để mang lại hiệu quả vượt trội cho cả Nhà tuyển dụng và Ứng viên.
 
 ## 🚀 Công nghệ sử dụng
 
 ### Frontend
 - **Framework**: Next.js 15+ (App Router)
-- **Styling**: Tailwind CSS (Modern "Premium Soft" design system)
+- **Styling**: Tailwind CSS với hệ thống thiết kế **"Premium Soft"** (Glassmorphism, bo góc cực đại, đổ bóng đa lớp).
 - **Icons**: Lucide React
-- **State Management**: React Context API
-- **Performance**: Server-side Pagination, Image Optimization, Lazy Loading
 
 ### Backend
 - **Framework**: NestJS (Node.js)
-- **Database**: PostgreSQL with Prisma ORM
-- **Storage**: MinIO (S3 Compatible Object Storage)
-- **Automation**: NestJS Schedule (Cron Jobs)
-- **Features**: JWT Authentication, Excel (XLSX) Processing, Multer for file uploads
+- **Database**: PostgreSQL với **pgvector** (Vector Database) & Prisma ORM.
+- **Storage**: MinIO (S3 Compatible).
+- **AI**: Google Gemini (Hỗ trợ mô hình Embedding và Chat).
+- **Automation**: NestJS Schedule (Cron Jobs).
 
-### Infrastructure
-- **Docker**: Container hóa Database (Postgres) và Storage (MinIO)
-- **Environment**: Cấu hình tách biệt cho Development và Production
+## ✨ Tính năng nổi bật
 
-## ✨ Tính năng chính
+### 🧠 Trí tuệ nhân tạo (AI-Powered)
+- **Tìm kiếm Ngữ nghĩa (Semantic Search)**: Tìm kiếm công việc bằng ngôn ngữ tự nhiên (ví dụ: "công việc về dữ liệu").
+- **AI Reranking**: AI tự động kiểm duyệt và xếp hạng lại kết quả tìm kiếm để đảm bảo độ chính xác cao nhất.
+- **Trợ lý Chatbot AI**:
+  - Tư vấn nghề nghiệp, CV và phỏng vấn.
+  - Tự động nhận diện và đề xuất tìm kiếm cho người dùng.
+  - Ghi nhớ lịch sử chat và hành vi người dùng (đã đăng nhập hoặc khách).
+- **Phân tích CV tự động**: Tự động đọc và bóc tách thông tin từ file CV (PDF) để điền vào hồ sơ người dùng.
+- **Vector hóa dữ liệu**: Mọi công việc, hồ sơ người dùng và lịch sử tìm kiếm đều được chuyển thành Vector để AI có thể hiểu sâu về ngữ nghĩa.
 
-### Dành cho Ứng viên
-- **Trang chủ hiện đại**: Tìm kiếm việc làm thông minh với bộ lọc loại nhân lực (Phổ thông, Chuyên gia...).
-- **Gợi ý thông minh**: Autocomplete cho tên công việc, kỹ năng và địa điểm.
-- **Hồ sơ chuyên nghiệp**: Dashboard cá nhân quản lý thông tin học vấn, kỹ năng và CV.
-- **Ứng tuyển mượt mà**: Popup ứng tuyển thông minh, tự động điền thông tin và đồng bộ hồ sơ.
-- **Theo dõi trạng thái**: Xem lịch sử ứng tuyển và trạng thái hồ sơ theo thời gian thực.
+### 👤 Dành cho Ứng viên
+- **Giao diện "Premium Soft"**: Trải nghiệm tìm việc mượt mà, sang trọng.
+- **Gợi ý thông minh**: Autocomplete cho Tên công việc, Kỹ năng và Địa điểm.
+- **Dashboard toàn năng**: Quản lý thông tin cá nhân, học vấn, kỹ năng và tải lên CV/Avatar.
+- **Ứng tuyển 1 chạm**: Popup ứng tuyển tự động điền thông tin và hỗ trợ tải CV linh hoạt.
 
-### Dành cho Nhà tuyển dụng (Admin)
-- **Bảng điều khiển (Admin Dashboard)**: Thống kê trực quan số lượng việc làm, hồ sơ và người dùng.
-- **Quản lý Việc làm**: 
-  - Tạo mới, chỉnh sửa và xóa tin tuyển dụng.
-  - Thao tác hàng loạt (Bulk Actions): Đóng/Mở tin, xóa hàng loạt.
-  - Nhập liệu nhanh: Import hàng trăm công việc từ file Excel.
-  - Theo dõi lượt xem thực tế của từng tin tuyển dụng.
-- **Quản lý Hồ sơ**: Hệ thống lọc ứng viên chuyên sâu, xem CV trực tuyến và cập nhật trạng thái hồ sơ.
-- **Quản lý Người dùng**: Phân quyền (Admin/Candidate) và quản lý tài khoản hệ thống.
-
-### Tối ưu hóa hệ thống
-- **Tự động hóa**: Cron Job tự động đóng các Job hết hạn và chuyển hồ sơ sang trạng thái History.
-- **Dọn dẹp Storage**: Tự động xóa file cũ trên Cloud khi người dùng cập nhật hoặc xóa ảnh/CV.
-- **Performance**: Phân trang hoàn toàn ở Backend để xử lý dữ liệu lớn.
+### 🏢 Dành cho Nhà tuyển dụng (Admin)
+- **Bảng điều khiển trực quan**: Thống kê số liệu hệ thống theo thời gian thực.
+- **Quản lý đa năng**: Thao tác hàng loạt (Bulk Actions), bộ lọc chuyên sâu và quản lý chi tiết (Jobs, Applications, Users).
+- **Tự động hóa tuyển dụng**:
+  - Import hàng trăm công việc từ file Excel.
+  - Tự động đóng các Job hết hạn và lưu trữ hồ sơ.
+- **Dọn dẹp thông minh**: Tự động xóa file trên Cloud khi dữ liệu thay đổi, tối ưu dung lượng.
 
 ## 🛠 Hướng dẫn cài đặt
 
@@ -52,62 +48,54 @@ RecruitWeb là một nền tảng tuyển dụng hiện đại, được thiết
 - Cài đặt Node.js (v20+)
 - Cài đặt Docker và Docker Compose
 
-### 2. Khởi chạy Infrastructure (Database & Storage)
-```bash
-docker compose up -d
-```
+### 2. Cấu hình môi trường (`.env`)
+Tạo file `.env` trong thư mục `backend/` và `frontend/`.
 
-### 3. Cấu hình Backend
-```bash
-cd backend
-npm install
-npx prisma db push
-npm run start:dev
-```
-
-### 4. Khởi chạy Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## ⚙️ Cấu hình môi trường (.env)
-
-Dự án yêu cầu các file `.env` tại thư mục `backend/` và `frontend/` để hoạt động chính xác.
-
-### Backend (`backend/.env`)
+#### `backend/.env`
 ```env
-# Database Configuration (PostgreSQL)
+# Database
 DATABASE_URL="postgresql://user:password@localhost:5432/ttn_db"
 
 # Security
 JWT_SECRET="your-super-secret-key"
 
-# Object Storage (MinIO / S3)
+# AI Configuration (Quan trọng)
+AI_API_KEY="your-gemini-api-key-here"
+AI_EMBEDDING_MODEL="text-embedding-004"
+AI_CHAT_MODEL="gemini-1.5-flash"
+
+# Object Storage (MinIO)
 MINIO_ENDPOINT="localhost"
 MINIO_PORT=9000
 MINIO_ACCESS_KEY="minioadmin"
 MINIO_SECRET_KEY="minioadmin"
 MINIO_BUCKET="ttn-bucket"
 MINIO_USE_SSL="false"
-
-# Public URL for File Access (Optional - Use for CDN/S3)
 MINIO_PUBLIC_URL=""
 ```
 
-### Frontend (`frontend/.env`)
+#### `frontend/.env`
 ```env
-# URL của Backend API
 NEXT_PUBLIC_API_URL="http://localhost:4001"
 ```
 
-## 🎨 Ngôn ngữ thiết kế: Premium Soft
-Dự án áp dụng ngôn ngữ thiết kế nhất quán cho toàn bộ hệ thống:
-- **Bo góc cực đại**: `rounded-[2.5rem]` tạo sự mềm mại.
-- **Đổ bóng đa lớp**: `shadow-xl` tạo chiều sâu sang trọng.
-- **Glassmorphism**: Hiệu ứng kính mờ `backdrop-blur-xl` trên thanh điều hướng và các bộ lọc.
-- **Interactive UI**: Hiệu ứng phản hồi vật lý (`active:scale-95`) và chuyển động mượt mà.
+### 3. Khởi chạy hệ thống
+```bash
+# Bật Database và Storage
+docker compose up -d
+
+# Cài đặt và chạy Backend
+cd backend
+npm install
+npx prisma db push
+npm run start:dev
+
+# Mở terminal mới, cài đặt và chạy Frontend
+cd frontend
+npm install
+npm run dev
+```
+Sau đó, truy cập `http://localhost:3000` để bắt đầu.
 
 ---
-Phát triển bởi Aki dev.
+Phát triển bởi đội ngũ kỹ thuật RecruitWeb.
