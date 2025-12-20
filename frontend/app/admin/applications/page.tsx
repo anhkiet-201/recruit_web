@@ -37,7 +37,7 @@ export default function AdminApplicationsPage() {
         { value: "pending", label: "Pending", icon: Clock },
         { value: "reviewed", label: "Reviewed", icon: HelpCircle },
         { value: "accepted", label: "Accepted", icon: CheckCircle },
-        { value: "rejected", label: "Rejected", icon: RedXCircle },
+        { value: "rejected", label: "Rejected", icon: XCircle },
         { value: "expired", label: "Expired", icon: XCircle },
     ];
 
@@ -99,4 +99,4 @@ export default function AdminApplicationsPage() {
     );
 }
 
-import { CheckCircle, Clock, RedXCircle, HelpCircle } from "lucide-react";
+import { CheckCircle, Clock, HelpCircle } from "lucide-react";

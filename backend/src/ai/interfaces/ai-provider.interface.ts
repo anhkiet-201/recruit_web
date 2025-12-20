@@ -1,18 +1,25 @@
-export interface IAiProvider {
-  /**
-   * Chuyển văn bản thành vector số
-   */
-  generateEmbedding(text: string): Promise<number[]>;
+export interface AiResponse {
+  text?: string;
+  toolCall?: {
+    name: string;
+    args: any;
+  };
+}
 
-  /**
-   * Chat hoặc xử lý văn bản bằng AI
-   */
-  generateText(prompt: string): Promise<string>;
+export abstract class IAiProvider {
+  /** Tạo Vector Embedding */
+  abstract generateEmbedding(text: string): Promise<number[]>;
 
-  /**
-   * Lấy instance của chat model (Dành riêng cho các tính năng chat nâng cao)
-   */
-  getChatModel(systemInstruction?: string): any;
+  /** Tạo Text đơn giản */
+  abstract generateText(prompt: string): Promise<string>;
+
+  /** Chat với lịch sử và Tools */
+  abstract chat(
+    systemInstruction: string,
+    history: { role: string; parts: string }[],
+    message: string,
+    tools?: any[]
+  ): Promise<AiResponse>;
 }
 
 export const AI_PROVIDER_TOKEN = 'AI_PROVIDER_TOKEN';

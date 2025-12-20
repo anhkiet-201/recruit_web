@@ -13,7 +13,7 @@ RecruitWeb là một nền tảng tuyển dụng hiện đại, được thiết
 - **Framework**: NestJS (Node.js)
 - **Database**: PostgreSQL với **pgvector** (Vector Database) & Prisma ORM.
 - **Storage**: MinIO (S3 Compatible).
-- **AI**: Google Gemini (Hỗ trợ mô hình Embedding và Chat).
+- **AI**: Google Gemini (Hỗ trợ mô hình Embedding và Chat), tích hợp **Abstraction Layer** để dễ dàng mở rộng sang OpenAI.
 - **Automation**: NestJS Schedule (Cron Jobs).
 
 ## ✨ Tính năng nổi bật
@@ -21,10 +21,11 @@ RecruitWeb là một nền tảng tuyển dụng hiện đại, được thiết
 ### 🧠 Trí tuệ nhân tạo (AI-Powered)
 - **Tìm kiếm Ngữ nghĩa (Semantic Search)**: Tìm kiếm công việc bằng ngôn ngữ tự nhiên (ví dụ: "công việc về dữ liệu").
 - **AI Reranking**: AI tự động kiểm duyệt và xếp hạng lại kết quả tìm kiếm để đảm bảo độ chính xác cao nhất.
-- **Trợ lý Chatbot AI**:
-  - Tư vấn nghề nghiệp, CV và phỏng vấn.
-  - Tự động nhận diện và đề xuất tìm kiếm cho người dùng.
-  - Ghi nhớ lịch sử chat và hành vi người dùng (đã đăng nhập hoặc khách).
+- **Trợ lý Chatbot AI Thông minh**:
+  - **Thấu hiểu ngữ nghĩa sâu**: Sử dụng `system.md` và `user_context.md` để hiểu sâu về kỹ năng và kinh nghiệm người dùng.
+  - **Tự động Tìm kiếm (RAG)**: AI chủ động sử dụng công cụ tìm kiếm khi phát hiện nhu cầu của người dùng, sau đó phân tích kết quả trả về từ Database để tư vấn chính xác.
+  - **Vòng lặp phản hồi (Feedback Loop)**: Cơ chế "Hidden Event" giúp AI tự động tóm tắt kết quả tìm kiếm thực tế ngay sau khi điều hướng người dùng.
+  - **Cá nhân hóa theo CV**: So khớp Vector Embedding của người dùng với Database Job để đưa ra nhận định về trình độ chuyên môn.
 - **Phân tích CV tự động**: Tự động đọc và bóc tách thông tin từ file CV (PDF) để điền vào hồ sơ người dùng.
 - **Vector hóa dữ liệu**: Mọi công việc, hồ sơ người dùng và lịch sử tìm kiếm đều được chuyển thành Vector để AI có thể hiểu sâu về ngữ nghĩa.
 

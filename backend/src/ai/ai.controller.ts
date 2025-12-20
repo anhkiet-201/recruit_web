@@ -9,7 +9,7 @@ export class AiController {
   constructor(
     private readonly aiService: AiService,
     private readonly jwtService: JwtService
-  ) {}
+  ) { }
 
   @Post('chat')
   @ApiBody({
@@ -17,24 +17,25 @@ export class AiController {
       type: 'object',
       properties: {
         message: { type: 'string' },
-        history: { 
-          type: 'array', 
-          items: { 
-            type: 'object', 
-            properties: { 
-              role: { type: 'string' }, 
-              parts: { type: 'string' } 
-            } 
-          } 
+        history: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              role: { type: 'string' },
+              parts: { type: 'string' }
+            }
+          }
         }
       }
     }
   })
   async chat(@Request() req, @Body() body: { message: string, history: any[] }) {
     try {
-      let userId: string | undefined = undefined;
+      // Manual extraction of userId if present, allowing guestId as fallback
+      let userId = req.user?.userId;
       const authHeader = req.headers.authorization;
-      
+
       // Manual Token Decoding (Soft Auth)
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split(' ')[1];
@@ -50,7 +51,7 @@ export class AiController {
       const response = await this.aiService.chat(body.message, body.history || [], userId, guestId);
       return { response };
     } catch (error) {
-      console.error("Gemini Chat Error Details:", error);
+      console.error("AI Chat Error:", error);
       throw error;
     }
   }
