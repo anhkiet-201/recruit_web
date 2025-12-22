@@ -35,7 +35,7 @@ export default function TitleSelector({ defaultValue = "", value, onChange }: Ti
         if (inputValue.trim() === "") {
             setFilteredSuggestions(suggestions.slice(0, 5));
         } else {
-            const filtered = suggestions.filter(item => 
+            const filtered = suggestions.filter(item =>
                 item.toLowerCase().includes(inputValue.toLowerCase())
             );
             setFilteredSuggestions(filtered.slice(0, 8)); // Limit to 8 results
@@ -55,9 +55,9 @@ export default function TitleSelector({ defaultValue = "", value, onChange }: Ti
     return (
         <div ref={containerRef} className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
-            <input 
+            <input
                 name="title"
-                type="text" 
+                type="text"
                 autoComplete="off"
                 value={inputValue}
                 onChange={(e) => {
@@ -67,7 +67,7 @@ export default function TitleSelector({ defaultValue = "", value, onChange }: Ti
                     setIsOpen(true);
                 }}
                 onFocus={() => setIsOpen(true)}
-                placeholder="Tên công việc, vị trí, kỹ năng..." 
+                placeholder="Tên công việc, vị trí, kỹ năng..."
                 className="w-full pl-12 pr-4 py-4 rounded-xl border-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-transparent"
             />
 
@@ -78,7 +78,7 @@ export default function TitleSelector({ defaultValue = "", value, onChange }: Ti
                         <span className="text-[10px] font-bold text-gray-400 uppercase px-2 tracking-wider">Đề xuất tìm kiếm</span>
                         <Sparkles size={12} className="text-yellow-500 mr-2" />
                     </div>
-                    <ul className="max-h-60 overflow-y-auto">
+                    <ul className="max-h-60 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {filteredSuggestions.map((item, index) => (
                             <li key={index}>
                                 <button

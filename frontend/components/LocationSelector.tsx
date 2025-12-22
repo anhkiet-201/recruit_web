@@ -25,7 +25,7 @@ export default function LocationSelector({ defaultValue = "" }: LocationSelector
         if (inputValue.trim() === "") {
             setFilteredLocations(locations.slice(0, 5)); // Show first 5 if empty
         } else {
-            const filtered = locations.filter(loc => 
+            const filtered = locations.filter(loc =>
                 loc.toLowerCase().includes(inputValue.toLowerCase())
             );
             setFilteredLocations(filtered);
@@ -46,9 +46,9 @@ export default function LocationSelector({ defaultValue = "" }: LocationSelector
     return (
         <div ref={containerRef} className="flex-1 relative">
             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
-            <input 
+            <input
                 name="location"
-                type="text" 
+                type="text"
                 autoComplete="off"
                 value={inputValue}
                 onChange={(e) => {
@@ -56,7 +56,7 @@ export default function LocationSelector({ defaultValue = "" }: LocationSelector
                     setIsOpen(true);
                 }}
                 onFocus={() => setIsOpen(true)}
-                placeholder="Thành phố, địa điểm..." 
+                placeholder="Thành phố, địa điểm..."
                 className="w-full pl-12 pr-4 py-4 rounded-xl border-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-transparent"
             />
 
@@ -66,7 +66,7 @@ export default function LocationSelector({ defaultValue = "" }: LocationSelector
                     <div className="p-2 border-b border-gray-50 bg-gray-50/50">
                         <span className="text-[10px] font-bold text-gray-400 uppercase px-2 tracking-wider">Gợi ý địa điểm</span>
                     </div>
-                    <ul className="max-h-60 overflow-y-auto">
+                    <ul className="max-h-60 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {filteredLocations.map((loc, index) => (
                             <li key={index}>
                                 <button
