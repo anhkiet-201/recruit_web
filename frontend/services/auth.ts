@@ -34,9 +34,13 @@ export const AuthService = {
         return null;
     },
 
-    // Stub for Google Login - requires backend implementation
-    loginWithGoogle: async () => {
-        console.warn('Google Login not yet implemented on backend');
-        alert("Google Login is not yet implemented.");
+    // Google Login - sends ID token to backend for verification
+    loginWithGoogle: async (idToken: string) => {
+        const response = await api.post('/auth/google', { token: idToken });
+        if (response.access_token) {
+            localStorage.setItem('token', response.access_token);
+            return response.user;
+        }
+        throw new Error('Google login failed: No access token');
     }
 };

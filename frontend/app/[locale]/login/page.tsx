@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, LogIn, Chrome } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -27,13 +28,20 @@ export default function LoginPage() {
         }
     };
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleSuccess = async (credentialResponse: any) => {
         try {
-            await AuthService.loginWithGoogle();
-            router.push("/");
+            if (credentialResponse.credential) {
+                await AuthService.loginWithGoogle(credentialResponse.credential);
+                await refreshProfile();
+                router.push("/");
+            }
         } catch (err: any) {
             setError(err.message);
         }
+    };
+
+    const handleGoogleError = () => {
+        setError("Google Login Failed");
     };
 
     return (
@@ -108,13 +116,17 @@ export default function LoginPage() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={handleGoogleLogin}
-                            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-[0.98]"
-                        >
-                            <Chrome size={20} className="text-red-500" />
-                            {t('googleButton')}
-                        </button>
+                        <div className="flex justify-center w-full min-h-[40px]">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={handleGoogleError}
+                                useOneTap={false}
+                                itp_support={true}
+                                theme="outline"
+                                shape="pill"
+                                width="360" // Fixed width can help stability
+                            />
+                        </div>
                     </div>
                     <div className="p-6 bg-gray-50 border-t border-gray-100 text-center">
                         <p className="text-sm text-gray-500">
