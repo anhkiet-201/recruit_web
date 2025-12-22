@@ -5,12 +5,17 @@ import { ApplicationService } from "@/services/applicationService";
 import Button from "@/components/ui/Button";
 import { CheckCircle, Zap } from "lucide-react";
 import ApplyJobDialog from "./ApplyJobDialog";
+import { useTranslations } from "next-intl";
 
-export default function JobActionSection({ jobId, jobTitle = "Vị trí tuyển dụng", jobType = "unskilled" }: { jobId: string; jobTitle?: string; jobType?: string }) {
+export default function JobActionSection({ jobId, jobTitle, jobType = "unskilled" }: { jobId: string; jobTitle?: string; jobType?: string }) {
+    const t = useTranslations("JobDetail");
     const { user } = useAuth();
     const [isApplied, setIsApplied] = useState(false);
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsOpen] = useState(false);
+
+    // Default title fallback if none provided
+    const displayTitle = jobTitle || t('position');
 
     useEffect(() => {
         if (user) {
@@ -36,24 +41,24 @@ export default function JobActionSection({ jobId, jobTitle = "Vị trí tuyển 
                 icon={CheckCircle}
                 disabled
             >
-                Đã ứng tuyển thành công
+                {t('applied')}
             </Button>
         );
     }
 
     return (
         <>
-            <Button 
-                icon={Zap} 
+            <Button
+                icon={Zap}
                 className="w-full shadow-xl shadow-blue-200 py-4 text-lg"
                 onClick={() => setIsOpen(true)}
             >
-                Ứng tuyển ngay
+                {t('applyNow')}
             </Button>
 
-            <ApplyJobDialog 
+            <ApplyJobDialog
                 jobId={jobId}
-                jobTitle={jobTitle}
+                jobTitle={displayTitle}
                 jobType={jobType}
                 isOpen={isDialogOpen}
                 onClose={() => setIsOpen(false)}

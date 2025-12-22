@@ -6,11 +6,14 @@ import { useRouter, usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { LogOut, LayoutDashboard, ShieldCheck, User as UserIcon, Briefcase } from "lucide-react";
 import Image from "next/image";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
 
 export default function Navbar() {
     const { user, profile, loading, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const t = useTranslations("Navigation");
 
     const handleLogout = async () => {
         logout();
@@ -18,13 +21,15 @@ export default function Navbar() {
     };
 
     // Kiểm tra xem có đang ở trang admin không để ẩn nav nếu cần, hoặc thay đổi style
-    const isAdminPage = pathname?.startsWith('/admin');
+    const isAdminPage = pathname?.includes('/admin');
+
+    if (isAdminPage) return null;
 
     return (
         <nav className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-xl border-b border-gray-100/50 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-20">
-                    
+
                     {/* Logo Section */}
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center gap-2.5 group">
@@ -35,32 +40,12 @@ export default function Navbar() {
                                 Recruit<span className="text-blue-600">Web</span>
                             </span>
                         </Link>
-                        
-                        {/* Desktop Menu */}
-                        {!isAdminPage && (
-                            <div className="hidden md:ml-10 md:flex md:space-x-8">
-                                <Link 
-                                    href="/" 
-                                    className={`px-1 pt-1 text-sm font-black uppercase tracking-widest transition-colors ${
-                                        pathname === '/' ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400 hover:text-gray-900"
-                                    }`}
-                                >
-                                    Home
-                                </Link>
-                                <Link 
-                                    href="/jobs" 
-                                    className={`px-1 pt-1 text-sm font-black uppercase tracking-widest transition-colors ${
-                                        pathname?.startsWith('/jobs') ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400 hover:text-gray-900"
-                                    }`}
-                                >
-                                    Jobs
-                                </Link>
-                            </div>
-                        )}
                     </div>
 
                     {/* Right Action Section */}
                     <div className="flex items-center gap-4">
+                        <LanguageSwitcher />
+
                         {loading ? (
                             <div className="flex gap-2">
                                 <div className="w-20 h-9 bg-gray-100 animate-pulse rounded-xl"></div>
@@ -98,10 +83,10 @@ export default function Navbar() {
                                     </div>
                                 </Link>
 
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    icon={LogOut} 
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    icon={LogOut}
                                     onClick={handleLogout}
                                     className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
                                 />
@@ -110,12 +95,12 @@ export default function Navbar() {
                             <div className="flex items-center gap-3">
                                 <Link href="/login">
                                     <Button variant="ghost" className="text-gray-500 font-black">
-                                        Login
+                                        {t('login')}
                                     </Button>
                                 </Link>
                                 <Link href="/register">
                                     <Button className="shadow-blue-200">
-                                        Register
+                                        {t('register')}
                                     </Button>
                                 </Link>
                             </div>

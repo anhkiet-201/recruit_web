@@ -11,7 +11,19 @@ export class UploadController {
     constructor(private readonly minioService: MinioService) {}
 
     @Post()
-// ... (keep existing @Post)
+    @UseInterceptors(FileInterceptor('file'))
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+        },
+    })
     async uploadFile(@UploadedFile() file: Express.Multer.File) {
         if (!file) throw new Error('File is required');
         return await this.minioService.uploadFile(file);

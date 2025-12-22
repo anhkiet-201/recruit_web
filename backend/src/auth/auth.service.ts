@@ -32,34 +32,36 @@ export class AuthService {
         };
     }
 
-    async register(data: any) {
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        try {
-            const user = await this.prisma.user.create({
-                data: {
-                    id: data.uid || undefined, // Allow providing UID if syncing, else autogenerate
-                    email: data.email,
-                    password: hashedPassword,
-                    name: data.name,
-                    role: 'candidate',
-                },
-            });
-            const { password, ...result } = user;
-            return result;
-        } catch (error: any) {
-            if (error.code === 'P2002') {
-                // User exists (email collision), return the existing user
-                const existingUser = await this.prisma.user.findUnique({
-                    where: { email: data.email }
-                });
-                if (existingUser) {
-                    const { password, ...result } = existingUser;
-                    return result;
-                }
-            }
-            throw error;
-        }
+  async register(email: string, pass: string, name: string, guestId?: string) {
+    const hashedPassword = await bcrypt.hash(pass, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        role: 'candidate',
+      },
+    });
+
+    // Migrate Guest search history to User if guestId provided
+    if (guestId) {
+      try {
+        await this.prisma.searchHistory.updateMany({
+          where: { guestId },
+          data: {
+            userId: user.id,
+            guestId: null // Clear guest link
+          }
+        });
+        // Delete the guest record as it's no longer needed
+        await this.prisma.guest.delete({ where: { id: guestId } }).catch(() => {});
+      } catch (e) {
+        console.warn('Migration of guest history failed', e);
+      }
     }
+
+    return user;
+  }
 
     async getUserById(id: string) {
         const user = await this.prisma.user.findUnique({ where: { id } });

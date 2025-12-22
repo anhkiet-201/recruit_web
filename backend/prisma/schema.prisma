@@ -23,8 +23,29 @@ model User {
   cvUrl     String?
   avatarUrl String?
   createdAt DateTime @default(now())
+  embedding Unsupported("vector(768)")?
 
-  applications Application[]
+  applications    Application[]
+  searchHistories SearchHistory[]
+}
+
+model Guest {
+  id              String          @id @default(uuid()) @db.Uuid
+  lastActive      DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+  searchHistories SearchHistory[]
+}
+
+model SearchHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?
+  guestId   String?  @db.Uuid
+  query     String
+  createdAt DateTime @default(now())
+  embedding Unsupported("vector(768)")?
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guest     Guest?   @relation(fields: [guestId], references: [id], onDelete: Cascade)
 }
 
 model Job {
@@ -37,11 +58,12 @@ model Job {
   experienceYears Int?
   createdAt       DateTime @default(now())
   updatedAt       DateTime? @updatedAt
-  deadline        DateTime? // New field for expiration
+  deadline        DateTime? 
   isActive        Boolean  @default(true)
   imageUrl        String?
   jobType         String?  // 'unskilled' | 'skilled' | 'professional'
   views           Int      @default(0)
+  embedding       Unsupported("vector(768)")?
 
   applications    Application[]
   jobTags         JobTag[]
@@ -52,7 +74,7 @@ model Application {
   jobId     String   @db.Uuid
   userId    String
   cvUrl     String
-  status    String   @default("pending") // 'pending' | 'reviewed' | 'rejected' | 'accepted'
+  status    String   @default("pending") // 'pending' | 'reviewed' | 'rejected' | 'accepted' | 'expired'
   createdAt DateTime @default(now())
 
   job       Job      @relation(fields: [jobId], references: [id])

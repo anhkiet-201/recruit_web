@@ -1,13 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { AiService } from '../ai/ai.service';
 
 @ApiTags('jobs')
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobsService: JobsService) { }
+  constructor(
+    private readonly jobsService: JobsService,
+    private readonly aiService: AiService
+  ) { }
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
@@ -48,8 +52,16 @@ export class JobsController {
   @ApiQuery({ name: 'jobType', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  search(@Query() query: any) {
-    return this.jobsService.search(query);
+  async search(@Request() req, @Query() query: any) {
+    const userId = req.user?.userId;
+    const guestId = req.headers['x-guest-id'] as string;
+    return this.jobsService.search({ ...query, userId, guestId });
+  }
+
+  @Get('ai-search')
+  @ApiQuery({ name: 'q', required: true })
+  aiSearch(@Query('q') query: string) {
+    return this.aiService.findSimilarJobs(query);
   }
 
   @Get('locations')

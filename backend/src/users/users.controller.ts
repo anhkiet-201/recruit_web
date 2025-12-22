@@ -22,7 +22,16 @@ export class UsersController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { 
+    storage: memoryStorage(),
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === 'application/pdf') {
+        cb(null, true);
+      } else {
+        cb(new Error('Chỉ cho phép tải lên tệp tin định dạng PDF cho CV'), false);
+      }
+    }
+  }))
   uploadCV(@Request() req, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new Error('File is required');
     return this.usersService.updateCV(req.user.userId, file);

@@ -1,7 +1,18 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
 
 interface RequestOptions extends RequestInit {
     headers?: Record<string, string>;
+}
+
+// Helper to get or create a persistent guestId
+function getGuestId() {
+    if (typeof window === 'undefined') return null;
+    let gid = localStorage.getItem('guestId');
+    if (!gid) {
+        gid = crypto.randomUUID();
+        localStorage.setItem('guestId', gid);
+    }
+    return gid;
 }
 
 async function fetchClient<T = any>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -10,6 +21,12 @@ async function fetchClient<T = any>(endpoint: string, options: RequestOptions = 
     const headers: Record<string, string> = {
         ...options.headers,
     };
+
+    // Add Guest ID to every request
+    const gid = getGuestId();
+    if (gid) {
+        headers['X-Guest-Id'] = gid;
+    }
 
     const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
@@ -32,7 +49,6 @@ async function fetchClient<T = any>(endpoint: string, options: RequestOptions = 
         throw new Error(errorData.message || 'API request failed');
     }
 
-    // Check if response has content before parsing
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.indexOf("application/json") !== -1) {
         return response.json();

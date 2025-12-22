@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { ApplicationService } from "@/services/applicationService";
 import { JobService } from "@/services/jobService";
 import { ChevronDown, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface JobFeedProps {
     initialData: { items: Job[], total: number, lastPage: number };
@@ -14,6 +15,7 @@ interface JobFeedProps {
 }
 
 export default function JobFeed({ initialData, filters }: JobFeedProps) {
+    const t = useTranslations("HomePage");
     const { user } = useAuth();
     const [jobs, setJobs] = useState<Job[]>(initialData.items);
     const [appliedJobIds, setAppliedJobIds] = useState<string[]>([]);
@@ -44,12 +46,12 @@ export default function JobFeed({ initialData, filters }: JobFeedProps) {
         setLoadingMore(true);
         const nextPage = page + 1;
         try {
-            const result = await JobService.searchJobs({ 
-                ...filters, 
-                page: nextPage, 
-                limit: 6 
+            const result = await JobService.searchJobs({
+                ...filters,
+                page: nextPage,
+                limit: 6
             });
-            
+
             setJobs(prev => [...prev, ...result.items]);
             setPage(nextPage);
             setHasMore(nextPage < result.lastPage);
@@ -65,16 +67,16 @@ export default function JobFeed({ initialData, filters }: JobFeedProps) {
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
                 {jobs.length > 0 ? (
                     jobs.map((job, index) => (
-                        <JobCard 
-                            key={job.id} 
-                            job={job} 
+                        <JobCard
+                            key={job.id}
+                            job={job}
                             isApplied={appliedJobIds.includes(job.id)}
                             priority={index < 3} // Priority for top 3 jobs
                         />
                     ))
                 ) : (
                     <div className="col-span-full text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
-                        <p className="text-gray-400 font-medium">Không tìm thấy công việc nào phù hợp.</p>
+                        <p className="text-gray-400 font-medium">{t('noJobsFound')}</p>
                     </div>
                 )}
             </div>
@@ -89,11 +91,11 @@ export default function JobFeed({ initialData, filters }: JobFeedProps) {
                         {loadingMore ? (
                             <>
                                 <RefreshCw size={18} className="animate-spin text-blue-600" />
-                                Đang tải thêm...
+                                {t('loadingMore')}
                             </>
                         ) : (
                             <>
-                                Xem thêm công việc
+                                {t('loadMore')}
                                 <ChevronDown size={18} className="group-hover:translate-y-0.5 transition-transform" />
                             </>
                         )}
