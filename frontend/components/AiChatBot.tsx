@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import MarkdownRenderer from "./ui/MarkdownRenderer";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 /**
  * Interface cho Tin nhắn
@@ -27,6 +27,7 @@ export default function AiChatBot() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const t = useTranslations("Chatbot");
+    const locale = useLocale();
 
     const INITIAL_MESSAGES: Message[] = [
         { role: "bot", text: t('greeting'), timestamp: Date.now() }
@@ -166,7 +167,7 @@ export default function AiChatBot() {
                 parts: msg.text
             }));
 
-            const contextMessage = `[User Context: Page=${pathname}] ${content}`;
+            const contextMessage = `[User Context: Page=${pathname}, Language=${locale}] ${content}`;
 
             const result = await api.post<{ response: string }>("/ai/chat", {
                 message: contextMessage,
@@ -318,8 +319,8 @@ export default function AiChatBot() {
                                         {/* Bubble */}
                                         <div className={`flex flex-col gap-2`}>
                                             <div className={`px-4 py-3 text-sm leading-relaxed shadow-sm ${msg.role === 'user'
-                                                    ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
-                                                    : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
+                                                ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
+                                                : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
                                                 }`}>
                                                 <MarkdownRenderer content={msg.text} />
                                             </div>
