@@ -82,17 +82,42 @@ export default function ManageJobsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        const ok = await confirm({
-            title: "Delete Job",
-            message: "Are you sure? This cannot be undone.",
-            confirmText: "Delete Job",
-            isDanger: true
-        });
-        if (!ok) return;
-        try {
-            await JobService.deleteJob(id);
-            setJobs(prev => prev.filter(job => job.id !== id));
-        } catch (e) { alert("Failed to delete"); }
+        const job = jobs.find(j => j.id === id);
+        if (!job) return;
+
+        const applicationCount = job._count?.applications || 0;
+
+        if (applicationCount > 0) {
+            const ok = await confirm({
+                title: "Cannot Delete Job",
+                message: "This job has generated applications and cannot be deleted. Would you like to mark it as expired instead to stop receiving new applications?",
+                confirmText: "Expire Job",
+                isDanger: false
+            });
+
+            if (ok) {
+                try {
+                    // Set deadline to yesterday to expire it
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+
+                    await JobService.updateJob(id, { deadline: yesterday.toISOString() });
+                    setJobs(prev => prev.map(j => j.id === id ? { ...j, deadline: yesterday.toISOString() } : j));
+                } catch (e) { console.error(e); alert("Failed to expire job"); }
+            }
+        } else {
+            const ok = await confirm({
+                title: "Delete Job",
+                message: "Are you sure? This cannot be undone.",
+                confirmText: "Delete Job",
+                isDanger: true
+            });
+            if (!ok) return;
+            try {
+                await JobService.deleteJob(id);
+                setJobs(prev => prev.filter(job => job.id !== id));
+            } catch (e) { alert("Failed to delete"); }
+        }
     };
 
     const handleBulkStatus = async (status: boolean) => {
@@ -206,9 +231,19 @@ export default function ManageJobsPage() {
                                         <p className="text-sm font-bold text-gray-700">{job.deadline ? new Date(job.deadline).toLocaleDateString('en-GB') : 'No Limit'}</p>
                                     </td>
                                     <td className="px-6 py-5">
-                                        <button onClick={() => handleToggleStatus(job)}>
-                                            <Badge variant={job.isActive ? "green" : "gray"} isDot>{job.isActive ? "Active" : "Draft"}</Badge>
-                                        </button>
+                                        {(() => {
+                                            const isExpired = job.deadline && new Date(job.deadline) < new Date();
+                                            if (isExpired) {
+                                                return (
+                                                    <Badge variant="red" isDot>Expired</Badge>
+                                                );
+                                            }
+                                            return (
+                                                <button onClick={() => handleToggleStatus(job)}>
+                                                    <Badge variant={job.isActive ? "green" : "gray"} isDot>{job.isActive ? "Active" : "Draft"}</Badge>
+                                                </button>
+                                            );
+                                        })()}
                                     </td>
                                     <td className="px-8 py-5 text-right">
                                         <div className="flex justify-end gap-2">
