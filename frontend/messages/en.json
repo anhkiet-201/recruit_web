@@ -177,7 +177,19 @@
         "registerButton": "Create Account",
         "hasAccount": "Already have an account?",
         "loginLink": "Login",
-        "passwordMinLength": "Minimum 6 characters"
+        "passwordMinLength": "Minimum 6 characters",
+        "forgotPasswordLink": "Forgot password?",
+        "forgotPasswordTitle": "Forgot Password",
+        "forgotPasswordSubtitle": "Enter your email to receive a reset link",
+        "sendResetLink": "Send reset link",
+        "backToLogin": "Back to login",
+        "resetPasswordTitle": "Reset Password",
+        "resetPasswordSubtitle": "Enter a new password for your account",
+        "newPasswordLabel": "New password",
+        "confirmPasswordLabel": "Confirm new password",
+        "resetPasswordButton": "Update password",
+        "resetSuccess": "Password updated successfully!",
+        "forgotSuccess": "Reset link has been sent to your email."
     },
     "Footer": {
         "copyright": "© {year} RecruitWeb. All rights reserved."

@@ -11,6 +11,7 @@ import { ApplicationsModule } from './applications/applications.module';
 import { TagsModule } from './tags/tags.module';
 import { UploadModule } from './upload/upload.module';
 import { AiModule } from './ai/ai.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { AiModule } from './ai/ai.module';
     ApplicationsModule,
     TagsModule,
     UploadModule,
-    AiModule
+    AiModule,
+    MailModule
   ],
   controllers: [AppController],
   providers: [AppService],

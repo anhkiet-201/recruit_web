@@ -177,7 +177,19 @@
     "registerButton": "Đăng ký tài khoản",
     "hasAccount": "Đã có tài khoản?",
     "loginLink": "Đăng nhập",
-    "passwordMinLength": "Tối thiểu 6 ký tự"
+    "passwordMinLength": "Tối thiểu 6 ký tự",
+    "forgotPasswordLink": "Quên mật khẩu?",
+    "forgotPasswordTitle": "Quên mật khẩu",
+    "forgotPasswordSubtitle": "Nhập email của bạn để nhận liên kết đặt lại mật khẩu",
+    "sendResetLink": "Gửi liên kết đặt lại",
+    "backToLogin": "Quay lại đăng nhập",
+    "resetPasswordTitle": "Đặt lại mật khẩu",
+    "resetPasswordSubtitle": "Nhập mật khẩu mới cho tài khoản của bạn",
+    "newPasswordLabel": "Mật khẩu mới",
+    "confirmPasswordLabel": "Xác nhận mật khẩu mới",
+    "resetPasswordButton": "Cập nhật mật khẩu",
+    "resetSuccess": "Mật khẩu đã được cập nhật thành công!",
+    "forgotSuccess": "Liên kết đặt lại mật khẩu đã được gửi đến email của bạn."
   },
   "Footer": {
     "copyright": "© {year} RecruitWeb. All rights reserved."

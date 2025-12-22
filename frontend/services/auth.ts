@@ -38,5 +38,13 @@ export const AuthService = {
     loginWithGoogle: async () => {
         console.warn('Google Login not yet implemented on backend');
         alert("Google Login is not yet implemented.");
+    },
+
+    forgotPassword: async (email: string) => {
+        return api.post('/auth/forgot-password', { email });
+    },
+
+    resetPassword: async (token: string, password: any) => {
+        return api.post('/auth/reset-password', { token, password });
     }
 };
