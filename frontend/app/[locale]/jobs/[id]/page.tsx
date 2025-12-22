@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { JobService } from "@/services/jobService";
 import { useRouter, useParams } from "next/navigation";
 import JobActionSection from "@/components/JobActionSection";
-import { MapPin, DollarSign, Briefcase, Calendar, ChevronLeft, Building2, Eye, Users, Clock, Share2, RefreshCw } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Calendar, ChevronLeft, Building2, Eye, Users, Clock, Share2, RefreshCw, Languages } from "lucide-react";
+import { api } from "@/lib/api";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -23,6 +24,9 @@ export default function JobDetailPage() {
     const [job, setJob] = useState<Job | null>(null);
     const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
+    const [translatedContent, setTranslatedContent] = useState<string | null>(null);
+    const [isTranslating, setIsTranslating] = useState(false);
+    const [showTranslated, setShowTranslated] = useState(false);
 
     const getJobTypeLabel = (type?: string) => {
         switch (type) {
@@ -62,6 +66,43 @@ export default function JobDetailPage() {
         if (!dateStr) return "N/A";
         const date = new Date(dateStr);
         return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    };
+
+    const handleTranslate = async () => {
+        if (showTranslated) {
+            setShowTranslated(false);
+            return;
+        }
+
+        if (translatedContent) {
+            setShowTranslated(true);
+            return;
+        }
+
+        if (!job?.content) return;
+
+        setIsTranslating(true);
+        try {
+            const prompt = `Translate the following job description to ${locale === 'vi' ? 'Vietnamese' : locale === 'zh' ? 'Chinese' : 'English'}. Keep the formatting (markdown/HTML) if possible. Do not add any conversational text, just the translation.\n\n${job.content}`;
+
+            const res = await api.post<{ response: string }>("/ai/chat", {
+                message: prompt,
+                history: []
+            });
+
+            // The AI chat endpoint might wrap response in JSON or return text. 
+            // Based on AiChatBot.tsx, it returns { response: string }
+            // formatting might differ based on model. 
+            // Let's assume response.response is the text.
+
+            setTranslatedContent(res.response);
+            setShowTranslated(true);
+        } catch (error) {
+            console.error("Translation failed:", error);
+            alert("Translation failed. Please try again.");
+        } finally {
+            setIsTranslating(false);
+        }
     };
 
     if (loading) {
@@ -163,12 +204,24 @@ export default function JobDetailPage() {
                                 </div>
 
                                 <div className="prose max-w-none">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="w-2 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-200"></div>
-                                        <h3 className="text-2xl font-black text-gray-900 tracking-tight">{t('jobDetails')}</h3>
+                                    <div className="flex items-center justify-between gap-4 mb-8">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-200"></div>
+                                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">{t('jobDetails')}</h3>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleTranslate}
+                                            disabled={isTranslating}
+                                            className="text-blue-600 hover:bg-blue-50"
+                                            icon={isTranslating ? RefreshCw : Languages}
+                                        >
+                                            {isTranslating ? t('translating') : (showTranslated ? t('originalContent') : t('translateTo'))}
+                                        </Button>
                                     </div>
                                     <div className="whitespace-pre-wrap text-gray-600 text-lg leading-relaxed font-medium">
-                                        {job.content}
+                                        {showTranslated ? translatedContent : job.content}
                                     </div>
                                 </div>
                             </div>
