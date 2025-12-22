@@ -22,4 +22,5 @@ export interface Application {
     status: 'pending' | 'reviewed' | 'rejected' | 'accepted';
     createdAt: string;
     job?: Job; // For display purposes
+    user?: UserProfile; // For display purposes
 }

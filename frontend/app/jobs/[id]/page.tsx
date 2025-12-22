@@ -9,6 +9,7 @@ import Image from "next/image";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { Job } from "@/models/Job";
+import JobCard from "@/components/JobCard";
 
 export default function JobDetailPage() {
     const router = useRouter();
@@ -16,7 +17,17 @@ export default function JobDetailPage() {
     const id = params?.id as string;
 
     const [job, setJob] = useState<Job | null>(null);
+    const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const getJobTypeLabel = (type?: string) => {
+        switch (type) {
+            case 'unskilled': return 'Lao động phổ thông';
+            case 'professional': return 'Nhân sự cấp cao';
+            case 'skilled': return 'Lao động có bằng cấp';
+            default: return 'Tuyển dụng';
+        }
+    };
 
     useEffect(() => {
         if (id) {
@@ -31,6 +42,17 @@ export default function JobDetailPage() {
                 });
         }
     }, [id]);
+
+    useEffect(() => {
+        if (job) {
+            JobService.searchJobs({ jobType: job.jobType, limit: 4 })
+                .then(res => {
+                    const related = res.items.filter(j => j.id !== job.id).slice(0, 3);
+                    setRelatedJobs(related);
+                })
+                .catch(console.error);
+        }
+    }, [job]);
 
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return "N/A";
@@ -74,7 +96,7 @@ export default function JobDetailPage() {
                         <div className="hidden md:block h-8 w-px bg-gray-100"></div>
                         <div className="hidden md:flex items-center gap-3">
                             <h2 className="text-sm font-black text-gray-900 line-clamp-1 max-w-[300px]">{job.title}</h2>
-                            <Badge variant="blue" className="text-[9px]">{job.jobType || 'Tuyển dụng'}</Badge>
+                            <Badge variant="blue" className="text-[9px]">{getJobTypeLabel(job.jobType)}</Badge>
                         </div>
                     </div>
 
@@ -173,7 +195,7 @@ export default function JobDetailPage() {
                                             </div>
                                             <div>
                                                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Loại nhân lực</p>
-                                                <p className="text-sm font-bold text-gray-700 capitalize">{job.jobType || 'Chưa phân loại'}</p>
+                                                <p className="text-sm font-bold text-gray-700">{getJobTypeLabel(job.jobType)}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
@@ -182,7 +204,7 @@ export default function JobDetailPage() {
                                             </div>
                                             <div>
                                                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Hạn nộp</p>
-                                                <p className="text-sm font-bold text-gray-700">{job.deadline ? formatDate(job.deadline) : 'Đang cập nhật'}</p>
+                                                <p className="text-sm font-bold text-gray-700">{job.deadline ? formatDate(job.deadline) : 'Không thời hạn'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -220,6 +242,23 @@ export default function JobDetailPage() {
                     </div>
 
                 </div>
+
+                {/* 4. RELATED JOBS */}
+                {relatedJobs.length > 0 && (
+                    <div className="mt-20 border-t border-gray-200 pt-16">
+                        <div className="flex items-center gap-3 mb-10">
+                            <div className="w-2 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-200"></div>
+                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Công việc liên quan</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {relatedJobs.map(relatedJob => (
+                                <div key={relatedJob.id} className="h-full">
+                                    <JobCard job={relatedJob} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

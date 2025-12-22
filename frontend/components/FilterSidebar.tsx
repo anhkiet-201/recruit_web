@@ -36,9 +36,9 @@ export default function FilterSidebar() {
 
     const jobTypeOptions = [
         { value: "all", label: "Tất cả loại hình", icon: Briefcase },
-        { value: "unskilled", label: "Phổ thông", icon: Zap },
-        { value: "skilled", label: "Chất lượng cao", icon: Award },
-        { value: "professional", label: "Có bằng cấp", icon: GraduationCap },
+        { value: "unskilled", label: "Lao động phổ thông", icon: Zap },
+        { value: "professional", label: "Nhân sự cấp cao", icon: Award },
+        { value: "skilled", label: "Lao động có bằng cấp", icon: GraduationCap },
     ];
 
     return (

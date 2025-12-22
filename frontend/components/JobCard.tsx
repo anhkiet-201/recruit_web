@@ -14,9 +14,9 @@ export default function JobCard({ job, isApplied = false, priority = false }: { 
 
     const getJobTypeLabel = (type?: string) => {
         switch (type) {
-            case 'unskilled': return { label: 'Phổ thông', icon: Zap, color: 'text-green-600 bg-green-50' };
-            case 'skilled': return { label: 'Chất lượng cao', icon: Award, color: 'text-blue-600 bg-blue-50' };
-            case 'professional': return { label: 'Có bằng cấp', icon: GraduationCap, color: 'text-purple-600 bg-purple-50' };
+            case 'unskilled': return { label: 'Lao động phổ thông', icon: Zap, color: 'text-green-600 bg-green-50' };
+            case 'professional': return { label: 'Nhân sự cấp cao', icon: Award, color: 'text-blue-600 bg-blue-50' };
+            case 'skilled': return { label: 'Lao động có bằng cấp', icon: GraduationCap, color: 'text-purple-600 bg-purple-50' };
             default: return { label: 'Tuyển dụng', icon: Zap, color: 'text-gray-600 bg-gray-50' };
         }
     };
@@ -67,7 +67,10 @@ export default function JobCard({ job, isApplied = false, priority = false }: { 
                     </div>
                     {(job as any).jobTags && (job as any).jobTags.length > 0 && <div className="flex flex-wrap gap-1.5 mb-6">{(job as any).jobTags.slice(0, 3).map((jt: any) => <span key={jt.tagId} className="px-2 py-0.5 bg-gray-100 text-[9px] font-black text-gray-400 uppercase rounded-md tracking-wider">#{jt.tag.name}</span>)}{(job as any).jobTags.length > 3 && <span className="text-[9px] font-black text-gray-300 uppercase">...</span>}</div>}
                     <div className="mt-auto flex items-center justify-between bg-gray-50/50 rounded-3xl p-2 pl-4 border border-gray-100/50">
-                        <div className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase tracking-[0.1em]"><Clock size={12} /><span>Hạn: {formatDate(job.deadline)}</span></div>
+                        <div className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase tracking-[0.1em]">
+                            <Clock size={12} />
+                            <span>Hạn: {job.deadline ? formatDate(job.deadline) : 'Không thời hạn'}</span>
+                        </div>
                         <div className="h-9 w-9 bg-white shadow-md rounded-[1.2rem] flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 group-hover:rotate-[360deg]"><ChevronRight size={18} /></div>
                     </div>
                 </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { JobService } from "@/services/jobService";
 import { getAllTags, createTag, addTagToJob, deleteTag, removeTagFromJob, getJobTags } from "@/services/tagService";
 import { Tag } from "@/models/Tag";
-import { X, Save, Upload, MapPin, DollarSign, Calendar, Briefcase, Hash, Plus, Image as ImageIcon, User, AlertCircle } from "lucide-react";
+import { X, Save, Upload, MapPin, DollarSign, Calendar, Briefcase, Hash, Plus, Image as ImageIcon, User, AlertCircle, Zap, Award, GraduationCap } from "lucide-react";
 import { useConfirm } from "@/contexts/ConfirmDialogContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -116,8 +116,8 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
 
     const jobTypeOptions = [
         { value: "unskilled", label: "Lao động phổ thông", icon: Zap },
-        { value: "skilled", label: "Lao động chất lượng cao", icon: Award },
-        { value: "professional", label: "Lao động có bằng cấp", icon: GraduationCap },
+        { value: "professional", label: "Nhân sự cấp cao", icon: Award },
+        { value: "skilled", label: "Lao động có bằng cấp", icon: GraduationCap },
     ];
 
     return (
@@ -159,7 +159,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
                 <Card noPadding className="border-none shadow-2xl">
                     <CardHeader title="Job Specifics" />
                     <div className="p-8 space-y-6">
-                        <Input icon={MapPin} label="Location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
+                        <Input icon={MapPin} label="Location" required value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
                         <div className="grid grid-cols-2 gap-4">
                             <Input icon={DollarSign} label="Min ($)" type="number" value={formData.salaryMin} onChange={e => setFormData({...formData, salaryMin: Number(e.target.value)})} />
                             <Input icon={DollarSign} label="Max ($)" type="number" value={formData.salaryMax} onChange={e => setFormData({...formData, salaryMax: Number(e.target.value)})} />

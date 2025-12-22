@@ -9,6 +9,8 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTe
     error?: string;
     isTextArea?: boolean;
     helperText?: React.ReactNode;
+    rows?: number;
+    inputClassName?: string;
 }
 
 export default function Input({
@@ -17,11 +19,13 @@ export default function Input({
     error,
     isTextArea = false,
     helperText,
+    rows,
     className = "",
+    inputClassName = "",
     ...props
 }: InputProps) {
     const Component = isTextArea ? "textarea" : "input";
-    
+
     return (
         <div className={`w-full space-y-2 ${className}`}>
             {label && (
@@ -45,6 +49,7 @@ export default function Input({
                         ${Icon ? "pl-14" : ""} 
                         ${error ? "ring-4 ring-red-500/5 shadow-red-50" : ""}
                         ${props.readOnly ? "bg-gray-50/50 shadow-none cursor-default" : ""}
+                        ${inputClassName}
                     `}
                     {...(props as any)}
                 />

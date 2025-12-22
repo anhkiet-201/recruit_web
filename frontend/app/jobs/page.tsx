@@ -55,6 +55,7 @@ export default async function JobsPage({
                         defaultValue={params.location} 
                         currentJobType={params.jobType || "all"}
                         action="/jobs"
+                        initialAiMode={isAiSearch}
                     />
                 </div>
                 <div className="absolute top-full left-0 right-0 h-32 bg-gradient-to-b from-white to-transparent pointer-events-none"></div>
