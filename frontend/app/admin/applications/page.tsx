@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { ApplicationService } from "@/services/applicationService";
 import { Application } from "@/models/User";
-import { FileText, Calendar, User, Briefcase, ExternalLink, Search, Filter, XCircle } from "lucide-react";
+import { FileText, Calendar, User, Briefcase, ExternalLink, Search, Filter, XCircle, CheckCircle, Clock, HelpCircle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -43,17 +43,17 @@ export default function AdminApplicationsPage() {
 
     const uniqueJobOptions = [
         { value: "all", label: "Tất cả công việc", icon: Briefcase },
-        ...Array.from(new Set(applications.map(app => app.job?.title).filter(Boolean)))
+        ...Array.from(new Set(applications.map(app => app.job?.title).filter((t): t is string => !!t)))
             .map(title => ({ value: title, label: title, icon: Briefcase }))
     ];
 
     const filteredApplications = applications.filter(app => {
-        const name = (app.user as any)?.name?.toLowerCase() || "";
-        const email = (app.user as any)?.email?.toLowerCase() || "";
+        const name = app.user?.name?.toLowerCase() || "";
+        const email = app.user?.email?.toLowerCase() || "";
         const search = searchTerm.toLowerCase();
-        return (name.includes(search) || email.includes(search)) && 
-               (statusFilter === "all" || app.status === statusFilter) && 
-               (jobFilter === "all" || app.job?.title === jobFilter);
+        return (name.includes(search) || email.includes(search)) &&
+            (statusFilter === "all" || app.status === statusFilter) &&
+            (jobFilter === "all" || app.job?.title === jobFilter);
     });
 
     if (loading) return <div className="min-h-[400px] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
@@ -84,7 +84,7 @@ export default function AdminApplicationsPage() {
                         <tbody className="divide-y divide-gray-50">
                             {filteredApplications.map((app) => (
                                 <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-8 py-5"><p className="text-sm font-black text-gray-900">{(app.user as any)?.name || 'Unknown'}</p></td>
+                                    <td className="px-8 py-5"><p className="text-sm font-black text-gray-900">{app.user?.name || 'Unknown'}</p></td>
                                     <td className="px-6 py-5"><p className="text-sm text-gray-700">{app.job?.title}</p></td>
                                     <td className="px-6 py-5"><p className="text-sm text-gray-500">{formatDate(app.createdAt)}</p></td>
                                     <td className="px-6 py-5">{app.cvUrl ? <a href={app.cvUrl} target="_blank"><Button variant="outline" size="sm" icon={FileText}>View CV</Button></a> : <span className="text-xs text-gray-300 italic">N/A</span>}</td>
@@ -98,5 +98,3 @@ export default function AdminApplicationsPage() {
         </div>
     );
 }
-
-import { CheckCircle, Clock, HelpCircle } from "lucide-react";
