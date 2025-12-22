@@ -10,13 +10,15 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { Job } from "@/models/Job";
 import JobCard from "@/components/JobCard";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatSalaryRange } from "@/utils/currency";
 
 export default function JobDetailPage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id as string;
     const t = useTranslations("JobDetail");
+    const locale = useLocale();
 
     const [job, setJob] = useState<Job | null>(null);
     const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
@@ -155,7 +157,7 @@ export default function JobDetailPage() {
                                         <div className="p-1.5 bg-blue-600 rounded-lg text-white"><DollarSign size={18} /></div>
                                         <div>
                                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{t('salary')}</p>
-                                            <p className="text-sm font-black text-blue-700">{job.salaryMin ? `${job.salaryMin} - ${job.salaryMax}` : t('negotiable')}</p>
+                                            <p className="text-sm font-black text-blue-700">{formatSalaryRange(job.salaryMin || 0, job.salaryMax || 0, locale, t('negotiable'))}</p>
                                         </div>
                                     </div>
                                 </div>

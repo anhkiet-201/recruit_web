@@ -6,11 +6,13 @@ import { Job } from "@/models/Job";
 import { MapPin, DollarSign, Calendar, Zap, GraduationCap, Award, ChevronRight, Clock, Briefcase, Eye, Sparkles } from "lucide-react";
 import SafeImage from "./ui/SafeImage";
 import { formatDate } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatSalaryRange } from "@/utils/currency";
 
 export default function JobCard({ job, isApplied = false, priority = false }: { job: Job; isApplied?: boolean; priority?: boolean; }) {
     const t = useTranslations("JobCard");
     const tDetail = useTranslations("JobDetail");
+    const locale = useLocale();
 
     const placeholderImage = job.isActive
         ? "https://placehold.co/400x200?text=No+Image"
@@ -65,7 +67,7 @@ export default function JobCard({ job, isApplied = false, priority = false }: { 
                     </h3>
                     <div className="grid grid-cols-2 gap-y-4 gap-x-2 mb-6">
                         <div className="flex items-center gap-2"><div className="p-1.5 bg-gray-50 rounded-xl text-gray-400"><MapPin size={14} /></div><span className="text-[11px] font-bold text-gray-500 truncate uppercase tracking-tight">{job.location}</span></div>
-                        <div className="flex items-center gap-2"><div className="p-1.5 bg-blue-50 rounded-xl text-blue-600"><DollarSign size={14} /></div><span className="text-[11px] font-black text-blue-700">{job.salaryMin ? `${job.salaryMin}-${job.salaryMax}` : t('negotiable')}</span></div>
+                        <div className="flex items-center gap-2"><div className="p-1.5 bg-blue-50 rounded-xl text-blue-600"><DollarSign size={14} /></div><span className="text-[11px] font-black text-blue-700">{formatSalaryRange(job.salaryMin || 0, job.salaryMax || 0, locale, t('negotiable'))}</span></div>
                         <div className="flex items-center gap-2"><div className="p-1.5 bg-indigo-50 rounded-xl text-indigo-600"><Briefcase size={14} /></div><span className="text-[11px] font-bold text-indigo-700 uppercase tracking-tight">{job.experienceYears ? t('yearsExp', { count: job.experienceYears }) : t('noExp')}</span></div>
                         <div className="flex items-center gap-2"><div className="p-1.5 bg-orange-50 rounded-xl text-orange-600"><Eye size={14} /></div><span className="text-[11px] font-bold text-orange-700 uppercase tracking-tight">{t('views', { count: job.views || 0 })}</span></div>
                     </div>

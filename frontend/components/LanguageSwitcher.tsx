@@ -1,7 +1,7 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
+import { usePathname, useRouter } from "@/i18n/routing";
 import { ChangeEvent, useState, useTransition, useRef, useEffect } from "react";
 import { Globe, Check } from "lucide-react";
 
@@ -22,12 +22,9 @@ export default function LanguageSwitcher() {
     const handleSelect = (nextLocale: string) => {
         setIsOpen(false);
         startTransition(() => {
-            // Construct new path by replacing the locale segment
-            // pathname starts with /vi, /en, etc.
-            const segments = pathname.split('/');
-            segments[1] = nextLocale;
-            const newPath = segments.join('/');
-            router.replace(newPath);
+            // With next-intl/navigation, we just pass the new locale and pathname
+            // It automatically handles the prefixing logic (including as-needed)
+            router.replace({ pathname }, { locale: nextLocale });
         });
     };
 
@@ -61,8 +58,8 @@ export default function LanguageSwitcher() {
                             onClick={() => handleSelect(lang.code)}
                             disabled={isPending}
                             className={`w-full text-left px-3 py-2 rounded-lg text-sm font-bold flex items-center justify-between transition-colors ${locale === lang.code
-                                    ? 'bg-blue-50 text-blue-700'
-                                    : 'text-gray-700 hover:bg-gray-50'
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
                             <span className="flex items-center gap-2">
