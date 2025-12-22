@@ -20,11 +20,13 @@ export default function Navbar() {
     // Kiểm tra xem có đang ở trang admin không để ẩn nav nếu cần, hoặc thay đổi style
     const isAdminPage = pathname?.startsWith('/admin');
 
+    if (isAdminPage) return null;
+
     return (
         <nav className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-xl border-b border-gray-100/50 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-20">
-                    
+
                     {/* Logo Section */}
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center gap-2.5 group">
@@ -35,28 +37,6 @@ export default function Navbar() {
                                 Recruit<span className="text-blue-600">Web</span>
                             </span>
                         </Link>
-                        
-                        {/* Desktop Menu */}
-                        {!isAdminPage && (
-                            <div className="hidden md:ml-10 md:flex md:space-x-8">
-                                <Link 
-                                    href="/" 
-                                    className={`px-1 pt-1 text-sm font-black uppercase tracking-widest transition-colors ${
-                                        pathname === '/' ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400 hover:text-gray-900"
-                                    }`}
-                                >
-                                    Home
-                                </Link>
-                                <Link 
-                                    href="/jobs" 
-                                    className={`px-1 pt-1 text-sm font-black uppercase tracking-widest transition-colors ${
-                                        pathname?.startsWith('/jobs') ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400 hover:text-gray-900"
-                                    }`}
-                                >
-                                    Jobs
-                                </Link>
-                            </div>
-                        )}
                     </div>
 
                     {/* Right Action Section */}
@@ -98,10 +78,10 @@ export default function Navbar() {
                                     </div>
                                 </Link>
 
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    icon={LogOut} 
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    icon={LogOut}
                                     onClick={handleLogout}
                                     className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
                                 />

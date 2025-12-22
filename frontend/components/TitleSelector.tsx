@@ -6,14 +6,24 @@ import { JobService } from "@/services/jobService";
 
 interface TitleSelectorProps {
     defaultValue?: string;
+    value?: string;
+    onChange?: (value: string) => void;
 }
 
-export default function TitleSelector({ defaultValue = "" }: TitleSelectorProps) {
-    const [inputValue, setInputValue] = useState(defaultValue);
+export default function TitleSelector({ defaultValue = "", value, onChange }: TitleSelectorProps) {
+    // Ưu tiên dùng value từ props nếu có (controlled), ngược lại dùng defaultValue
+    const [inputValue, setInputValue] = useState(value !== undefined ? value : defaultValue);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Sync input value when prop 'value' changes
+    useEffect(() => {
+        if (value !== undefined) {
+            setInputValue(value);
+        }
+    }, [value]);
 
     useEffect(() => {
         // Fetch all available suggestions (titles + tags)
@@ -51,7 +61,9 @@ export default function TitleSelector({ defaultValue = "" }: TitleSelectorProps)
                 autoComplete="off"
                 value={inputValue}
                 onChange={(e) => {
-                    setInputValue(e.target.value);
+                    const newValue = e.target.value;
+                    setInputValue(newValue);
+                    if (onChange) onChange(newValue);
                     setIsOpen(true);
                 }}
                 onFocus={() => setIsOpen(true)}
@@ -73,6 +85,7 @@ export default function TitleSelector({ defaultValue = "" }: TitleSelectorProps)
                                     type="button"
                                     onClick={() => {
                                         setInputValue(item);
+                                        if (onChange) onChange(item);
                                         setIsOpen(false);
                                         // Auto submit parent form
                                         setTimeout(() => {

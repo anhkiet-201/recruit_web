@@ -54,6 +54,10 @@ export const JobService = {
         return api.get<Job[]>(`/jobs/hot?limit=${limit}`);
     },
 
+    createJob: async (jobData: any): Promise<Job> => {
+        return api.post<Job>('/jobs', jobData);
+    },
+
     updateJob: async (id: string, jobData: Partial<Job>): Promise<void> => {
         return api.patch(`/jobs/${id}`, jobData);
     },

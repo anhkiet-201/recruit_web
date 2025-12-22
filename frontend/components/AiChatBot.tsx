@@ -44,6 +44,23 @@ export default function AiChatBot() {
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const chatWindowRef = useRef<HTMLDivElement>(null);
+
+    // --- EFFECT: Click Outside to Close ---
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (chatWindowRef.current && !chatWindowRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        }
+
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isOpen]);
 
     // --- EFFECT: Session Management ---
     useEffect(() => {
@@ -232,6 +249,7 @@ export default function AiChatBot() {
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
+                        ref={chatWindowRef}
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}

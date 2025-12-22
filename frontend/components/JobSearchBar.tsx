@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, MapPin, Sparkles, Wand2, MessageSquare } from "lucide-react";
 import TitleSelector from "./TitleSelector";
 import LocationSelector from "./LocationSelector";
@@ -11,21 +11,34 @@ interface JobSearchBarProps {
     defaultValue?: string;
     currentJobType?: string;
     action?: string;
+    initialAiMode?: boolean;
 }
 
 export default function JobSearchBar({ 
     defaultTitle = "", 
     defaultValue = "", 
     currentJobType = "all",
-    action = "/jobs"
+    action = "/jobs",
+    initialAiMode = true
 }: JobSearchBarProps) {
     const router = useRouter();
-    const [isAiMode, setIsAiMode] = useState(defaultTitle.includes("ai_q") || false);
+    // Default to AI Semantic Mode (true) for better user experience
+    const [isAiMode, setIsAiMode] = useState(initialAiMode);
+    
+    // Shared search term state for both modes
+    const [searchTerm, setSearchTerm] = useState(defaultTitle);
+
+    // Sync state when prop changes (e.g. Triggered by Chatbot AI Search)
+    useEffect(() => {
+        setIsAiMode(initialAiMode);
+        if (defaultTitle) setSearchTerm(defaultTitle);
+    }, [initialAiMode, defaultTitle]);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const text = formData.get("title") as string;
+        // Use state value for title instead of formData to ensure consistency
+        const text = searchTerm; 
         const location = formData.get("location") as string;
         const jobType = formData.get("jobType") as string;
 
@@ -77,14 +90,19 @@ export default function JobSearchBar({
                             name="title"
                             type="text" 
                             autoComplete="off"
-                            defaultValue={defaultTitle}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Mô tả công việc bạn mong muốn (VD: Tôi muốn tìm việc làm lập trình React tại HCM mức lương trên 20tr)..." 
                             className="w-full pl-14 pr-4 py-4 rounded-[1.8rem] border-none focus:ring-0 text-gray-900 bg-transparent font-bold placeholder:text-gray-300 placeholder:font-medium"
                         />
                     </div>
                 ) : (
                     <>
-                        <TitleSelector defaultValue={defaultTitle} />
+                        <TitleSelector 
+                            defaultValue={defaultTitle} 
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                        />
                         <div className="hidden md:block w-px h-10 bg-gray-200 self-center opacity-30"></div>
                         <LocationSelector defaultValue={defaultValue} />
                     </>
