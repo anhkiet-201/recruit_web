@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { JobService } from "@/services/jobService";
 import { useConfirm } from "@/contexts/ConfirmDialogContext";
@@ -8,24 +8,34 @@ import ImportJobDialog from "@/components/ImportJobDialog";
 import { Card, CardHeader } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import Dropdown from "@/components/ui/Dropdown";
 import Badge from "@/components/ui/Badge";
-import { 
-    Plus, Search, MapPin, DollarSign, 
-    Trash2, Edit, Eye, Users, Filter, XCircle, Upload, Calendar, X
+import {
+    Plus, Search, MapPin, DollarSign,
+    Trash2, Edit, Eye, Users, Filter, XCircle, Upload, Calendar, X,
+    CheckCircle, Clock, FileText, HelpCircle, Briefcase
 } from "lucide-react";
 
 export default function ManageJobsPage() {
     const { confirm } = useConfirm();
-    const [jobs, setJobs] = useState<any[]>([]); 
+    const [jobs, setJobs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
     const [showImportDialog, setShowImportDialog] = useState(false);
+
+    // Ref to prevent double fetch in Strict Mode
+    const isMounted = useRef(false);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [locationFilter, setLocationFilter] = useState("all");
 
-    useEffect(() => { loadJobs(); }, []);
+    useEffect(() => {
+        if (!isMounted.current) {
+            loadJobs();
+            isMounted.current = true;
+        }
+    }, []);
 
     const loadJobs = async () => {
         setLoading(true);
@@ -50,7 +60,18 @@ export default function ManageJobsPage() {
         return matchesSearch && matchesStatus && matchesLocation;
     });
 
-    const uniqueLocations = Array.from(new Set(jobs.map(j => j.location).filter(Boolean)));
+    const locationOptions = [
+        { value: "all", label: "All Locations", icon: MapPin },
+        ...Array.from(new Set(jobs.map(j => j.location).filter((t): t is string => !!t)))
+            .map(loc => ({ value: loc, label: loc, icon: MapPin }))
+    ];
+
+    const statusOptions = [
+        { value: "all", label: "All Status", icon: Filter },
+        { value: "active", label: "Active", icon: CheckCircle },
+        { value: "draft", label: "Draft", icon: FileText },
+        { value: "expired", label: "Expired", icon: Clock },
+    ];
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedJobIds(e.target.checked ? filteredJobs.map(job => job.id) : []);
@@ -118,34 +139,32 @@ export default function ManageJobsPage() {
             <Card noPadding className="border-none shadow-2xl">
                 <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col md:flex-row gap-4 items-center">
                     <div className="w-full md:w-96">
-                        <Input 
-                            icon={Search} 
-                            placeholder="Search job title..." 
-                            value={searchTerm} 
+                        <Input
+                            icon={Search}
+                            placeholder="Search job title..."
+                            value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex gap-3 w-full md:w-auto">
-                        <select 
-                            value={locationFilter} 
-                            onChange={(e) => setLocationFilter(e.target.value)}
-                            className="bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-600 px-4 focus:ring-2 focus:ring-blue-500 shadow-inner"
-                        >
-                            <option value="all">All Locations</option>
-                            {uniqueLocations.map((loc: any) => <option key={loc} value={loc}>{loc}</option>)}
-                        </select>
-                        <select 
-                            value={statusFilter} 
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-600 px-4 focus:ring-2 focus:ring-blue-500 shadow-inner"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="draft">Draft</option>
-                            <option value="expired">Expired</option>
-                        </select>
+                    <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                        <div className="w-full md:w-48">
+                            <Dropdown
+                                icon={MapPin}
+                                options={locationOptions}
+                                value={locationFilter}
+                                onChange={setLocationFilter}
+                            />
+                        </div>
+                        <div className="w-full md:w-48">
+                            <Dropdown
+                                icon={Filter}
+                                options={statusOptions}
+                                value={statusFilter}
+                                onChange={setStatusFilter}
+                            />
+                        </div>
                         {(searchTerm || statusFilter !== 'all' || locationFilter !== 'all') && (
-                            <Button variant="ghost" size="sm" icon={XCircle} onClick={() => {setSearchTerm(""); setStatusFilter("all"); setLocationFilter("all");}}>Clear</Button>
+                            <Button variant="ghost" size="sm" icon={XCircle} onClick={() => { setSearchTerm(""); setStatusFilter("all"); setLocationFilter("all"); }}>Clear</Button>
                         )}
                     </div>
                 </div>
@@ -213,7 +232,7 @@ export default function ManageJobsPage() {
                         <Button variant="ghost" size="sm" className="text-gray-400 hover:bg-white/10" onClick={() => handleBulkStatus(false)}>Draft</Button>
                         <Button variant="ghost" size="sm" icon={Trash2} className="text-red-400 hover:bg-white/10" onClick={() => handleBulkStatus(false)}>Delete</Button>
                     </div>
-                    <Button variant="secondary" size="sm" onClick={() => setSelectedJobIds([])} className="bg-white/10 hover:bg-white/20 border-none p-2 rounded-2xl"><X size={18}/></Button>
+                    <Button variant="secondary" size="sm" onClick={() => setSelectedJobIds([])} className="bg-white/10 hover:bg-white/20 border-none p-2 rounded-2xl"><X size={18} /></Button>
                 </div>
             )}
         </div>
