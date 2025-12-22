@@ -30,6 +30,22 @@
         "loadMore": "加载更多工作",
         "loadingMore": "正在加载更多..."
     },
+    "Chatbot": {
+        "title": "RecruitWeb AI",
+        "status": "在线",
+        "greeting": "你好！我是 **RecruitWeb AI**。\n\n我可以帮你找工作，分析简历或提供市场薪资建议。你需要什么帮助？",
+        "suggestions": {
+            "findJob": "寻找高薪 Java 工作",
+            "cvTips": "如何写标准简历",
+            "salary": "2年经验开发人员薪资",
+            "interview": "React 面试问题"
+        },
+        "inputPlaceholder": "输入你的问题...",
+        "disclaimer": "人工智能可能会犯错。请仔细核对重要信息。",
+        "thinking": "思考中...",
+        "error": "抱歉，处理此请求时遇到问题。",
+        "clearHistory": "清除聊天记录"
+    },
     "JobSearchBar": {
         "standardSearch": "标准搜索",
         "aiSemantic": "AI 语义",

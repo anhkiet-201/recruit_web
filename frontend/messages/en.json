@@ -30,6 +30,22 @@
         "loadMore": "Load more jobs",
         "loadingMore": "Loading more..."
     },
+    "Chatbot": {
+        "title": "RecruitWeb AI",
+        "status": "ONLINE",
+        "greeting": "Hello! I am **RecruitWeb AI**. \n\nI can help you find jobs, analyze CVs, or advise on market salaries. How can I assist you?",
+        "suggestions": {
+            "findJob": "Find high-salary Java jobs",
+            "cvTips": "How to write a standard CV",
+            "salary": "Salary for 2-year exp Developer",
+            "interview": "React interview questions"
+        },
+        "inputPlaceholder": "Enter your question...",
+        "disclaimer": "AI can make mistakes. Please double-check important information.",
+        "thinking": "Thinking...",
+        "error": "Sorry, I encountered an issue processing this request.",
+        "clearHistory": "Clear chat history"
+    },
     "JobSearchBar": {
         "standardSearch": "Standard Search",
         "aiSemantic": "AI Semantic",

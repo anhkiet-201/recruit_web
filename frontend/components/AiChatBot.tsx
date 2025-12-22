@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import MarkdownRenderer from "./ui/MarkdownRenderer";
+import { useTranslations } from "next-intl";
 
 /**
  * Interface cho Tin nhắn
@@ -20,31 +21,58 @@ interface Message {
 
 const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 Giờ
 const MAX_HISTORY_CONTEXT = 15; // Chỉ gửi 15 tin gần nhất để tối ưu Token
-const INITIAL_MESSAGES: Message[] = [
-    { role: "bot", text: "Xin chào! Tôi là **RecruitWeb AI**. \n\nTôi có thể giúp bạn tìm việc, phân tích CV hoặc tư vấn mức lương thị trường. Bạn cần hỗ trợ gì?", timestamp: Date.now() }
-];
-
-const SUGGESTIONS = [
-    { icon: Briefcase, text: "Tìm việc Java lương cao", query: "Tìm việc Java Developer lương cao" },
-    { icon: FileText, text: "Cách viết CV chuẩn", query: "Hướng dẫn viết CV chuyên nghiệp" },
-    { icon: DollarSign, text: "Lương Frontend 2 năm?", query: "Mức lương trung bình cho Frontend Developer 2 năm kinh nghiệm" },
-    { icon: Lightbulb, text: "Gợi ý việc phù hợp", query: "Gợi ý công việc phù hợp với tôi" },
-];
 
 export default function AiChatBot() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const t = useTranslations("Chatbot");
+
+    const INITIAL_MESSAGES: Message[] = [
+        { role: "bot", text: t('greeting'), timestamp: Date.now() }
+    ];
+
+    const SUGGESTIONS = [
+        { icon: Briefcase, text: t('suggestions.findJob'), query: t('suggestions.findJob') },
+        { icon: FileText, text: t('suggestions.cvTips'), query: t('suggestions.cvTips') },
+        { icon: DollarSign, text: t('suggestions.salary'), query: t('suggestions.salary') },
+        { icon: Lightbulb, text: t('suggestions.interview'), query: t('suggestions.interview') },
+    ];
 
     // --- STATE ---
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
-    const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
-    
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const chatWindowRef = useRef<HTMLDivElement>(null);
+
+    // Initial load handling to respect translation hook
+    useEffect(() => {
+        // Only load initial if no session, but we need to wait for 't' to be ready essentially (it is synchronous though)
+        // If we load from session, we might have old messages in different language? 
+        // ideally, chat history persists language, OR we clear it on language change. 
+        // For now, let's just respect the session if it exists, otherwise use translated initial.
+        const savedSession = localStorage.getItem("chat_session");
+        if (savedSession) {
+            try {
+                const { messages: savedMessages, lastActive } = JSON.parse(savedSession);
+                if (Date.now() - lastActive < SESSION_TIMEOUT) {
+                    setMessages(savedMessages);
+                } else {
+                    localStorage.removeItem("chat_session");
+                    setMessages(INITIAL_MESSAGES);
+                }
+            } catch (e) {
+                localStorage.removeItem("chat_session");
+                setMessages(INITIAL_MESSAGES);
+            }
+        } else {
+            setMessages(INITIAL_MESSAGES);
+        }
+    }, []); // Run once on mount
 
     // --- EFFECT: Click Outside to Close ---
     useEffect(() => {
@@ -61,18 +89,6 @@ export default function AiChatBot() {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [isOpen]);
-
-    // --- EFFECT: Session Management ---
-    useEffect(() => {
-        const savedSession = localStorage.getItem("chat_session");
-        if (savedSession) {
-            try {
-                const { messages: savedMessages, lastActive } = JSON.parse(savedSession);
-                if (Date.now() - lastActive < SESSION_TIMEOUT) setMessages(savedMessages);
-                else localStorage.removeItem("chat_session");
-            } catch (e) { localStorage.removeItem("chat_session"); }
-        }
-    }, []);
 
     useEffect(() => {
         if (messages.length > 1) {
@@ -107,7 +123,7 @@ export default function AiChatBot() {
         text = text.replace(/\[.*?\]/g, "").trim();
 
         if (!text && searchQuery) {
-            text = isSuggest ? "Đang phân tích và lọc công việc..." : "Đang tìm kiếm trên hệ thống...";
+            text = isSuggest ? t('thinking') : t('thinking');
         }
 
         return { text, searchQuery, isSuggest };
@@ -149,7 +165,7 @@ export default function AiChatBot() {
                 role: msg.role === 'bot' ? 'assistant' : 'user',
                 parts: msg.text
             }));
-            
+
             const contextMessage = `[User Context: Page=${pathname}] ${content}`;
 
             const result = await api.post<{ response: string }>("/ai/chat", {
@@ -158,7 +174,7 @@ export default function AiChatBot() {
             });
 
             const { text, searchQuery, isSuggest } = processBotResponse(result.response);
-            
+
             const botMsg: Message = {
                 role: "bot",
                 text: text,
@@ -166,7 +182,7 @@ export default function AiChatBot() {
                 isSuggest,
                 timestamp: Date.now()
             };
-            
+
             setMessages(prev => [...prev, botMsg]);
 
             if (searchQuery) {
@@ -175,7 +191,7 @@ export default function AiChatBot() {
             }
         } catch (error) {
             console.error(error);
-            setMessages(prev => [...prev, { role: "bot", text: "Xin lỗi, kết nối mạng không ổn định. Vui lòng thử lại.", timestamp: Date.now() }]);
+            setMessages(prev => [...prev, { role: "bot", text: t('error'), timestamp: Date.now() }]);
         } finally {
             setLoading(false);
         }
@@ -190,7 +206,7 @@ export default function AiChatBot() {
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             const systemMsg = `[SYSTEM_EVENT: Search for "${query}" completed.]`;
-            
+
             const result = await api.post<{ response: string }>("/ai/chat", {
                 message: systemMsg,
                 history: currentHistory
@@ -200,7 +216,7 @@ export default function AiChatBot() {
 
             if (text) {
                 setMessages(prev => {
-                    const updated = prev.map(msg => 
+                    const updated = prev.map(msg =>
                         msg.searchQuery === query ? { ...msg, searchQuery: undefined } : msg
                     );
                     return [...updated, { role: "bot", text: text, timestamp: Date.now() }];
@@ -223,14 +239,14 @@ export default function AiChatBot() {
             {/* 1. Trigger Button */}
             <AnimatePresence>
                 {!isOpen && (
-                    <motion.div 
+                    <motion.div
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
                         className="fixed bottom-6 right-6 z-[999]"
                     >
                         <div className="absolute inset-0 bg-blue-500/50 rounded-full blur-xl animate-pulse -z-10"></div>
-                        <button 
+                        <button
                             onClick={() => setIsOpen(true)}
                             className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-110 active:scale-95 transition-all border border-white/20"
                         >
@@ -261,24 +277,24 @@ export default function AiChatBot() {
                             sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[450px] sm:h-[650px] sm:rounded-3xl"
                     >
                         {/* Header */}
-                        <div className="flex-shrink-0 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between z-10">
+                        <div className="flex-shrink-0 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-center sm:justify-between z-10">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg text-white">
                                     <Sparkles size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-800 text-sm">RecruitWeb AI</h3>
+                                    <h3 className="font-bold text-gray-800 text-sm">{t('title')}</h3>
                                     <div className="flex items-center gap-1.5">
                                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                        <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Online</span>
+                                        <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('status')}</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
-                                <button onClick={handleNewChat} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Làm mới">
+                                <button onClick={handleNewChat} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title={t('clearHistory')}>
                                     <RefreshCw size={18} />
                                 </button>
-                                <button onClick={() => setIsOpen(false)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Đóng">
+                                <button onClick={() => setIsOpen(false)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Close">
                                     <X size={20} />
                                 </button>
                             </div>
@@ -287,7 +303,7 @@ export default function AiChatBot() {
                         {/* Messages Area */}
                         <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth bg-gradient-to-b from-white/50 to-blue-50/30">
                             {messages.map((msg, idx) => (
-                                <motion.div 
+                                <motion.div
                                     key={`${idx}-${msg.timestamp}`}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -301,26 +317,25 @@ export default function AiChatBot() {
 
                                         {/* Bubble */}
                                         <div className={`flex flex-col gap-2`}>
-                                            <div className={`px-4 py-3 text-sm leading-relaxed shadow-sm ${ 
-                                                msg.role === 'user' 
-                                                ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm" 
-                                                : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
-                                            }`}>
+                                            <div className={`px-4 py-3 text-sm leading-relaxed shadow-sm ${msg.role === 'user'
+                                                    ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
+                                                    : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
+                                                }`}>
                                                 <MarkdownRenderer content={msg.text} />
                                             </div>
-                                            
+
                                             {/* Search Status Indicator */}
                                             {msg.searchQuery && (
                                                 <div className="flex items-center gap-2 text-xs text-blue-600 font-medium ml-1 animate-pulse">
                                                     <RefreshCw size={10} className="animate-spin" />
-                                                    {msg.isSuggest ? "Đang lọc kết quả..." : "Đang tìm kiếm..."}
+                                                    {msg.isSuggest ? t('thinking') : t('thinking')}
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                 </motion.div>
                             ))}
-                            
+
                             {/* Loading / Typing Indicator */}
                             {loading && (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start w-full">
@@ -339,7 +354,7 @@ export default function AiChatBot() {
 
                         {/* Footer: Quick Actions & Input */}
                         <div className="p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 flex-shrink-0">
-                            
+
                             {/* Quick Suggestions (Only if messages < 5 to keep clean) */}
                             {messages.length < 5 && !loading && (
                                 <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar mask-fade-right">
@@ -357,23 +372,23 @@ export default function AiChatBot() {
                             )}
 
                             <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
-                                <input 
-                                    type="text" 
-                                    value={input} 
-                                    onChange={(e) => setInput(e.target.value)} 
-                                    placeholder="Nhập câu hỏi của bạn..." 
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder={t('inputPlaceholder')}
                                     className="flex-1 bg-gray-100/50 hover:bg-gray-100 border border-gray-200 focus:border-blue-500 focus:bg-white rounded-xl px-4 py-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400"
                                 />
-                                <button 
-                                    type="submit" 
-                                    disabled={!input.trim() || loading} 
+                                <button
+                                    type="submit"
+                                    disabled={!input.trim() || loading}
                                     className="p-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl shadow-lg disabled:opacity-50 disabled:shadow-none transition-all"
                                 >
                                     <Send size={18} />
                                 </button>
                             </form>
                             <div className="text-center mt-2">
-                                <p className="text-[10px] text-gray-400">AI có thể mắc sai sót. Hãy kiểm tra lại thông tin quan trọng.</p>
+                                <p className="text-[10px] text-gray-400">{t('disclaimer')}</p>
                             </div>
                         </div>
                     </motion.div>

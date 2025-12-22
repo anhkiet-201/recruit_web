@@ -30,6 +30,22 @@
     "loadMore": "Xem thêm công việc",
     "loadingMore": "Đang tải thêm..."
   },
+  "Chatbot": {
+    "title": "RecruitWeb AI",
+    "status": "ONLINE",
+    "greeting": "Xin chào! Tôi là **RecruitWeb AI**. \n\nTôi có thể giúp bạn tìm việc, phân tích CV hoặc tư vấn mức lương thị trường. Bạn cần hỗ trợ gì?",
+    "suggestions": {
+      "findJob": "Tìm việc Java lương cao",
+      "cvTips": "Cách viết CV chuẩn",
+      "salary": "Lương Developer 2 năm KN",
+      "interview": "Câu hỏi phỏng vấn React"
+    },
+    "inputPlaceholder": "Nhập câu hỏi của bạn...",
+    "disclaimer": "AI có thể mắc sai sót. Hãy kiểm tra lại thông tin quan trọng.",
+    "thinking": "Đang suy nghĩ...",
+    "error": "Xin lỗi, tôi gặp sự cố khi xử lý yêu cầu này.",
+    "clearHistory": "Xóa lịch sử chat"
+  },
   "JobSearchBar": {
     "standardSearch": "Tìm kiếm chuẩn",
     "aiSemantic": "AI Semantic",
