@@ -5,10 +5,6 @@ import { PromptService } from './prompt.service';
 
 /**
  * Service quản lý logic trí tuệ nhân tạo (AI) trung tâm.
- * Chịu trách nhiệm:
- * 1. Xây dựng ngữ cảnh (Context) từ dữ liệu người dùng.
- * 2. Tương tác với AI Provider (Gemini/OpenAI).
- * 3. Xử lý các logic nghiệp vụ như Tìm kiếm việc làm (RAG) và gợi ý.
  */
 @Injectable()
 export class AiService {
@@ -20,54 +16,52 @@ export class AiService {
 
   /**
    * Xử lý hội thoại chính với người dùng.
-   * 
-   * @param message Tin nhắn hiện tại của người dùng.
-   * @param history Lịch sử chat trước đó (để duy trì ngữ cảnh).
-   * @param userId ID người dùng (nếu đã đăng nhập).
-   * @param guestId ID khách (nếu chưa đăng nhập).
-   * @returns Phản hồi văn bản từ AI.
    */
   async chat(message: string, history: any[], userId?: string, guestId?: string) {
-    // 1. Load System Prompt & User Context
     const systemPrompt = await this.promptService.getPrompt('system');
     const userContext = await this.buildUserContext(userId, guestId);
     
     let fullSystemInstruction = `${systemPrompt}\n\n${userContext}`;
 
-    // --- LOGIC: Xử lý sự kiện sau tìm kiếm (Post-Search Context) ---
-    // Frontend gửi tín hiệu ngầm dạng: "[SYSTEM_EVENT: Search for \"Java\" completed...]"
-    // Server sẽ chặn tin nhắn này, query DB thật, và bơm dữ liệu vào prompt cho AI tóm tắt.
-    const searchEventMatch = message.match(/\`[SYSTEM_EVENT: Search for \"(.*?)\" completed/);
+    // --- LOGIC: Xử lý sự kiện sau tìm kiếm ---
+    const searchEventMatch = message.match(/\[SYSTEM_EVENT: Search for "(.*?)" completed/);
     if (searchEventMatch) {
         const query = searchEventMatch[1];
         try {
-            // RAG: Retrieval-Augmented Generation (Tìm kiếm dữ liệu thật để bổ sung cho AI)
             const jobs = await this.findSimilarJobs(query, 5);
-            const jobData = jobs.map(j => `- ${j.title} (Lương: ${j.salaryMin || 'TT'} - ${j.salaryMax || 'TT'} USD) tại ${j.location}`).join('\n');
             
-            fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ (QUERY: \"${query}\") ===\n${jobData}\n\nNHIỆM VỤ: Hãy tóm tắt ngắn gọn các công việc trên cho người dùng và mời họ ứng tuyển.`;
+            if (jobs.length > 0) {
+                const jobData = jobs.map(j => {
+                    const salary = (j.salaryMin || j.salaryMax) 
+                        ? `${j.salaryMin || '0'}$ - ${j.salaryMax || '??'}$` 
+                        : 'Thỏa thuận';
+                    return `- ${j.title} (Lương: ${salary}) tại ${j.location}`;
+                }).join('\n');
+
+                fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ TỪ DATABASE (QUERY: "${query}") ===\n${jobData}\n\nNHIỆM VỤ: Dựa vào danh sách trên, hãy giới thiệu ngắn gọn cho người dùng. TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
+            } else {
+                fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ (QUERY: "${query}") ===\nKHÔNG TÌM THẤY CÔNG VIỆC NÀO TRONG DATABASE.\n\nNHIỆM VỤ: Hãy thông báo khéo léo cho người dùng là hiện tại chưa có vị trí phù hợp. Tuyệt đối không được bịa ra công việc ảo.`;
+            }
         } catch (e) {
             console.error("Error fetching jobs for AI context:", e);
         }
     }
+    // ------------------------------------------------------------------
 
-    // 2. Define Tools (Định nghĩa công cụ cho AI)
-    // AI sẽ quyết định có gọi tool này hay không dựa trên message của user.
     const tools = [{
       name: "perform_search",
       description: "Thực hiện tìm kiếm hoặc gợi ý việc làm dựa trên nhu cầu của người dùng.",
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "Chuỗi từ khóa tìm kiếm đã được tối ưu hóa (ví dụ: 'React Developer Hanoi Senior')." },
-          mode: { type: "string", enum: ["search", "suggest"], description: "Chế độ: 'search' cho yêu cầu trực tiếp, 'suggest' cho gợi ý chủ động." }
+          query: { type: "string", description: "Chuỗi từ khóa tìm kiếm đã được tối ưu hóa." },
+          mode: { type: "string", enum: ["search", "suggest"], description: "Chế độ tìm kiếm." }
         },
         required: ["query", "mode"]
       }
     }];
 
     try {
-      // Gọi AI Provider
       const response = await this.aiProvider.chat(
         fullSystemInstruction, 
         history, 
@@ -77,18 +71,15 @@ export class AiService {
 
       let finalResponse = response.text || "";
 
-      // 3. Handle Tool Calls (Xử lý khi AI quyết định dùng tool)
       if (response.toolCall && response.toolCall.name === 'perform_search') {
         const { query, mode } = response.toolCall.args;
         const tag = mode === 'suggest' ? 'SUGGEST' : 'SEARCH';
         
-        // Nếu AI chỉ gọi tool mà không nói gì, ta thêm câu dẫn mặc định
         if (!finalResponse.trim()) {
             finalResponse = mode === 'suggest' 
-                ? `Dựa trên sở thích của bạn, tôi tìm thấy một số công việc phù hợp:` 
+                ? "Dựa trên sở thích của bạn, tôi tìm thấy một số công việc phù hợp:" 
                 : `Tôi đã tìm kiếm các vị trí "${query}" cho bạn:`
         }
-        // Gắn thẻ đặc biệt để Frontend nhận diện và chuyển hướng
         finalResponse += `\n[${tag}: ${query}]`;
       }
 
@@ -99,10 +90,6 @@ export class AiService {
     }
   }
 
-  /**
-   * Xây dựng ngữ cảnh người dùng (User Context) để cá nhân hóa AI.
-   * Bao gồm: Thông tin cá nhân, CV Analysis, Lịch sử tìm kiếm/ứng tuyển.
-   */
   private async buildUserContext(userId?: string, guestId?: string): Promise<string> {
     const defaultVars = {
         name: 'Khách',
@@ -126,65 +113,65 @@ export class AiService {
       });
 
       if (user) {
-        // Feature: CV Semantic Analysis
         const cvMatches = await this.getJobsMatchingCv(userId);
         const cvAnalysisText = cvMatches.length > 0 
-            ? `Hệ thống nhận thấy CV của ứng viên có độ tương đồng cao với các vị trí: ${cvMatches.map(j => j.title).join(', ')}. Hãy dùng thông tin này để suy luận về chuyên môn của ứng viên.`
-            : 'Chưa có dữ liệu phân tích CV (hoặc chưa upload CV).';
+            ? `Hệ thống nhận thấy CV tương đồng với: ${cvMatches.map(j => j.title).join(', ')}.`
+            : 'Chưa có dữ liệu phân tích CV.';
+
+        // FEATURE: Persistent Search Context
+        let lastSearchContext = "";
+        if (user.searchHistories.length > 0) {
+             const lastQuery = user.searchHistories[0].query;
+             const lastJobs = await this.findSimilarJobs(lastQuery, 3);
+             if (lastJobs.length > 0) {
+                 lastSearchContext = `\n=== KẾT QUẢ TÌM KIẾM GẦN NHẤT CỦA USER ("${lastQuery}") ===\n` + 
+                 lastJobs.map(j => `- ${j.title} (${j.location})`).join('\n');
+             }
+        }
 
         return this.promptService.getPrompt('user_context', {
             ...defaultVars,
             name: user.name || 'Thành viên',
             skills: user.skills || 'N/A',
             education: user.education || 'N/A',
-            experience: 'N/A', 
             search_history: user.searchHistories.map(s => s.query).join(', ') || 'Chưa có dữ liệu',
             application_history: user.applications.map(a => `${a.job.title} (${a.status})`).join(', ') || 'Chưa có dữ liệu',
-            cv_analysis: cvAnalysisText
+            cv_analysis: cvAnalysisText + lastSearchContext
         });
       }
     } else if (guestId) {
       const guestHistory = await this.prisma.searchHistory.findMany({
-        where: { guestId }, 
-        take: 5, 
-        orderBy: { createdAt: 'desc' }, 
-        select: { query: true } 
+        where: { guestId }, take: 5, orderBy: { createdAt: 'desc' }, select: { query: true } 
       });
-      
       return this.promptService.getPrompt('user_context', {
         ...defaultVars,
         name: 'Khách vãng lai',
         search_history: guestHistory.map(s => s.query).join(', ') || 'Chưa có dữ liệu',
-        cv_analysis: 'Không có thông tin CV cho khách vãng lai.'
       });
     }
-
     return this.promptService.getPrompt('user_context', defaultVars);
   }
 
-  /**
-   * Tìm kiếm Job dựa trên CV của người dùng sử dụng Vector Search.
-   * Sử dụng pgvector để so sánh embedding của User và Job.
-   */
   private async getJobsMatchingCv(userId: string): Promise<{ title: string }[]> {
     try {
         const jobs: any[] = await this.prisma.$queryRawUnsafe(`
-            SELECT j.title
-            FROM "Job" j, "User" u
-            WHERE u.id = '${userId}'
-            AND u.embedding IS NOT NULL
-            AND j.embedding IS NOT NULL
-            AND j."isActive" = true
-            ORDER BY j.embedding <=> u.embedding
-            LIMIT 3
+            SELECT j.title FROM "Job" j, "User" u
+            WHERE u.id = '${userId}' AND u.embedding IS NOT NULL AND j.embedding IS NOT NULL AND j."isActive" = true
+            ORDER BY j.embedding <=> u.embedding LIMIT 3
         `);
         return jobs;
-    } catch (e) {
-        return [];
-    }
+    } catch (e) { return []; }
   }
 
-  // --- UTILS (Giữ lại để tương thích ngược nếu cần) ---
+  async analyzeResume(text: string) {
+    const prompt = `Trích xuất JSON (Họ tên, Kỹ năng, Học vấn) từ CV: ${text}`;
+    try {
+      const res = await this.aiProvider.generateText(prompt);
+      return JSON.parse(res.replace(/```json|```/g, '').trim());
+    } catch (e) { return null; }
+  }
+
+  // --- UTILS ---
   async generateStructuredJobText(job: any): Promise<string> {
     const prompt = `Phân tích job: ${job.title} ${job.content}`;
     try { return (await this.aiProvider.generateText(prompt)).trim(); }
@@ -217,11 +204,13 @@ export class AiService {
     `);
     if (!results.length) return [];
     
-    // Rerank lại bằng AI để đảm bảo chất lượng cao nhất
-    const rerankPrompt = `Lọc Job phù hợp với "${query}". Trả về JSON array ID. Danh sách:\n${results.map(c => `ID:${c.id}|${c.title}`).join('\n')}`;
+    const jobList = results.map(c => `ID:${c.id}|${c.title}`).join('\n');
+    const rerankPrompt = `Lọc Job phù hợp với "${query}". Trả về JSON array ID. Danh sách:\n${jobList}`;
+    
     try {
       const res = await this.aiProvider.generateText(rerankPrompt);
-      const validIds: string[] = JSON.parse(res.replace(/```json|```/g, '').trim());
+      const cleanJson = res.replace(/```json|```/g, '').trim();
+      const validIds: string[] = JSON.parse(cleanJson);
       return results.filter(c => validIds.includes(c.id)).slice(0, limit);
     } catch { return results.slice(0, limit); }
   }

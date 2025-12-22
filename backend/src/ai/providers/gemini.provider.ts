@@ -83,6 +83,7 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
       systemInstruction: { parts: [{ text: systemInstruction }] },
       generationConfig: {
         maxOutputTokens: 2048,
+        temperature: 0
       },
     };
 
@@ -111,23 +112,21 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
       }
 
       // 4. Gửi tin nhắn
-      const result = await chat.sendMessage({
-        content: {
-          role: 'user',
-          parts: [{ text: message }]
-        }
-      });
+      const result = await chat.sendMessage({ message: message });
 
       // 5. Xử lý phản hồi (Safe Parsing)
       // Do SDK @google/genai có thể thay đổi cấu trúc trả về, ta cần kiểm tra kỹ.
       let text = "";
       let functionCalls: any[] = [];
 
-      // Kiểm tra Function Call (Ưu tiên)
-      if (result.functionCalls && result.functionCalls.length > 0) {
+      // Kiểm tra Function Call (Hỗ trợ cả dạng hàm và dạng thuộc tính)
+      if (typeof result.functionCalls === 'function') {
+        const calls = result.functionCalls();
+        if (Array.isArray(calls)) functionCalls = calls;
+      } else if (Array.isArray(result.functionCalls)) {
         functionCalls = result.functionCalls;
       } else if (Array.isArray(result.candidates) && result.candidates.length > 0) {
-        // Fallback: Kiểm tra thủ công trong candidates
+        // Fallback: Kiểm tra thủ công trong candidates nếu method trên không trả về dữ liệu
         const parts = result.candidates[0]?.content?.parts || [];
         const fcPart = parts.find((p: any) => p.functionCall);
         if (fcPart) {
