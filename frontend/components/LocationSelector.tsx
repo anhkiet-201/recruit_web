@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { MapPin, Search } from "lucide-react";
 import { JobService } from "@/services/jobService";
+import { useTranslations } from "next-intl";
 
 interface LocationSelectorProps {
     defaultValue?: string;
 }
 
 export default function LocationSelector({ defaultValue = "" }: LocationSelectorProps) {
+    const t = useTranslations("JobSearchBar");
     const [inputValue, setInputValue] = useState(defaultValue);
     const [locations, setLocations] = useState<string[]>([]);
     const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
@@ -56,7 +58,7 @@ export default function LocationSelector({ defaultValue = "" }: LocationSelector
                     setIsOpen(true);
                 }}
                 onFocus={() => setIsOpen(true)}
-                placeholder="Thành phố, địa điểm..."
+                placeholder={t('locationPlaceholder')}
                 className="w-full pl-12 pr-4 py-4 rounded-xl border-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-transparent"
             />
 
@@ -64,7 +66,7 @@ export default function LocationSelector({ defaultValue = "" }: LocationSelector
             {isOpen && filteredLocations.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="p-2 border-b border-gray-50 bg-gray-50/50">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase px-2 tracking-wider">Gợi ý địa điểm</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase px-2 tracking-wider">{t('locationSuggestionsTitle')}</span>
                     </div>
                     <ul className="max-h-60 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {filteredLocations.map((loc, index) => (

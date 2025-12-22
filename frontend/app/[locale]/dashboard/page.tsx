@@ -16,8 +16,10 @@ import {
     Save, X, Upload, ExternalLink, CheckCircle, Briefcase, RefreshCw, AlertCircle, Camera
 } from "lucide-react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export default function DashboardPage() {
+    const t = useTranslations("Dashboard");
     const { user, profile, loading, refreshProfile } = useAuth();
     const router = useRouter();
     const [applications, setApplications] = useState<Application[]>([]);
@@ -121,16 +123,16 @@ export default function DashboardPage() {
                                         {profile?.avatarUrl ? <Image src={profile.avatarUrl} alt="Avatar" fill className="object-cover" unoptimized /> : (profile?.name || user.email)?.[0].toUpperCase()}
                                         <div className="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm">
                                             <Camera size={28} className="text-white mb-2 drop-shadow-md" />
-                                            <span className="text-[10px] text-white font-black uppercase tracking-widest drop-shadow-md">Update</span>
+                                            <span className="text-[10px] text-white font-black uppercase tracking-widest drop-shadow-md">{t('updateAvatar')}</span>
                                         </div>
                                         {avatarUploading && <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-20"><RefreshCw size={32} className="animate-spin text-blue-600" /></div>}
                                     </div>
                                 </div>
                             </div>
                             <div className="text-center mt-6 mb-8">
-                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">{profile?.name || "Member"}</h2>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">{profile?.name || t('member')}</h2>
                                 <div className="flex items-center justify-center gap-2 mt-2">
-                                    <Badge variant={profile?.role === 'admin' ? "purple" : "blue"} className="px-3 py-1 text-[10px] uppercase tracking-widest shadow-sm shadow-blue-200/50">{profile?.role || "Candidate"}</Badge>
+                                    <Badge variant={profile?.role === 'admin' ? "purple" : "blue"} className="px-3 py-1 text-[10px] uppercase tracking-widest shadow-sm shadow-blue-200/50">{profile?.role || t('candidate')}</Badge>
                                 </div>
                             </div>
 
@@ -145,17 +147,17 @@ export default function DashboardPage() {
                                     <div className="w-10 h-10 rounded-xl bg-blue-100/50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
                                         <Phone size={18} />
                                     </div>
-                                    <span className="truncate">{profile?.phone || "No phone number"}</span>
+                                    <span className="truncate">{profile?.phone || t('noPhone')}</span>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm font-medium text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-blue-100 transition-colors group">
                                     <div className="w-10 h-10 rounded-xl bg-blue-100/50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
                                         <MapPin size={18} />
                                     </div>
-                                    <span className="truncate">{profile?.address || "No address"}</span>
+                                    <span className="truncate">{profile?.address || t('noAddress')}</span>
                                 </div>
                             </div>
 
-                            <Button variant={isEditing ? "danger" : "outline"} className="w-full mt-8 py-6 rounded-2xl font-bold text-sm border-2 hover:bg-slate-50" icon={isEditing ? X : Edit2} onClick={() => setIsEditing(!isEditing)}>{isEditing ? "Cancel Editing" : "Edit Public Profile"}</Button>
+                            <Button variant={isEditing ? "danger" : "outline"} className="w-full mt-8 py-6 rounded-2xl font-bold text-sm border-2 hover:bg-slate-50" icon={isEditing ? X : Edit2} onClick={() => setIsEditing(!isEditing)}>{isEditing ? t('cancelEditing') : t('editProfile')}</Button>
                         </div>
                     </Card>
 
@@ -165,14 +167,14 @@ export default function DashboardPage() {
                                 <FileText size={24} />
                             </div>
                             <p className="text-3xl font-black text-slate-800">{applications.length}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Applications</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{t('applications')}</p>
                         </div>
                         <div className="bg-white rounded-[2rem] p-6 text-center border border-slate-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                             <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                 <CheckCircle size={24} />
                             </div>
                             <p className="text-3xl font-black text-slate-800">{applications.filter(a => a.status === 'accepted').length}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Offers</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{t('offers')}</p>
                         </div>
                     </div>
                 </div>
@@ -185,13 +187,13 @@ export default function DashboardPage() {
                             <div>
                                 <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-3">
                                     <div className="w-2 h-8 bg-blue-600 rounded-full"></div>
-                                    Professional Profile
+                                    {t('professionalProfile')}
                                 </h1>
-                                <p className="text-slate-400 text-sm font-medium mt-1 pl-5">Manage your personal information and resume</p>
+                                <p className="text-slate-400 text-sm font-medium mt-1 pl-5">{t('manageInfo')}</p>
                             </div>
                             {isEditing && (
                                 <Button size="sm" icon={Save} isLoading={saving} onClick={handleSaveProfile} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200">
-                                    Save Changes
+                                    {t('saveChanges')}
                                 </Button>
                             )}
                         </div>
@@ -201,11 +203,11 @@ export default function DashboardPage() {
                             <section className="space-y-6">
                                 <div className="flex items-center gap-3 text-slate-800 pb-2 border-b border-slate-100">
                                     <User size={20} className="text-blue-600" />
-                                    <h3 className="font-bold text-sm uppercase tracking-widest">Personal Details</h3>
+                                    <h3 className="font-bold text-sm uppercase tracking-widest">{t('personalDetails')}</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <Input
-                                        label="Full Name"
+                                        label={t('fullName')}
                                         className={!isEditing ? "font-semibold text-slate-700" : ""}
                                         inputClassName={!isEditing ? "!bg-white border-transparent font-black text-lg text-slate-800 shadow-none px-0" : ""}
                                         value={isEditing ? formData.name : (profile?.name || "N/A")}
@@ -213,17 +215,17 @@ export default function DashboardPage() {
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     />
                                     <Input
-                                        label="Phone Number"
+                                        label={t('phoneNumber')}
                                         className={!isEditing ? "font-semibold text-slate-700" : ""}
                                         inputClassName={!isEditing ? "!bg-white border-transparent font-black text-lg text-slate-800 shadow-none px-0" : ""}
                                         value={isEditing ? formData.phone : (profile?.phone || "N/A")}
                                         readOnly={!isEditing}
-                                        helperText={isEditing && <p className="text-[10px] text-amber-600 font-bold flex gap-1 mt-1"><AlertCircle size={12} /> Recruiters will use this to contact you.</p>}
+                                        helperText={isEditing && <p className="text-[10px] text-amber-600 font-bold flex gap-1 mt-1"><AlertCircle size={12} /> {t('phoneHelper')}</p>}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     />
                                     <div className="md:col-span-2">
                                         <Input
-                                            label="Address"
+                                            label={t('address')}
                                             className={!isEditing ? "font-semibold text-slate-700" : ""}
                                             inputClassName={!isEditing ? "!bg-white border-transparent font-semibold text-slate-700 shadow-none px-0" : ""}
                                             value={isEditing ? formData.address : (profile?.address || "N/A")}
@@ -238,13 +240,13 @@ export default function DashboardPage() {
                             <section className="space-y-6">
                                 <div className="flex items-center gap-3 text-slate-800 pb-2 border-b border-slate-100">
                                     <GraduationCap size={20} className="text-blue-600" />
-                                    <h3 className="font-bold text-sm uppercase tracking-widest">Education</h3>
+                                    <h3 className="font-bold text-sm uppercase tracking-widest">{t('education')}</h3>
                                 </div>
                                 {isEditing ? (
-                                    <Input isTextArea rows={4} value={formData.education} onChange={e => setFormData({ ...formData, education: e.target.value })} placeholder="Describe your educational background..." />
+                                    <Input isTextArea rows={4} value={formData.education} onChange={e => setFormData({ ...formData, education: e.target.value })} placeholder={t('educationPlaceholder')} />
                                 ) : (
                                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 min-h-[100px]">
-                                        <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">{profile?.education || "No education details added yet."}</p>
+                                        <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">{profile?.education || t('noEducation')}</p>
                                     </div>
                                 )}
                             </section>
@@ -253,10 +255,10 @@ export default function DashboardPage() {
                             <section className="space-y-6">
                                 <div className="flex items-center gap-3 text-slate-800 pb-2 border-b border-slate-100">
                                     <Wrench size={20} className="text-blue-600" />
-                                    <h3 className="font-bold text-sm uppercase tracking-widest">Skills & Expertise</h3>
+                                    <h3 className="font-bold text-sm uppercase tracking-widest">{t('skills')}</h3>
                                 </div>
                                 {isEditing ? (
-                                    <Input placeholder="E.g. React, Node.js, Python, Design..." value={formData.skills} onChange={e => setFormData({ ...formData, skills: e.target.value })} helperText="Separate skills with commas" />
+                                    <Input placeholder={t('skillsPlaceholder')} value={formData.skills} onChange={e => setFormData({ ...formData, skills: e.target.value })} helperText={t('skillsHelper')} />
                                 ) : (
                                     <div className="flex flex-wrap gap-3">
                                         {profile?.skills ? profile.skills.split(',').map((s, i) => (
@@ -264,7 +266,7 @@ export default function DashboardPage() {
                                                 {s.trim()}
                                             </div>
                                         )) : (
-                                            <p className="text-sm text-slate-400 italic">No skills listed yet.</p>
+                                            <p className="text-sm text-slate-400 italic">{t('noSkills')}</p>
                                         )}
                                     </div>
                                 )}
@@ -274,7 +276,7 @@ export default function DashboardPage() {
                             <section className="space-y-6">
                                 <div className="flex items-center gap-3 text-slate-800 pb-2 border-b border-slate-100">
                                     <FileText size={20} className="text-blue-600" />
-                                    <h3 className="font-bold text-sm uppercase tracking-widest">Resume / CV</h3>
+                                    <h3 className="font-bold text-sm uppercase tracking-widest">{t('resume')}</h3>
                                 </div>
 
                                 <div className="group relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-50 to-white border border-slate-200 p-1">
@@ -285,12 +287,12 @@ export default function DashboardPage() {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-black text-slate-800 truncate max-w-[200px] sm:max-w-xs transition-colors group-hover:text-blue-700">
-                                                    {cvUploading ? "Uploading..." : (profile?.cvUrl ? getFileName(profile.cvUrl) : "No Resume Uploaded")}
+                                                    {cvUploading ? t('uploading') : (profile?.cvUrl ? getFileName(profile.cvUrl) : t('noResume'))}
                                                 </p>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span className={`w-2 h-2 rounded-full ${profile?.cvUrl ? "bg-emerald-500" : "bg-slate-300"}`}></span>
                                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                                        {profile?.cvUrl ? "PDF Verified" : "Missing File"}
+                                                        {profile?.cvUrl ? t('pdfVerified') : t('missingFile')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -311,7 +313,7 @@ export default function DashboardPage() {
                                                 onClick={() => cvInputRef.current?.click()}
                                                 className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm rounded-xl"
                                             >
-                                                {profile?.cvUrl ? "Replace" : "Upload Cloud"}
+                                                {profile?.cvUrl ? t('replace') : t('uploadCloud')}
                                             </Button>
                                         </div>
                                     </div>
@@ -327,9 +329,9 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between">
                             <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-3">
                                 <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
-                                Recent Applications
+                                {t('recentApplications')}
                             </h2>
-                            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-blue-600 font-bold" icon={ChevronRight} iconPosition="right" onClick={() => router.push('/dashboard/applications')}>View All</Button>
+                            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-blue-600 font-bold" icon={ChevronRight} iconPosition="right" onClick={() => router.push('/dashboard/applications')}>{t('viewAll')}</Button>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4">
@@ -341,7 +343,7 @@ export default function DashboardPage() {
                                                 <Briefcase size={24} />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{(app.job as any)?.title || "Job Application"}</h4>
+                                                <h4 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{(app.job as any)?.title || t('jobApplication')}</h4>
                                                 <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                                     <span className="flex items-center gap-1"><Clock size={12} /> {new Date(app.createdAt).toLocaleDateString('en-GB')}</span>
                                                     <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
@@ -357,8 +359,8 @@ export default function DashboardPage() {
                                     <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
                                         <Briefcase size={24} />
                                     </div>
-                                    <p className="text-slate-500 font-bold">You haven't applied to any jobs yet.</p>
-                                    <Button variant="outline" className="mt-4" onClick={() => router.push('/')}>Browse Jobs</Button>
+                                    <p className="text-slate-500 font-bold">{t('noApplicationsYet')}</p>
+                                    <Button variant="outline" className="mt-4" onClick={() => router.push('/')}>{t('browseJobs')}</Button>
                                 </div>
                             )}
                         </div>

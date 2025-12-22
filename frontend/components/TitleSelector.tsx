@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, Briefcase, Sparkles } from "lucide-react";
 import { JobService } from "@/services/jobService";
+import { useTranslations } from "next-intl";
 
 interface TitleSelectorProps {
     defaultValue?: string;
@@ -11,6 +12,7 @@ interface TitleSelectorProps {
 }
 
 export default function TitleSelector({ defaultValue = "", value, onChange }: TitleSelectorProps) {
+    const t = useTranslations("JobSearchBar");
     // Ưu tiên dùng value từ props nếu có (controlled), ngược lại dùng defaultValue
     const [inputValue, setInputValue] = useState(value !== undefined ? value : defaultValue);
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -67,7 +69,7 @@ export default function TitleSelector({ defaultValue = "", value, onChange }: Ti
                     setIsOpen(true);
                 }}
                 onFocus={() => setIsOpen(true)}
-                placeholder="Tên công việc, vị trí, kỹ năng..."
+                placeholder={t('titlePlaceholder')}
                 className="w-full pl-12 pr-4 py-4 rounded-xl border-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-transparent"
             />
 
@@ -75,7 +77,7 @@ export default function TitleSelector({ defaultValue = "", value, onChange }: Ti
             {isOpen && filteredSuggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="p-2 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase px-2 tracking-wider">Đề xuất tìm kiếm</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase px-2 tracking-wider">{t('suggestionsTitle')}</span>
                         <Sparkles size={12} className="text-yellow-500 mr-2" />
                     </div>
                     <ul className="max-h-60 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

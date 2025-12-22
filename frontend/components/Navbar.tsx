@@ -6,11 +6,14 @@ import { useRouter, usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { LogOut, LayoutDashboard, ShieldCheck, User as UserIcon, Briefcase } from "lucide-react";
 import Image from "next/image";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
 
 export default function Navbar() {
     const { user, profile, loading, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const t = useTranslations("Navigation");
 
     const handleLogout = async () => {
         logout();
@@ -18,7 +21,7 @@ export default function Navbar() {
     };
 
     // Kiểm tra xem có đang ở trang admin không để ẩn nav nếu cần, hoặc thay đổi style
-    const isAdminPage = pathname?.startsWith('/admin');
+    const isAdminPage = pathname?.includes('/admin');
 
     if (isAdminPage) return null;
 
@@ -41,6 +44,8 @@ export default function Navbar() {
 
                     {/* Right Action Section */}
                     <div className="flex items-center gap-4">
+                        <LanguageSwitcher />
+
                         {loading ? (
                             <div className="flex gap-2">
                                 <div className="w-20 h-9 bg-gray-100 animate-pulse rounded-xl"></div>
@@ -90,12 +95,12 @@ export default function Navbar() {
                             <div className="flex items-center gap-3">
                                 <Link href="/login">
                                     <Button variant="ghost" className="text-gray-500 font-black">
-                                        Login
+                                        {t('login')}
                                     </Button>
                                 </Link>
                                 <Link href="/register">
                                     <Button className="shadow-blue-200">
-                                        Register
+                                        {t('register')}
                                     </Button>
                                 </Link>
                             </div>
