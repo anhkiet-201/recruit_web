@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class JobsCleanupService {
   private readonly logger = new Logger(JobsCleanupService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCleanup() {
@@ -18,16 +18,16 @@ export class JobsCleanupService {
   async handleJobExpiration() {
     const now = new Date();
     const expiredJobs = await this.prisma.job.updateMany({
-      where: { isActive: true, deadline: { lt: now } },
-      data: { isActive: false }
+      where: { status: 'ACTIVE', deadline: { lt: now } },
+      data: { status: 'CLOSED' }
     });
 
     if (expiredJobs.count > 0) {
-        const closedJobIds = await this.prisma.job.findMany({ where: { isActive: false, deadline: { lt: now } }, select: { id: true } });
-        const ids = closedJobIds.map(j => j.id);
-        if (ids.length > 0) {
-            await this.prisma.application.updateMany({ where: { jobId: { in: ids }, status: 'pending' }, data: { status: 'expired' } });
-        }
+      const closedJobIds = await this.prisma.job.findMany({ where: { status: 'CLOSED', deadline: { lt: now } }, select: { id: true } });
+      const ids = closedJobIds.map(j => j.id);
+      if (ids.length > 0) {
+        await this.prisma.application.updateMany({ where: { jobId: { in: ids }, status: 'pending' }, data: { status: 'expired' } });
+      }
     }
   }
 

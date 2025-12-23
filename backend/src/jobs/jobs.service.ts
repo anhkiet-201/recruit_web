@@ -19,16 +19,16 @@ export class JobsService {
   async indexJobWithAi(job: any) {
     // Fire-and-forget: Không await, để chạy nền
     this.processAiIndexing(job).catch(err => {
-        console.error(`Background AI Indexing failed for Job ${job.id}`, err);
+      console.error(`Background AI Indexing failed for Job ${job.id}`, err);
     });
   }
 
   private async processAiIndexing(job: any) {
-      // 1. Dùng AI phân tách ý chính
-      const optimizedText = await this.aiService.generateStructuredJobText(job);
-      // 2. Tạo Vector từ văn bản đã tối ưu
-      await this.aiService.embedJob(job.id, optimizedText);
-      console.log(`[Background] Indexed Job ${job.id} with AI Optimized Text.`);
+    // 1. Dùng AI phân tách ý chính
+    const optimizedText = await this.aiService.generateStructuredJobText(job);
+    // 2. Tạo Vector từ văn bản đã tối ưu
+    await this.aiService.embedJob(job.id, optimizedText);
+    console.log(`[Background] Indexed Job ${job.id} with AI Optimized Text.`);
   }
 
   /**
@@ -45,7 +45,7 @@ export class JobsService {
 
     let createdCount = 0;
     const errors: any[] = [];
-    
+
     // Process imports in chunks to avoid overwhelming DB, but trigger AI in parallel
     for (const row of data) {
       try {
@@ -55,28 +55,28 @@ export class JobsService {
             salaryMin: row['MinSalary'] ? parseInt(row['MinSalary']) : null,
             salaryMax: row['MaxSalary'] ? parseInt(row['MaxSalary']) : null,
             jobType: row['JobType']?.toLowerCase() || 'unskilled',
-            isActive: false, // Default Draft
+            status: 'REVIEWING', // Default Draft
             views: 0,
             imageUrl: row['ImageURL'] || null
           }
         });
-        
+
         // Trigger background AI indexing immediately
         this.indexJobWithAi(job);
-        
+
         // Handle tags...
         const tagNames = row['Tags'] ? row['Tags'].toString().split(',').map(t => t.trim()) : [];
         if (tagNames.length > 0) {
-            for (const tagName of tagNames) {
-                if (!tagName) continue;
-                const tag = await this.prisma.tag.upsert({ where: { name: tagName }, update: {}, create: { name: tagName } });
-                await this.prisma.jobTag.create({ data: { jobId: job.id, tagId: tag.id } });
-            }
+          for (const tagName of tagNames) {
+            if (!tagName) continue;
+            const tag = await this.prisma.tag.upsert({ where: { name: tagName }, update: {}, create: { name: tagName } });
+            await this.prisma.jobTag.create({ data: { jobId: job.id, tagId: tag.id } });
+          }
         }
 
         createdCount++;
-      } catch (error) { 
-          errors.push({ row: createdCount + 2, error: error.message });
+      } catch (error) {
+        errors.push({ row: createdCount + 2, error: error.message });
       }
     }
     return { success: true, count: createdCount, errors: errors.length > 0 ? errors : null };
@@ -90,7 +90,7 @@ export class JobsService {
         salaryMax: createJobDto.salaryMax ? parseInt(createJobDto.salaryMax) : null,
         experienceYears: createJobDto.experienceYears ? parseInt(createJobDto.experienceYears) : null,
         imageUrl: createJobDto.imageUrl, deadline: createJobDto.deadline ? new Date(createJobDto.deadline) : null,
-        jobType: createJobDto.jobType, isActive: true
+        jobType: createJobDto.jobType, status: 'ACTIVE'
       }
     });
 
@@ -102,13 +102,13 @@ export class JobsService {
   async update(id: string, updateJobDto: any) {
     // Check image cleanup logic...
     if (updateJobDto.imageUrl !== undefined) {
-        const oldJob = await this.prisma.job.findUnique({ where: { id }, select: { imageUrl: true } });
-        if (oldJob?.imageUrl && oldJob.imageUrl !== updateJobDto.imageUrl) {
-            try {
-                const filename = oldJob.imageUrl.split('/').pop();
-                if (filename) await this.minioService.deleteFile(filename);
-            } catch (e) {}
-        }
+      const oldJob = await this.prisma.job.findUnique({ where: { id }, select: { imageUrl: true } });
+      if (oldJob?.imageUrl && oldJob.imageUrl !== updateJobDto.imageUrl) {
+        try {
+          const filename = oldJob.imageUrl.split('/').pop();
+          if (filename) await this.minioService.deleteFile(filename);
+        } catch (e) { }
+      }
     }
 
     const job = await this.prisma.job.update({
@@ -151,10 +151,10 @@ export class JobsService {
           await this.prisma.guest.upsert({ where: { id: guestId }, update: { lastActive: new Date() }, create: { id: guestId } });
           await this.prisma.$executeRaw`INSERT INTO "SearchHistory" ("id", "guestId", "query", "embedding", "createdAt") VALUES (gen_random_uuid(), ${guestId}::uuid, ${queryText}, ${vectorString}::vector, NOW())`;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
-    const where: any = { isActive: true };
+    const where: any = { status: 'ACTIVE' };
     if (title) where.OR = [{ title: { contains: title, mode: 'insensitive' } }, { jobTags: { some: { tag: { name: { contains: title, mode: 'insensitive' } } } } }];
     if (location) where.location = { contains: location, mode: 'insensitive' };
     if (jobType && jobType !== 'all') where.jobType = jobType;
@@ -169,13 +169,13 @@ export class JobsService {
   async findOne(id: string, incrementView: boolean = true) {
     try { const data = incrementView ? { views: { increment: 1 } } : {}; return await this.prisma.job.update({ where: { id }, data, include: { jobTags: { include: { tag: true } } } }); } catch (error) { return null; }
   }
-  async remove(id: string) { 
-      const job = await this.prisma.job.findUnique({ where: { id }, select: { imageUrl: true } });
-      if (job?.imageUrl) { try { const filename = job.imageUrl.split('/').pop(); if (filename) await this.minioService.deleteFile(filename); } catch (e) {} }
-      return this.prisma.job.delete({ where: { id } }); 
+  async remove(id: string) {
+    const job = await this.prisma.job.findUnique({ where: { id }, select: { imageUrl: true } });
+    if (job?.imageUrl) { try { const filename = job.imageUrl.split('/').pop(); if (filename) await this.minioService.deleteFile(filename); } catch (e) { } }
+    return this.prisma.job.delete({ where: { id } });
   }
-  async getLocations() { const jobs = await this.prisma.job.findMany({ where: { isActive: true }, select: { location: true }, distinct: ['location'] }); return jobs.map(j => j.location); }
-  async getSuggestions() { const [jobs, tags] = await Promise.all([this.prisma.job.findMany({ where: { isActive: true }, select: { title: true }, distinct: ['title'], take: 20 }), this.prisma.tag.findMany({ select: { name: true }, take: 20 }) ]); return Array.from(new Set([...jobs.map(j => j.title), ...tags.map(t => t.name)])); }
-  async getTrendingJobs(limit: number = 6) { return this.prisma.job.findMany({ where: { isActive: true }, include: { jobTags: { include: { tag: true } }, _count: { select: { applications: true } } }, orderBy: { views: 'desc' }, take: Number(limit) }); }
-  async getHotJobs(limit: number = 6) { return this.prisma.job.findMany({ where: { isActive: true }, include: { jobTags: { include: { tag: true } }, _count: { select: { applications: true } } }, orderBy: { applications: { _count: 'desc' } }, take: Number(limit) }); }
+  async getLocations() { const jobs = await this.prisma.job.findMany({ where: { status: 'ACTIVE' }, select: { location: true }, distinct: ['location'] }); return jobs.map(j => j.location); }
+  async getSuggestions() { const [jobs, tags] = await Promise.all([this.prisma.job.findMany({ where: { status: 'ACTIVE' }, select: { title: true }, distinct: ['title'], take: 20 }), this.prisma.tag.findMany({ select: { name: true }, take: 20 })]); return Array.from(new Set([...jobs.map(j => j.title), ...tags.map(t => t.name)])); }
+  async getTrendingJobs(limit: number = 6) { return this.prisma.job.findMany({ where: { status: 'ACTIVE' }, include: { jobTags: { include: { tag: true } }, _count: { select: { applications: true } } }, orderBy: { views: 'desc' }, take: Number(limit) }); }
+  async getHotJobs(limit: number = 6) { return this.prisma.job.findMany({ where: { status: 'ACTIVE' }, include: { jobTags: { include: { tag: true } }, _count: { select: { applications: true } } }, orderBy: { applications: { _count: 'desc' } }, take: Number(limit) }); }
 }
