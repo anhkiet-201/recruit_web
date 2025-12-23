@@ -23,7 +23,7 @@ export class AiJobRepository {
     async findSimilarJobs(vectorString: string, query: string, limit: number = 20): Promise<any[]> {
         return this.prisma.$queryRaw`
       SELECT id, title, content, location, "imageUrl", "jobType", "salaryMin", "salaryMax", (1 - ("embedding" <=> ${vectorString}::vector)) as similarity
-      FROM "Job" WHERE "isActive" = true AND "embedding" IS NOT NULL
+      FROM "Job" WHERE ("status" = 'ACTIVE' OR "status" = 'ACCEPTED') AND "embedding" IS NOT NULL
       ORDER BY ((1 - ("embedding" <=> ${vectorString}::vector)) + (CASE WHEN title ILIKE ${'%' + query + '%'} THEN 0.8 ELSE 0 END)) DESC LIMIT ${limit}
     `;
     }

@@ -27,6 +27,8 @@ model User {
 
   applications    Application[]
   searchHistories SearchHistory[]
+  jobs            Job[]           @relation("JobAuthor")
+  employerRequests EmployerRequest[]
 }
 
 model Guest {
@@ -48,6 +50,25 @@ model SearchHistory {
   guest     Guest?   @relation(fields: [guestId], references: [id], onDelete: Cascade)
 }
 
+model EmployerRequest {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  status    String   @default("pending") // pending, approved, rejected
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum JobStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  REVIEWING
+  ACCEPTED
+  REJECTED
+}
+
+
 model Job {
   id              String   @id @default(uuid()) @db.Uuid
   title           String
@@ -59,14 +80,16 @@ model Job {
   createdAt       DateTime @default(now())
   updatedAt       DateTime? @updatedAt
   deadline        DateTime? 
-  isActive        Boolean  @default(true)
+  status          JobStatus @default(DRAFT)
   imageUrl        String?
   jobType         String?  // 'unskilled' | 'skilled' | 'professional'
   views           Int      @default(0)
   embedding       Unsupported("vector(768)")?
+  authorId        String?
 
   applications    Application[]
   jobTags         JobTag[]
+  author          User?    @relation("JobAuthor", fields: [authorId], references: [id])
 }
 
 model Application {

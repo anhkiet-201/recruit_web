@@ -156,7 +156,7 @@ export class AiService {
     try {
         const jobs: any[] = await this.prisma.$queryRawUnsafe(`
             SELECT j.title FROM "Job" j, "User" u
-            WHERE u.id = '${userId}' AND u.embedding IS NOT NULL AND j.embedding IS NOT NULL AND j."isActive" = true
+            WHERE u.id = '${userId}' AND u.embedding IS NOT NULL AND j.embedding IS NOT NULL AND (j."status" = 'ACTIVE' OR j."status" = 'ACCEPTED')
             ORDER BY j.embedding <=> u.embedding LIMIT 3
         `);
         return jobs;
@@ -196,7 +196,7 @@ export class AiService {
     const results: any[] = await this.prisma.$queryRawUnsafe(`
       SELECT id, title, content, location, "imageUrl", "jobType", "salaryMin", "salaryMax", 
              (1 - ("embedding" <=> '${vectorStr}'::vector)) as similarity
-      FROM "Job" WHERE "isActive" = true AND "embedding" IS NOT NULL
+      FROM "Job" WHERE ("status" = 'ACTIVE' OR "status" = 'ACCEPTED') AND "embedding" IS NOT NULL
       ORDER BY (
         (1 - ("embedding" <=> '${vectorStr}'::vector)) + 
         (CASE WHEN title ILIKE '%${query}%' THEN 0.8 ELSE 0 END)

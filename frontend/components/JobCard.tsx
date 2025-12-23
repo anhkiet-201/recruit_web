@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Job } from "@/models/Job";
-import { MapPin, DollarSign, Calendar, Zap, GraduationCap, Award, ChevronRight, Clock, Briefcase, Eye, Sparkles } from "lucide-react";
+import { MapPin, DollarSign, Zap, GraduationCap, Award, ChevronRight, Clock, Briefcase, Eye, Sparkles } from "lucide-react";
 import SafeImage from "./ui/SafeImage";
 import { formatDate } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
 import { formatSalaryRange } from "@/utils/currency";
+import { JobStatus } from "@/models/JobStatus";
 
 export default function JobCard({ job, isApplied = false, priority = false }: { job: Job; isApplied?: boolean; priority?: boolean; }) {
     const t = useTranslations("JobCard");
     const tDetail = useTranslations("JobDetail");
     const locale = useLocale();
 
-    const placeholderImage = job.isActive
-        ? "https://placehold.co/400x200?text=No+Image"
-        : "https://placehold.co/400x200?text=DRAFT";
+    const placeholderImage = job.status === JobStatus.DRAFT
+        ? "https://placehold.co/400x200?text=DRAFT"
+        : "https://placehold.co/400x200?text=No+Image";
 
     const getJobTypeLabel = (type?: string) => {
         switch (type) {

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { JobService } from "@/services/jobService";
 import { useRouter, useParams } from "next/navigation";
+import { JobStatus } from "@/models/JobStatus";
 
 export default function EditJobPage() {
     const router = useRouter();
@@ -13,7 +14,7 @@ export default function EditJobPage() {
         salaryMin: 0,
         salaryMax: 0,
         experienceYears: 0,
-        isActive: true,
+        jobStatus: JobStatus.DRAFT,
         imageUrl: ""
     });
 
@@ -31,7 +32,7 @@ export default function EditJobPage() {
                         salaryMin: job.salaryMin || 0,
                         salaryMax: job.salaryMax || 0,
                         experienceYears: job.experienceYears || 0,
-                        isActive: job.isActive,
+                        jobStatus: job.status,
                         imageUrl: job.imageUrl || ""
                     });
                     setOldImageUrl(job.imageUrl);
@@ -151,8 +152,8 @@ export default function EditJobPage() {
                         id="isActive"
                         type="checkbox"
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        checked={formData.isActive}
-                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                        checked={formData.jobStatus === JobStatus.ACTIVE || formData.jobStatus === JobStatus.ACCEPTED}
+                        onChange={(e) => setFormData({ ...formData, jobStatus: e.target.checked ? JobStatus.ACTIVE : JobStatus.DRAFT })}
                     />
                     <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
                         Active

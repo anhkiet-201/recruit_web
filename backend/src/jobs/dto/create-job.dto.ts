@@ -47,8 +47,8 @@ export class CreateJobDto {
   @IsOptional()
   jobType?: string;
 
-  @ApiProperty({ example: true, required: false })
-  @IsBoolean()
+  @ApiProperty({ example: 'ACTIVE', required: false, enum: ['DRAFT', 'ACTIVE', 'EXPIRED', 'REVIEWING', 'ACCEPTED', 'REJECTED'] })
+  @IsString()
   @IsOptional()
-  isActive?: boolean;
+  status?: string;
 }

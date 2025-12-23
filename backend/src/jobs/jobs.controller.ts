@@ -16,8 +16,9 @@ export class JobsController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Post()
-  create(@Body() createJobDto: any) {
-    return this.jobsService.create(createJobDto);
+  @Post()
+  create(@Request() req, @Body() createJobDto: any) {
+    return this.jobsService.create(createJobDto, req.user);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -37,8 +38,8 @@ export class JobsController {
   })
   @UseInterceptors(FileInterceptor('file'))
   importJobs(@UploadedFile() file: Express.Multer.File) {
-      if (!file) throw new Error('File is required');
-      return this.jobsService.importFromExcel(file);
+    if (!file) throw new Error('File is required');
+    return this.jobsService.importFromExcel(file);
   }
 
   @Get()

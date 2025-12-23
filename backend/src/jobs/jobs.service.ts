@@ -82,7 +82,17 @@ export class JobsService {
     return { success: true, count: createdCount, errors: errors.length > 0 ? errors : null };
   }
 
-  async create(createJobDto: any) {
+  async create(createJobDto: any, user: any) {
+    // Determine default status based on role
+    // If admin -> ACTIVE (or respect DTO), if others -> REVIEWING
+    let status = 'REVIEWING';
+    if (user?.role === 'admin') {
+      status = createJobDto.status || 'ACTIVE';
+    } else {
+      // Force REVIEWING for non-admins unless specific logic allows otherwise
+      status = 'REVIEWING';
+    }
+
     const job = await this.prisma.job.create({
       data: {
         title: createJobDto.title, content: createJobDto.content, location: createJobDto.location,
@@ -90,7 +100,9 @@ export class JobsService {
         salaryMax: createJobDto.salaryMax ? parseInt(createJobDto.salaryMax) : null,
         experienceYears: createJobDto.experienceYears ? parseInt(createJobDto.experienceYears) : null,
         imageUrl: createJobDto.imageUrl, deadline: createJobDto.deadline ? new Date(createJobDto.deadline) : null,
-        jobType: createJobDto.jobType, status: 'ACTIVE'
+        jobType: createJobDto.jobType,
+        status: status as any, // enum casting
+        authorId: user?.userId // Set author
       }
     });
 

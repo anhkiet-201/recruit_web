@@ -1,3 +1,5 @@
+import { JobStatus } from "./JobStatus";
+
 export interface Job {
     id: string;
     title: string;
@@ -9,7 +11,7 @@ export interface Job {
     createdAt: string;
     updatedAt?: string;
     deadline?: string; // ISO Date string
-    isActive: boolean;
+    status: JobStatus;
     imageUrl?: string;
     jobType?: string;
     views?: number;

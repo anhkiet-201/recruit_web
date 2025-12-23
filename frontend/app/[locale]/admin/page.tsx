@@ -9,6 +9,7 @@ import Badge from "@/components/ui/Badge";
 import StatCard from "@/components/ui/StatCard";
 import { Briefcase, FileText, Users, ChevronRight, MapPin, DollarSign } from "lucide-react";
 import Link from "next/link";
+import { getJobStatusColor } from "@/utils/jobUtils";
 
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState({ jobs: 0, applications: 0, users: 0 });
@@ -65,7 +66,7 @@ export default function AdminDashboardPage() {
                                         <td className="px-8 py-5 text-sm font-bold text-gray-900">{job.title}</td>
                                         <td className="px-6 py-5 text-sm text-gray-500 font-medium">{job.location}</td>
                                         <td className="px-6 py-5 text-sm text-blue-600 font-black tracking-tight">{job.salaryMin ? `$${job.salaryMin} - ${job.salaryMax}` : 'T.Thuận'}</td>
-                                        <td className="px-6 py-5"><Badge variant={job.isActive ? "green" : "gray"} isDot>{job.isActive ? "Active" : "Draft"}</Badge></td>
+                                        <td className="px-6 py-5"><Badge variant={getJobStatusColor(job.status)} isDot>{job.status}</Badge></td>
                                     </tr>
                                 ))}
                             </tbody>

@@ -15,6 +15,8 @@ import {
     Trash2, Edit, Eye, Users, Filter, XCircle, Upload, Calendar, X,
     CheckCircle, Clock, FileText, HelpCircle, Briefcase
 } from "lucide-react";
+import { JobStatus } from "@/models/JobStatus";
+import { getJobStatusColor } from "@/utils/jobUtils";
 
 export default function ManageJobsPage() {
     const { confirm } = useConfirm();
@@ -53,9 +55,8 @@ export default function ManageJobsPage() {
     const filteredJobs = jobs.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
         let matchesStatus = true;
-        if (statusFilter === 'active') matchesStatus = job.isActive === true;
-        if (statusFilter === 'draft') matchesStatus = job.isActive === false;
-        if (statusFilter === 'expired') matchesStatus = job.deadline && new Date(job.deadline) < new Date();
+        if (statusFilter !== 'all') matchesStatus = job.status === statusFilter;
+
         const matchesLocation = locationFilter === 'all' || job.location === locationFilter;
         return matchesSearch && matchesStatus && matchesLocation;
     });
@@ -68,9 +69,9 @@ export default function ManageJobsPage() {
 
     const statusOptions = [
         { value: "all", label: "All Status", icon: Filter },
-        { value: "active", label: "Active", icon: CheckCircle },
-        { value: "draft", label: "Draft", icon: FileText },
-        { value: "expired", label: "Expired", icon: Clock },
+        { value: JobStatus.ACTIVE, label: "Active", icon: CheckCircle },
+        { value: JobStatus.DRAFT, label: "Draft", icon: FileText },
+        { value: JobStatus.EXPIRED, label: "Expired", icon: Clock },
     ];
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,12 +98,9 @@ export default function ManageJobsPage() {
 
             if (ok) {
                 try {
-                    // Set deadline to yesterday to expire it
-                    const yesterday = new Date();
-                    yesterday.setDate(yesterday.getDate() - 1);
-
-                    await JobService.updateJob(id, { deadline: yesterday.toISOString() });
-                    setJobs(prev => prev.map(j => j.id === id ? { ...j, deadline: yesterday.toISOString() } : j));
+                    // Set status to EXPIRED
+                    await JobService.updateJob(id, { status: JobStatus.EXPIRED });
+                    setJobs(prev => prev.map(j => j.id === id ? { ...j, status: JobStatus.EXPIRED } : j));
                 } catch (e) { console.error(e); alert("Failed to expire job"); }
             }
         } else {
@@ -120,25 +118,29 @@ export default function ManageJobsPage() {
         }
     };
 
-    const handleBulkStatus = async (status: boolean) => {
+    const handleBulkStatus = async (status: JobStatus) => {
         try {
-            setJobs(prev => prev.map(job => selectedJobIds.includes(job.id) ? { ...job, isActive: status } : job));
-            await Promise.all(selectedJobIds.map(id => JobService.updateJob(id, { isActive: status })));
+            setJobs(prev => prev.map(job => selectedJobIds.includes(job.id) ? { ...job, status: status } : job));
+            await Promise.all(selectedJobIds.map(id => JobService.updateJob(id, { status: status })));
         } catch (e) { loadJobs(); }
     };
 
     const handleToggleStatus = async (job: any) => {
-        const newStatus = !job.isActive;
+        // Toggle logic: If ACTIVE -> DRAFT, If DRAFT -> ACTIVE, If EXPIRED -> DRAFT (or ACTIVE?)
+        // Let's assume standard toggle is Active <-> Draft. Expired -> Draft.
+        let newStatus = JobStatus.ACTIVE;
+        if (job.status === JobStatus.ACTIVE) newStatus = JobStatus.DRAFT;
+
         const ok = await confirm({
-            title: `${newStatus ? "Activate" : "Deactivate"} Job`,
-            message: `Are you sure you want to ${newStatus ? "activate" : "deactivate"} this job?`,
-            confirmText: newStatus ? "Activate" : "Deactivate",
-            isDanger: !newStatus
+            title: "Update Job Status",
+            message: `Change status from ${job.status} to ${newStatus}?`,
+            confirmText: "Update",
+            isDanger: false
         });
         if (!ok) return;
         try {
-            setJobs(jobs.map(j => j.id === job.id ? { ...j, isActive: newStatus } : j));
-            await JobService.updateJob(job.id, { isActive: newStatus });
+            setJobs(jobs.map(j => j.id === job.id ? { ...j, status: newStatus } : j));
+            await JobService.updateJob(job.id, { status: newStatus });
         } catch (e) { loadJobs(); }
     };
 
@@ -195,10 +197,10 @@ export default function ManageJobsPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-100">
+                    <table className="min-w-full">
                         <thead>
                             <tr className="bg-gray-50/30">
-                                <th className="px-8 py-4 text-left"><input type="checkbox" className="rounded-md border-gray-300 text-blue-600" checked={selectedJobIds.length === filteredJobs.length} onChange={handleSelectAll} /></th>
+                                <th className="px-8 py-4 text-left"><input type="checkbox" className="rounded-md border-gray-300 text-blue-600" checked={selectedJobIds.length === filteredJobs.length && filteredJobs.length > 0} onChange={handleSelectAll} /></th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Job Information</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Stats</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Deadline</th>
@@ -206,7 +208,7 @@ export default function ManageJobsPage() {
                                 <th className="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="">
                             {filteredJobs.map((job) => (
                                 <tr key={job.id} className={`hover:bg-blue-50/30 transition-colors ${selectedJobIds.includes(job.id) ? "bg-blue-50/50" : ""}`}>
                                     <td className="px-8 py-5 text-left"><input type="checkbox" className="rounded-md border-gray-300 text-blue-600" checked={selectedJobIds.includes(job.id)} onChange={() => handleSelectJob(job.id)} /></td>
@@ -232,15 +234,9 @@ export default function ManageJobsPage() {
                                     </td>
                                     <td className="px-6 py-5">
                                         {(() => {
-                                            const isExpired = job.deadline && new Date(job.deadline) < new Date();
-                                            if (isExpired) {
-                                                return (
-                                                    <Badge variant="red" isDot>Expired</Badge>
-                                                );
-                                            }
                                             return (
                                                 <button onClick={() => handleToggleStatus(job)}>
-                                                    <Badge variant={job.isActive ? "green" : "gray"} isDot>{job.isActive ? "Active" : "Draft"}</Badge>
+                                                    <Badge variant={getJobStatusColor(job.status)} isDot>{job.status}</Badge>
                                                 </button>
                                             );
                                         })()}
@@ -263,9 +259,9 @@ export default function ManageJobsPage() {
                 <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-3xl shadow-2xl p-2.5 pl-6 flex items-center gap-6 animate-in slide-in-from-bottom-10 duration-500">
                     <span className="text-sm font-black tracking-widest uppercase">{selectedJobIds.length} Selected</span>
                     <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" className="text-green-400 hover:bg-white/10" onClick={() => handleBulkStatus(true)}>Activate</Button>
-                        <Button variant="ghost" size="sm" className="text-gray-400 hover:bg-white/10" onClick={() => handleBulkStatus(false)}>Draft</Button>
-                        <Button variant="ghost" size="sm" icon={Trash2} className="text-red-400 hover:bg-white/10" onClick={() => handleBulkStatus(false)}>Delete</Button>
+                        <Button variant="ghost" size="sm" className="text-green-400 hover:bg-white/10" onClick={() => handleBulkStatus(JobStatus.ACTIVE)}>Activate</Button>
+                        <Button variant="ghost" size="sm" className="text-gray-400 hover:bg-white/10" onClick={() => handleBulkStatus(JobStatus.DRAFT)}>Draft</Button>
+                        <Button variant="ghost" size="sm" icon={Trash2} className="text-red-400 hover:bg-white/10" onClick={() => handleDelete(selectedJobIds[0]) /* TODO: implement bulk delete */}>Delete</Button>
                     </div>
                     <Button variant="secondary" size="sm" onClick={() => setSelectedJobIds([])} className="bg-white/10 hover:bg-white/20 border-none p-2 rounded-2xl"><X size={18} /></Button>
                 </div>

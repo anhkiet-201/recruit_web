@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { JobStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -18,12 +19,12 @@ export class JobsCleanupService {
   async handleJobExpiration() {
     const now = new Date();
     const expiredJobs = await this.prisma.job.updateMany({
-      where: { status: 'ACTIVE', deadline: { lt: now } },
-      data: { status: 'CLOSED' }
+      where: { status: JobStatus.ACTIVE, deadline: { lt: now } },
+      data: { status: JobStatus.EXPIRED }
     });
 
     if (expiredJobs.count > 0) {
-      const closedJobIds = await this.prisma.job.findMany({ where: { status: 'CLOSED', deadline: { lt: now } }, select: { id: true } });
+      const closedJobIds = await this.prisma.job.findMany({ where: { status: JobStatus.EXPIRED, deadline: { lt: now } }, select: { id: true } });
       const ids = closedJobIds.map(j => j.id);
       if (ids.length > 0) {
         await this.prisma.application.updateMany({ where: { jobId: { in: ids }, status: 'pending' }, data: { status: 'expired' } });
