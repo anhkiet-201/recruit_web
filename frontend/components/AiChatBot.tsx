@@ -235,6 +235,8 @@ export default function AiChatBot() {
     };
 
     // --- RENDER ---
+    if (pathname?.includes('/admin')) return null;
+
     return (
         <>
             {/* 1. Trigger Button */}
