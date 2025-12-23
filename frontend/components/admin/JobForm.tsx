@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { JobService } from "@/services/jobService";
 import { getAllTags, createTag, addTagToJob, deleteTag, removeTagFromJob, getJobTags } from "@/services/tagService";
 import { Tag } from "@/models/Tag";
-import { X, Save, Upload, MapPin, DollarSign, Calendar, Briefcase, Hash, Plus, Image as ImageIcon, User, AlertCircle, Zap, Award, GraduationCap } from "lucide-react";
+import { X, Save, Upload, MapPin, DollarSign, Calendar, Briefcase, Hash, Plus, Image as ImageIcon, User, AlertCircle, Zap, Award, GraduationCap, Type, FileText, AlignLeft, RefreshCw } from "lucide-react";
 import { useConfirm } from "@/contexts/ConfirmDialogContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -23,7 +23,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
     const { confirm } = useConfirm();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
-    
+
     const [formData, setFormData] = useState({
         title: "", content: "", location: "", salaryMin: 0, salaryMax: 0,
         experienceYears: 0, imageUrl: "", deadline: "", jobType: "unskilled"
@@ -87,7 +87,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
     };
 
     const handleDeleteTag = async (tagId: string, e: React.MouseEvent) => {
-        e.stopPropagation(); 
+        e.stopPropagation();
         const ok = await confirm({
             title: "Delete Tag",
             message: "Are you sure you want to permanently delete this tag?",
@@ -121,74 +121,199 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
     ];
 
     return (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
-            <div className="lg:col-span-2 space-y-8">
-                <Card noPadding className="border-none shadow-2xl">
-                    <CardHeader title={title} subtitle="Thông tin nội dung công việc tuyển dụng" />
-                    <div className="p-8 space-y-8">
-                        <Input label="Job Title" required placeholder="Ví dụ: Senior React Developer" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-                        <Input isTextArea label="Job Description" required rows={12} placeholder="Mô tả công việc, yêu cầu..." value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
-                    </div>
-                </Card>
-
-                <Card noPadding className="border-none shadow-2xl">
-                    <CardHeader title="Cover Image" subtitle="Hình ảnh đại diện cho tin tuyển dụng" />
-                    <div className="p-8">
-                        <div className="flex flex-col items-center justify-center border-4 border-dashed border-gray-100 rounded-[2.5rem] p-10 hover:bg-gray-50/50 transition-all cursor-pointer relative overflow-hidden group">
-                            {formData.imageUrl ? (
-                                <div className="relative w-full h-64 rounded-3xl overflow-hidden shadow-lg">
-                                    <img src={formData.imageUrl} alt="Job Cover" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                                        <p className="text-white font-black uppercase tracking-widest text-xs">Thay đổi ảnh</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="text-center">
-                                    <div className="mx-auto h-16 w-16 text-gray-200 mb-4 group-hover:scale-110 transition-transform"><ImageIcon size={64} /></div>
-                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Kéo thả hoặc nhấn để tải ảnh</p>
-                                </div>
-                            )}
-                            <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                            {uploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><RefreshCw size={32} className="animate-spin text-blue-600" /></div>}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-3 gap-8 pb-32">
+            {/* Main Content - Left Column */}
+            <div className="xl:col-span-2 space-y-8">
+                {/* Basic Info Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-1">
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                            <FileText size={20} />
                         </div>
+                        <h3 className="text-lg font-bold text-gray-900">Nội dung tuyển dụng</h3>
                     </div>
-                </Card>
+                    <Card noPadding className="border-none shadow-xl shadow-gray-100/50 overflow-hidden">
+                        <div className="p-8 space-y-8">
+                            <Input
+                                icon={Type}
+                                label="Tiêu đề công việc"
+                                required
+                                placeholder="Ví dụ: Senior React Developer"
+                                value={formData.title}
+                                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                            />
+                            <Input
+                                icon={AlignLeft}
+                                isTextArea
+                                label="Mô tả chi tiết"
+                                required
+                                rows={16}
+                                placeholder="Mô tả chi tiết về công việc, yêu cầu ứng viên, quyền lợi..."
+                                value={formData.content}
+                                onChange={e => setFormData({ ...formData, content: e.target.value })}
+                            />
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Media Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-1">
+                        <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                            <ImageIcon size={20} />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900">Hình ảnh minh họa</h3>
+                    </div>
+                    <Card noPadding className="border-none shadow-xl shadow-gray-100/50 overflow-hidden">
+                        <div className="p-8">
+                            <div className="flex flex-col items-center justify-center border-4 border-dashed border-gray-100 rounded-[2rem] p-12 hover:bg-gray-50/50 hover:border-blue-100 transition-all cursor-pointer relative overflow-hidden group">
+                                {formData.imageUrl ? (
+                                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg">
+                                        <img src={formData.imageUrl} alt="Job Cover" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
+                                            <p className="text-white font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                                                <Upload size={18} /> Thay đổi ảnh
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center space-y-4">
+                                        <div className="mx-auto h-20 w-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-100 transition-all duration-300 shadow-sm">
+                                            <ImageIcon size={32} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Tải ảnh bìa</p>
+                                            <p className="text-xs text-gray-400 font-medium">PNG, JPG up to 5MB</p>
+                                        </div>
+                                    </div>
+                                )}
+                                <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                                {uploading && (
+                                    <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
+                                        <RefreshCw size={40} className="animate-spin text-blue-600 mb-2" />
+                                        <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Đang tải lên...</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
 
+            {/* Sidebar - Right Column */}
             <div className="space-y-8">
-                <Card noPadding className="border-none shadow-2xl">
-                    <CardHeader title="Job Specifics" />
-                    <div className="p-8 space-y-6">
-                        <Input icon={MapPin} label="Location" required value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input icon={DollarSign} label="Min ($)" type="number" value={formData.salaryMin} onChange={e => setFormData({...formData, salaryMin: Number(e.target.value)})} />
-                            <Input icon={DollarSign} label="Max ($)" type="number" value={formData.salaryMax} onChange={e => setFormData({...formData, salaryMax: Number(e.target.value)})} />
-                        </div>
-                        <Input icon={Briefcase} label="Experience" type="number" value={formData.experienceYears} onChange={e => setFormData({...formData, experienceYears: Number(e.target.value)})} />
-                        <Input icon={Calendar} label="Deadline" type="date" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} />
-                        <Dropdown icon={User} label="Job Type" options={jobTypeOptions} value={formData.jobType} onChange={val => setFormData({...formData, jobType: val})} />
-                    </div>
-                </Card>
+                {/* Actions */}
+                <div className="bg-white p-4 rounded-2xl shadow-xl shadow-gray-100/50 sticky top-4 z-10 border border-gray-50">
+                    <Button icon={Save} className="w-full py-4 text-base shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all" isLoading={loading}>{submitLabel}</Button>
+                </div>
 
-                <Card noPadding className="border-none shadow-2xl">
-                    <CardHeader title="Tags & Skills" />
-                    <div className="p-8">
-                        <div className="flex gap-2 mb-6"><input type="text" placeholder="Thêm tag..." className="flex-1 bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold" value={newTagName} onChange={e => setNewTagName(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleCreateTag())} /><button type="button" onClick={handleCreateTag} className="bg-gray-900 text-white p-2.5 rounded-xl hover:scale-105 active:scale-95 transition-all"><Plus size={20}/></button></div>
-                        <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto no-scrollbar">
-                            {availableTags.map(tag => (
-                                <div key={tag.id} onClick={() => toggleTag(tag.id)} className={`group flex items-center gap-1.5 pl-3 pr-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer border transition-all ${selectedTags.includes(tag.id) ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100" : "bg-white text-gray-400 border-gray-100 hover:border-gray-300"}`}>
-                                    <span>{tag.name}</span>
-                                    <button type="button" onClick={e => handleDeleteTag(tag.id, e)} className={`p-1 rounded-lg transition-colors ${selectedTags.includes(tag.id) ? "text-white/50 hover:text-white" : "text-gray-300 hover:text-red-500 hover:bg-red-50"}`}><X size={12}/></button>
+                {/* Job Specifics */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-1">
+                        <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                            <Briefcase size={20} />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900">Chi tiết công việc</h3>
+                    </div>
+                    <Card noPadding className="border-none shadow-xl shadow-gray-100/50 overflow-hidden">
+                        <div className="p-6 space-y-6">
+                            <Dropdown icon={User} label="Loại hình công việc" options={jobTypeOptions} value={formData.jobType} onChange={val => setFormData({ ...formData, jobType: val })} />
+
+                            <div className="space-y-2">
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-[0.15em] ml-2">Mức lương (VND)</label>
+                                <div className="overflow-hidden rounded-xl border border-gray-100 shadow-sm bg-gray-50/30">
+                                    <table className="w-full text-sm">
+                                        <tbody className="divide-y divide-gray-100">
+                                            <tr className="group hover:bg-white transition-colors">
+                                                <td className="px-4 py-4 font-bold text-[10px] text-gray-400 uppercase tracking-widest w-1/3 align-middle group-hover:text-blue-600 transition-colors">Min</td>
+                                                <td className="p-1 w-2/3">
+                                                    <Input
+                                                        icon={DollarSign}
+                                                        value={formData.salaryMin ? formData.salaryMin.toLocaleString('vi-VN') : ''}
+                                                        onChange={e => setFormData({ ...formData, salaryMin: Number(e.target.value.replace(/\./g, '')) })}
+                                                        className="!space-y-0"
+                                                        inputClassName="!border-none !shadow-none !rounded-lg focus:!ring-0 !bg-transparent text-xs !font-bold text-gray-700 w-full text-right"
+                                                    />
+                                                </td>
+                                            </tr>
+                                            <tr className="group hover:bg-white transition-colors">
+                                                <td className="px-4 py-4 font-bold text-[10px] text-gray-400 uppercase tracking-widest w-1/3 align-middle group-hover:text-blue-600 transition-colors">Max</td>
+                                                <td className="p-1 w-2/3">
+                                                    <Input
+                                                        icon={DollarSign}
+                                                        value={formData.salaryMax ? formData.salaryMax.toLocaleString('vi-VN') : ''}
+                                                        onChange={e => setFormData({ ...formData, salaryMax: Number(e.target.value.replace(/\./g, '')) })}
+                                                        className="!space-y-0"
+                                                        inputClassName="!border-none !shadow-none !rounded-lg focus:!ring-0 !bg-transparent text-xs !font-bold text-gray-700 w-full text-right"
+                                                    />
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                </Card>
+                            </div>
 
-                <div className="pt-4"><Button icon={Save} className="w-full py-5 text-lg" isLoading={loading}>{submitLabel}</Button></div>
+                            <Input icon={MapPin} label="Địa điểm làm việc" required value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                            <Input icon={Briefcase} label="Kinh nghiệm (Năm)" type="number" min={0} value={formData.experienceYears} onChange={e => setFormData({ ...formData, experienceYears: Math.max(0, Number(e.target.value)) })} />
+                            <Input icon={Calendar} label="Hạn nộp hồ sơ" type="date" value={formData.deadline} onChange={e => setFormData({ ...formData, deadline: e.target.value })} />
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Tags Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-1">
+                        <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                            <Hash size={20} />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900">Tags & Kỹ năng</h3>
+                    </div>
+                    <Card noPadding className="border-none shadow-xl shadow-gray-100/50 overflow-hidden">
+                        <div className="p-6 space-y-4">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Thêm tag mới..."
+                                    className="flex-1 bg-gray-50 border-none rounded-xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all placeholder:text-gray-400"
+                                    value={newTagName}
+                                    onChange={e => setNewTagName(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleCreateTag())}
+                                />
+                                <button type="button" onClick={handleCreateTag} className="bg-gray-900 text-white px-4 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-gray-900/20">
+                                    <Plus size={18} />
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                {availableTags.map(tag => (
+                                    <div
+                                        key={tag.id}
+                                        onClick={() => toggleTag(tag.id)}
+                                        className={`
+                                            group flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer border transition-all duration-300
+                                            ${selectedTags.includes(tag.id)
+                                                ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/30 ring-2 ring-blue-600/20"
+                                                : "bg-white text-gray-500 border-gray-100 hover:border-blue-200 hover:text-blue-600 hover:shadow-sm"
+                                            }
+                                        `}
+                                    >
+                                        <span>{tag.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={e => handleDeleteTag(tag.id, e)}
+                                            className={`p-0.5 rounded-md transition-all ${selectedTags.includes(tag.id) ? "text-blue-200 hover:text-white hover:bg-white/20" : "text-gray-300 hover:text-red-500 hover:bg-red-50"}`}
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
         </form>
     );
 }
 
-import { RefreshCw } from "lucide-react";
+// Add custom scrollbar styles or ensure they exist globally
+// .custom-scrollbar::-webkit-scrollbar { width: 4px; }

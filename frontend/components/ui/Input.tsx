@@ -35,7 +35,7 @@ export default function Input({
             )}
             <div className="relative group">
                 {Icon && (
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-focus-within:text-blue-600 transition-colors">
+                    <div className={`absolute left-5 ${isTextArea ? 'top-5' : 'top-1/2 -translate-y-1/2'} text-gray-400 pointer-events-none group-focus-within:text-blue-600 transition-colors`}>
                         <Icon size={20} />
                     </div>
                 )}
