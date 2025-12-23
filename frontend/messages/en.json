@@ -144,7 +144,8 @@
         "viewAll": "View All",
         "jobApplication": "Job Application",
         "noApplicationsYet": "You haven't applied to any jobs yet.",
-        "browseJobs": "Browse Jobs"
+        "browseJobs": "Browse Jobs",
+        "negotiable": "Negotiable"
     },
     "Navigation": {
         "home": "Home",

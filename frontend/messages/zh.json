@@ -144,7 +144,8 @@
         "viewAll": "查看全部",
         "jobApplication": "职位申请",
         "noApplicationsYet": "您尚未申请任何职位。",
-        "browseJobs": "浏览职位"
+        "browseJobs": "浏览职位",
+        "negotiable": "面议"
     },
     "Navigation": {
         "home": "首页",
