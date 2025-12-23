@@ -46,6 +46,21 @@ export class ApplicationsService {
     });
   }
 
+  async getEmployerApplications(employerId: string) {
+    return this.prisma.application.findMany({
+      where: {
+        job: {
+          authorId: employerId
+        }
+      },
+      include: {
+        job: { select: { title: true, authorId: true } },
+        user: { select: { name: true, email: true, phone: true, address: true, avatarUrl: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   async findAll() {
     return this.prisma.application.findMany({
       include: {

@@ -26,10 +26,28 @@ export const getFileNameFromUrl = (url?: string): string => {
         // Tên file có dạng timestamp-originalname.ext
         const nameParts = fullName.split('-');
         if (nameParts.length > 1) {
-            return nameParts.slice(1).join('-'); 
+            return nameParts.slice(1).join('-');
         }
         return fullName;
     } catch {
         return "File";
     }
+};
+
+/**
+ * Định dạng số sang tiền tệ VNĐ.
+ */
+export const formatCurrency = (amount?: number): string => {
+    if (amount === undefined || amount === null) return 'N/A';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+};
+
+/**
+ * Định dạng khoảng lương.
+ */
+export const formatSalaryRange = (min?: number, max?: number): string => {
+    if (!min && !max) return 'Thỏa thuận';
+    if (!min) return `Lên đến ${formatCurrency(max)}`;
+    if (!max) return `Từ ${formatCurrency(min)}`;
+    return `${formatCurrency(min)} - ${formatCurrency(max)}`;
 };

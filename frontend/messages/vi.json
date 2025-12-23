@@ -64,6 +64,7 @@
     "notFound": "Không tìm thấy công việc",
     "views": "Lượt xem",
     "location": "Địa điểm",
+    "phone": "Số điện thoại",
     "salary": "Mức lương",
     "negotiable": "Thỏa thuận",
     "jobDetails": "Chi tiết tuyển dụng",
@@ -186,5 +187,25 @@
   "Common": {
     "loading": "Đang tải...",
     "error": "Có lỗi xảy ra"
+  },
+  "EmployerProfile": {
+    "notFound": "Không tìm thấy nhà tuyển dụng",
+    "backHome": "Quay lại trang chủ",
+    "back": "Quay lại",
+    "contactNow": "Liên hệ ngay",
+    "verifiedPartner": "Đối tác xác thực",
+    "activeJobs": "Vị trí đang tuyển",
+    "memberSince": "Tham gia từ",
+    "contactInfo": "Thông tin liên hệ",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "address": "Địa chỉ",
+    "aboutCompany": "Về công ty",
+    "commitmentText": "Chúng tôi cam kết cung cấp một môi trường làm việc chuyên nghiệp, minh bạch và đầy cơ hội cho các ứng viên tài năng.",
+    "openingJobs": "Các vị trí đang tuyển",
+    "totalOfLine": "Tổng cộng",
+    "listings": "tin đăng",
+    "noJobs": "Hiện tại chưa có tin tuyển dụng nào.",
+    "noJobsDescription": "Hãy quay lại sau để cập nhật những cơ hội việc làm mới nhất từ nhà tuyển dụng này."
   }
 }

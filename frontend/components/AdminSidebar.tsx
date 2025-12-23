@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, FileText, Users, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText, Users, Settings, LogOut, ShieldCheck } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 
 export default function AdminSidebar() {
@@ -13,13 +13,14 @@ export default function AdminSidebar() {
     const menuItems = [
         { name: "Overview", href: "/admin", icon: LayoutDashboard },
         { name: "Jobs", href: "/admin/jobs", icon: Briefcase },
+        { name: "Employer Requests", href: "/admin/employer-requests", icon: ShieldCheck },
         { name: "Applications", href: "/admin/applications", icon: FileText },
         { name: "Users", href: "/admin/users", icon: Users },
         // { name: "Settings", href: "/admin/settings", icon: Settings },
     ];
 
     return (
-        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
+        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 overflow-y-auto shrink-0">
             <div className="p-6 border-b border-gray-100 flex items-center gap-2">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                     <span className="text-white font-bold text-xl">A</span>

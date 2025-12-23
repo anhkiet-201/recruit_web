@@ -11,6 +11,8 @@ import Input from "@/components/ui/Input";
 import Dropdown from "@/components/ui/Dropdown";
 import { Card, CardHeader } from "@/components/ui/Card";
 
+import { useAuth } from "../AuthProvider";
+
 interface JobFormProps {
     initialData?: any;
     jobId?: string;
@@ -21,6 +23,7 @@ interface JobFormProps {
 
 export default function JobForm({ initialData, jobId, onSubmit, submitLabel, title }: JobFormProps) {
     const { confirm } = useConfirm();
+    const { profile } = useAuth();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
 
@@ -124,6 +127,12 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
         <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-3 gap-8 pb-32">
             {/* Main Content - Left Column */}
             <div className="xl:col-span-2 space-y-8">
+                {profile?.role === 'employer' && (
+                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-3 text-blue-800 text-sm font-bold shadow-sm">
+                        <AlertCircle className="text-blue-600 shrink-0" size={20} />
+                        <p>Lưu ý: Tin tuyển dụng của bạn sẽ được Admin kiểm duyệt trước khi hiển thị chính thức trên hệ thống.</p>
+                    </div>
+                )}
                 {/* Basic Info Section */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">

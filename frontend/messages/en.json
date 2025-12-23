@@ -64,6 +64,7 @@
         "notFound": "Job not found",
         "views": "Views",
         "location": "Location",
+        "phone": "Phone",
         "salary": "Salary",
         "negotiable": "Negotiable",
         "jobDetails": "Job Details",
@@ -186,5 +187,25 @@
     "Common": {
         "loading": "Loading...",
         "error": "Something went wrong"
+    },
+    "EmployerProfile": {
+        "notFound": "Employer Not Found",
+        "backHome": "Back to Home",
+        "back": "Back",
+        "contactNow": "Contact Now",
+        "verifiedPartner": "Verified Partner",
+        "activeJobs": "Active Jobs",
+        "memberSince": "Member since",
+        "contactInfo": "Contact Information",
+        "email": "Email",
+        "phone": "Phone",
+        "address": "Address",
+        "aboutCompany": "About Company",
+        "commitmentText": "We are committed to providing a professional, transparent, and opportunity-filled work environment for talented candidates.",
+        "openingJobs": "Current Openings",
+        "totalOfLine": "Total of",
+        "listings": "listings",
+        "noJobs": "No job listings available at the moment.",
+        "noJobsDescription": "Check back later for exciting opportunities from this employer."
     }
 }

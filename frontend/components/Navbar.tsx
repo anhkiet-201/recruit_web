@@ -8,12 +8,25 @@ import { LogOut, LayoutDashboard, ShieldCheck, User as UserIcon, Briefcase } fro
 import Image from "next/image";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
+import { useState, useEffect } from "react";
+import BecomeEmployerDialog from "./BecomeEmployerDialog";
+import { UserService } from "@/services/userService";
 
 export default function Navbar() {
     const { user, profile, loading, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const t = useTranslations("Navigation");
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [requestStatus, setRequestStatus] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (user && profile?.role === 'candidate') {
+            UserService.getEmployerRequestStatus().then(req => {
+                if (req) setRequestStatus(req.status);
+            });
+        }
+    }, [user, profile]);
 
     const handleLogout = async () => {
         logout();
@@ -53,6 +66,24 @@ export default function Navbar() {
                             </div>
                         ) : user ? (
                             <div className="flex items-center gap-3">
+                                {/* Become Employer Button */}
+                                {profile?.role === 'candidate' && !requestStatus && (
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="hidden md:flex text-blue-600 font-bold"
+                                        onClick={() => setIsDialogOpen(true)}
+                                    >
+                                        Tuyển dụng
+                                    </Button>
+                                )}
+                                
+                                {requestStatus === 'pending' && (
+                                    <span className="hidden md:block px-3 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-black uppercase rounded-lg border border-yellow-100">
+                                        Đang chờ duyệt
+                                    </span>
+                                )}
+
                                 {/* Admin Shortcut */}
                                 {profile?.role === 'admin' && (
                                     <Link href="/admin">
@@ -69,7 +100,7 @@ export default function Navbar() {
                                             <p className="text-xs font-black text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1 max-w-[100px]">
                                                 {profile?.name || "Member"}
                                             </p>
-                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest text-right">
                                                 {profile?.role || "Candidate"}
                                             </p>
                                         </div>
@@ -108,6 +139,12 @@ export default function Navbar() {
                     </div>
                 </div>
             </div>
+            
+            <BecomeEmployerDialog 
+                isOpen={isDialogOpen} 
+                onClose={() => setIsDialogOpen(false)}
+                onSuccess={() => setRequestStatus('pending')}
+            />
         </nav>
     );
 }

@@ -6,7 +6,9 @@ import { useTranslations } from "next-intl";
 export default function Footer() {
     const pathname = usePathname();
     const t = useTranslations("Footer");
-    const isAdminPage = pathname?.startsWith('/admin');
+    
+    // Check if path contains /admin (robust check for /vi/admin, /en/admin, etc.)
+    const isAdminPage = pathname?.includes('/admin');
 
     if (isAdminPage) return null;
 

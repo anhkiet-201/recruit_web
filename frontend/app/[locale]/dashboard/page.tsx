@@ -6,7 +6,7 @@ import { ApplicationService } from "@/services/applicationService";
 import { UserService } from "@/services/userService";
 import { Application } from "@/models/User";
 import { useRouter } from "next/navigation";
-import { Card, CardHeader, CardFooter } from "@/components/ui/Card";
+import { Card} from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Badge from "@/components/ui/Badge";
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import EmployerDashboard from "@/components/EmployerDashboard";
 
 export default function DashboardPage() {
     const t = useTranslations("Dashboard");
@@ -27,6 +28,7 @@ export default function DashboardPage() {
     const [saving, setSaving] = useState(false);
     const [cvUploading, setCvUploading] = useState(false);
     const [avatarUploading, setAvatarUploading] = useState(false);
+    const [requestStatus, setRequestStatus] = useState<string | null>(null);
 
     const cvInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +41,15 @@ export default function DashboardPage() {
             else {
                 const userId = profile?.id || user.uid;
                 ApplicationService.getMyApplications(userId).then(setApplications);
-                if (profile) setFormData({ name: profile.name || "", phone: profile.phone || "", address: profile.address || "", education: profile.education || "", skills: profile.skills || "" });
+                if (profile) {
+                    setFormData({ name: profile.name || "", phone: profile.phone || "", address: profile.address || "", education: profile.education || "", skills: profile.skills || "" });
+                    
+                    if (profile.role === 'candidate') {
+                        UserService.getEmployerRequestStatus().then(req => {
+                            if (req) setRequestStatus(req.status);
+                        });
+                    }
+                }
             }
         }
     }, [user, profile, loading, router]);
@@ -103,8 +113,45 @@ export default function DashboardPage() {
 
     if (loading || !user) return <div className="min-h-screen flex items-center justify-center"><RefreshCw className="animate-spin text-blue-600" /></div>;
 
+    if (profile?.role === 'employer') {
+        return (
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-800">Employer Dashboard</h1>
+                        <p className="text-slate-500 font-medium">Chào mừng trở lại, {profile.name}!</p>
+                    </div>
+                    <Badge variant="blue" className="px-4 py-2 uppercase tracking-widest font-black">Nhà tuyển dụng</Badge>
+                </div>
+                <EmployerDashboard />
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {requestStatus && (
+                <div className={`mb-8 p-4 rounded-2xl flex items-center justify-between border ${
+                    requestStatus === 'pending' ? 'bg-yellow-50 border-yellow-100 text-yellow-800' :
+                    requestStatus === 'rejected' ? 'bg-red-50 border-red-100 text-red-800' :
+                    'bg-emerald-50 border-emerald-100 text-emerald-800'
+                }`}>
+                    <div className="flex items-center gap-3">
+                        {requestStatus === 'pending' ? <Clock size={20} /> : <AlertCircle size={20} />}
+                        <div>
+                            <p className="font-bold text-sm">Yêu cầu trở thành Nhà tuyển dụng</p>
+                            <p className="text-xs font-medium opacity-80">
+                                {requestStatus === 'pending' ? 'Yêu cầu của bạn đang được admin xem xét.' : 
+                                 requestStatus === 'rejected' ? 'Yêu cầu của bạn đã bị từ chối. Vui lòng liên hệ hỗ trợ để biết thêm chi tiết.' : 
+                                 'Yêu cầu của bạn đã được chấp nhận!'}
+                            </p>
+                        </div>
+                    </div>
+                    <Badge variant={requestStatus === 'pending' ? 'warning' : requestStatus === 'rejected' ? 'danger' : 'success'}>
+                        {requestStatus.toUpperCase()}
+                    </Badge>
+                </div>
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
                 {/* LEFT COL - PROFILE CARD (4 cols) */}

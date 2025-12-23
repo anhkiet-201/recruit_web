@@ -24,9 +24,21 @@ export class ApplicationsController {
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
+  @Get('employer')
+  getEmployerApplications(@Request() req) {
+    if (req.user.role !== 'employer' && req.user.role !== 'admin') {
+      throw new Error('Bạn không có quyền thực hiện hành động này.');
+    }
+    return this.applicationsService.getEmployerApplications(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @Get()
-  findAll() {
-    // Ideally add check for admin role here
+  findAll(@Request() req) {
+    if (req.user.role !== 'admin') {
+      throw new Error('Bạn không có quyền thực hiện hành động này.');
+    }
     return this.applicationsService.findAll();
   }
 

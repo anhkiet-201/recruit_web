@@ -3,7 +3,7 @@ import { LucideIcon } from "lucide-react";
 
 interface BadgeProps {
     children: React.ReactNode;
-    variant?: "blue" | "green" | "purple" | "red" | "gray" | "yellow";
+    variant?: "blue" | "green" | "purple" | "red" | "gray" | "yellow" | "success" | "danger" | "warning";
     icon?: LucideIcon;
     className?: string;
     isDot?: boolean;
@@ -23,14 +23,16 @@ export default function Badge({
         red: "bg-red-50 text-red-700 border-red-100",
         gray: "bg-gray-50 text-gray-700 border-gray-100",
         yellow: "bg-yellow-50 text-yellow-700 border-yellow-100",
+        success: "bg-green-50 text-green-700 border-green-100",
+        danger: "bg-red-50 text-red-700 border-red-100",
+        warning: "bg-yellow-50 text-yellow-700 border-yellow-100",
     };
 
     return (
         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase border tracking-wider ${variants[variant]} ${className}`}>
-            {isDot && <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                variant === 'green' ? 'bg-green-500' : 
-                variant === 'blue' ? 'bg-blue-500' : 'bg-current'
-            }`}></div>}
+            {isDot && <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${variant === 'green' ? 'bg-green-500' :
+                    variant === 'blue' ? 'bg-blue-500' : 'bg-current'
+                }`}></div>}
             {Icon && <Icon size={12} />}
             {children}
         </span>

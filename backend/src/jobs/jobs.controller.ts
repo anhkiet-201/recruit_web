@@ -43,8 +43,24 @@ export class JobsController {
   }
 
   @Get()
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'authorId', required: false })
   findAll(@Query() query: any) {
+    // If not admin/employer and status not provided, default to ACTIVE
+    // However, for simplicity, let's just pass query to service
     return this.jobsService.findAll(query);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @Patch(':id/approve')
+  approve(@Param('id') id: string, @Body('status') status: 'ACTIVE' | 'REJECTED' | 'DRAFT', @Request() req) {
+    if (req.user.role !== 'admin') {
+      throw new Error('Bạn không có quyền thực hiện hành động này.');
+    }
+    return this.jobsService.approveJob(id, status);
   }
 
   @Get('search')
@@ -94,8 +110,8 @@ export class JobsController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateJobDto: any) {
-    return this.jobsService.update(id, updateJobDto);
+  update(@Param('id') id: string, @Body() updateJobDto: any, @Request() req) {
+    return this.jobsService.update(id, updateJobDto, req.user);
   }
 
   @UseGuards(AuthGuard('jwt'))

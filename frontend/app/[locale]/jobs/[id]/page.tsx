@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { JobService } from "@/services/jobService";
 import { useRouter, useParams } from "next/navigation";
 import JobActionSection from "@/components/JobActionSection";
-import { MapPin, DollarSign, Briefcase, Calendar, ChevronLeft, Building2, Eye, Users, Clock, Share2, RefreshCw, Languages } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Calendar, ChevronLeft, Building2, Eye, Users, Clock, Share2, RefreshCw, Languages, Phone } from "lucide-react";
 import { api } from "@/lib/api";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
@@ -275,22 +275,75 @@ export default function JobDetailPage() {
                             </div>
 
                             {/* Company Card - Inside Sticky Wrapper */}
-                            <div className="bg-gradient-to-br from-gray-900 to-black rounded-[2.5rem] shadow-2xl p-10 text-white relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-blue-600/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
+                            <div className="bg-white rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100 p-10 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-blue-50 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                                 <div className="relative z-10">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-xl">
-                                            <Building2 size={28} />
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 shadow-sm overflow-hidden flex-shrink-0">
+                                            {job.author?.avatarUrl ? (
+                                                <img
+                                                    src={job.author.avatarUrl}
+                                                    alt={job.author.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <Building2 size={32} />
+                                            )}
                                         </div>
                                         <div>
-                                            <h4 className="font-black text-xl tracking-tight">RecruitWeb Partner</h4>
-                                            <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">{t('verifiedEmployer')}</p>
+                                            <h4 className="font-black text-xl text-gray-900 tracking-tight leading-tight mb-1">
+                                                {job.author?.name || "RecruitWeb Partner"}
+                                            </h4>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="blue" className="text-[9px] px-2 py-0.5">{t('verifiedEmployer')}</Badge>
+                                            </div>
                                         </div>
                                     </div>
-                                    <p className="text-sm text-gray-400 leading-relaxed mb-8 font-medium">
-                                        {t('qualityCommitment')}
+
+                                    <div className="space-y-5 mb-10">
+                                        <div className="group/item flex items-start gap-4">
+                                            <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 text-gray-400 group-hover/item:text-blue-600 group-hover/item:bg-blue-50 group-hover/item:border-blue-100 transition-all">
+                                                <Languages size={16} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Email</p>
+                                                <p className="text-sm font-bold text-gray-700 break-all">{job.author?.email || "contact@recruitweb.com"}</p>
+                                            </div>
+                                        </div>
+
+                                        {job.author?.phone && (
+                                            <div className="group/item flex items-start gap-4">
+                                                <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 text-gray-400 group-hover/item:text-blue-600 group-hover/item:bg-blue-50 group-hover/item:border-blue-100 transition-all">
+                                                    <Phone size={16} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{t('phone') || 'Phone'}</p>
+                                                    <p className="text-sm font-bold text-gray-700">{job.author.phone}</p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {job.author?.address && (
+                                            <div className="group/item flex items-start gap-4">
+                                                <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 text-gray-400 group-hover/item:text-blue-600 group-hover/item:bg-blue-50 group-hover/item:border-blue-100 transition-all">
+                                                    <MapPin size={16} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{t('location')}</p>
+                                                    <p className="text-sm font-bold text-gray-700 leading-relaxed">{job.author.address}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <p className="text-xs text-gray-400 leading-relaxed mb-8 font-medium italic">
+                                        "{t('qualityCommitment')}"
                                     </p>
-                                    <button className="w-full py-4 bg-white text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all hover:bg-blue-600 hover:text-white shadow-xl">
+
+                                    <button
+                                        onClick={() => job.author?.id && router.push(`/${locale}/employers/${job.author.id}`)}
+                                        className="w-full py-4 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all hover:bg-blue-600 shadow-xl shadow-gray-200"
+                                    >
                                         {t('companyProfile')}
                                     </button>
                                 </div>

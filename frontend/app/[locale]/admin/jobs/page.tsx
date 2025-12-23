@@ -29,6 +29,7 @@ export default function ManageJobsPage() {
     const isMounted = useRef(false);
 
     const [searchTerm, setSearchTerm] = useState("");
+    const [authorSearchTerm, setAuthorSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [locationFilter, setLocationFilter] = useState("all");
 
@@ -54,11 +55,17 @@ export default function ManageJobsPage() {
 
     const filteredJobs = jobs.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const authorName = job.author?.name || 'Admin';
+        const authorEmail = job.author?.email || 'System';
+        const matchesAuthor =
+            authorName.toLowerCase().includes(authorSearchTerm.toLowerCase()) ||
+            authorEmail.toLowerCase().includes(authorSearchTerm.toLowerCase());
+
         let matchesStatus = true;
         if (statusFilter !== 'all') matchesStatus = job.status === statusFilter;
 
         const matchesLocation = locationFilter === 'all' || job.location === locationFilter;
-        return matchesSearch && matchesStatus && matchesLocation;
+        return matchesSearch && matchesAuthor && matchesStatus && matchesLocation;
     });
 
     const locationOptions = [
@@ -70,9 +77,19 @@ export default function ManageJobsPage() {
     const statusOptions = [
         { value: "all", label: "All Status", icon: Filter },
         { value: JobStatus.ACTIVE, label: "Active", icon: CheckCircle },
+        { value: JobStatus.REVIEWING, label: "Reviewing", icon: Clock },
         { value: JobStatus.DRAFT, label: "Draft", icon: FileText },
         { value: JobStatus.EXPIRED, label: "Expired", icon: Clock },
     ];
+
+    const handleApprove = async (id: string, status: JobStatus) => {
+        try {
+            await JobService.approveJob(id, status as any);
+            setJobs(prev => prev.map(j => j.id === id ? { ...j, status } : j));
+        } catch (error) {
+            alert("Failed to update status");
+        }
+    };
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedJobIds(e.target.checked ? filteredJobs.map(job => job.id) : []);
@@ -165,12 +182,20 @@ export default function ManageJobsPage() {
 
             <Card noPadding className="border-none shadow-2xl">
                 <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col md:flex-row gap-4 items-center">
-                    <div className="w-full md:w-96">
+                    <div className="w-full md:w-80">
                         <Input
                             icon={Search}
                             placeholder="Search job title..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="w-full md:w-64">
+                        <Input
+                            icon={Users}
+                            placeholder="Author name or email..."
+                            value={authorSearchTerm}
+                            onChange={(e) => setAuthorSearchTerm(e.target.value)}
                         />
                     </div>
                     <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
@@ -190,8 +215,8 @@ export default function ManageJobsPage() {
                                 onChange={setStatusFilter}
                             />
                         </div>
-                        {(searchTerm || statusFilter !== 'all' || locationFilter !== 'all') && (
-                            <Button variant="ghost" size="sm" icon={XCircle} onClick={() => { setSearchTerm(""); setStatusFilter("all"); setLocationFilter("all"); }}>Clear</Button>
+                        {(searchTerm || authorSearchTerm || statusFilter !== 'all' || locationFilter !== 'all') && (
+                            <Button variant="ghost" size="sm" icon={XCircle} onClick={() => { setSearchTerm(""); setAuthorSearchTerm(""); setStatusFilter("all"); setLocationFilter("all"); }}>Clear</Button>
                         )}
                     </div>
                 </div>
@@ -202,6 +227,7 @@ export default function ManageJobsPage() {
                             <tr className="bg-gray-50/30">
                                 <th className="px-8 py-4 text-left"><input type="checkbox" className="rounded-md border-gray-300 text-blue-600" checked={selectedJobIds.length === filteredJobs.length && filteredJobs.length > 0} onChange={handleSelectAll} /></th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Job Information</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Author</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Stats</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Deadline</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
@@ -224,6 +250,22 @@ export default function ManageJobsPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
+                                        <div className="flex flex-col">
+                                            <button
+                                                className="text-left hover:text-blue-600 transition-colors"
+                                                onClick={() => setAuthorSearchTerm(job.author?.name || 'Admin')}
+                                            >
+                                                <p className="text-sm font-bold text-gray-700">{job.author?.name || 'Admin'}</p>
+                                            </button>
+                                            <button
+                                                className="text-left hover:text-blue-600 transition-colors"
+                                                onClick={() => setAuthorSearchTerm(job.author?.email || '')}
+                                            >
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase">{job.author?.email || 'System'}</p>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-5">
                                         <div className="flex gap-4">
                                             <div className="flex items-center gap-1.5 text-blue-600"><Users size={16} /> <span className="text-sm font-black">{job._count?.applications || 0}</span></div>
                                             <div className="flex items-center gap-1.5 text-gray-400"><Eye size={16} /> <span className="text-sm font-bold">{job.views || 0}</span></div>
@@ -243,6 +285,24 @@ export default function ManageJobsPage() {
                                     </td>
                                     <td className="px-8 py-5 text-right">
                                         <div className="flex justify-end gap-2">
+                                            {job.status === JobStatus.REVIEWING && (
+                                                <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        icon={CheckCircle}
+                                                        className="p-2 text-green-600 hover:bg-green-50"
+                                                        onClick={() => handleApprove(job.id, JobStatus.ACTIVE)}
+                                                    />
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        icon={XCircle}
+                                                        className="p-2 text-red-600 hover:bg-red-50"
+                                                        onClick={() => handleApprove(job.id, JobStatus.REJECTED)}
+                                                    />
+                                                </>
+                                            )}
                                             <Link href={`/jobs/${job.id}`} target="_blank"><Button variant="ghost" size="sm" icon={Eye} className="p-2"></Button></Link>
                                             <Link href={`/admin/jobs/edit/${job.id}`}><Button variant="ghost" size="sm" icon={Edit} className="p-2 text-orange-500 hover:bg-orange-50"></Button></Link>
                                             <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(job.id)} className="p-2 text-red-500 hover:bg-red-50"></Button>

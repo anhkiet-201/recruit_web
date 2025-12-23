@@ -73,5 +73,23 @@ export const UserService = {
 
     deleteUser: async (userId: string): Promise<void> => {
         return api.delete(`/users/${userId}`);
-    }
+    },
+
+    createEmployerRequest: async (): Promise<any> => {
+        return api.post('/users/employer-request', {});
+    },
+
+    getEmployerRequestStatus: async (): Promise<any> => {
+        return api.get('/users/employer-request/status');
+    },
+
+    getAllEmployerRequests: async (): Promise<any[]> => {
+        return api.get('/users/employer-requests');
+    },
+
+    handleEmployerRequest: (id: string, status: 'approved' | 'rejected' | 'pending') =>
+        api.patch<{ message: string }>(`/users/employer-requests/${id}`, { status }),
+
+    getPublicProfile: (id: string) =>
+        api.get<UserProfile>(`/users/${id}/public`),
 };

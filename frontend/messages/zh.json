@@ -64,6 +64,7 @@
         "notFound": "未找到职位",
         "views": "次浏览",
         "location": "地点",
+        "phone": "电话",
         "salary": "薪资",
         "negotiable": "面议",
         "jobDetails": "职位详情",
@@ -186,5 +187,25 @@
     "Common": {
         "loading": "加载中...",
         "error": "发生错误"
+    },
+    "EmployerProfile": {
+        "notFound": "找不到雇主",
+        "backHome": "返回首页",
+        "back": "返回",
+        "contactNow": "立即联系",
+        "verifiedPartner": "已验证伙伴",
+        "activeJobs": "在招职位",
+        "memberSince": "加入时间",
+        "contactInfo": "联系信息",
+        "email": "电子邮件",
+        "phone": "电话",
+        "address": "地址",
+        "aboutCompany": "关于公司",
+        "commitmentText": "我们致力于为优秀候选人提供一个专业、透明且充满机会的工作环境。",
+        "openingJobs": "在招职位",
+        "totalOfLine": "共计",
+        "listings": "个职位",
+        "noJobs": "目前暂无招聘信息。",
+        "noJobsDescription": "请稍后再来查看该雇主提供的最新职位信息。"
     }
 }

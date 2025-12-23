@@ -22,7 +22,7 @@ export class UsersController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file', { 
+  @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
     fileFilter: (req, file, cb) => {
       if (file.mimetype === 'application/pdf') {
@@ -60,6 +60,49 @@ export class UsersController {
   @Get('profile')
   getProfile(@Request() req) {
     return this.usersService.getProfile(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @Post('employer-request')
+  createEmployerRequest(@Request() req) {
+    return this.usersService.createEmployerRequest(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @Get('employer-request/status')
+  getEmployerRequestStatus(@Request() req) {
+    return this.usersService.getEmployerRequestStatus(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @Get('employer-requests')
+  getAllEmployerRequests(@Request() req) {
+    if (req.user.role !== 'admin') {
+      throw new Error('Bạn không có quyền thực hiện hành động này.');
+    }
+    return this.usersService.getAllEmployerRequests();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @Patch('employer-requests/:id')
+  handleEmployerRequest(
+    @Param('id') id: string,
+    @Body('status') status: 'approved' | 'rejected',
+    @Request() req,
+  ) {
+    if (req.user.role !== 'admin') {
+      throw new Error('Bạn không có quyền thực hiện hành động này.');
+    }
+    return this.usersService.handleEmployerRequest(id, status);
+  }
+
+  @Get(':id/public')
+  getPublicProfile(@Param('id') id: string) {
+    return this.usersService.getPublicProfile(id);
   }
 
   @UseGuards(AuthGuard('jwt'))

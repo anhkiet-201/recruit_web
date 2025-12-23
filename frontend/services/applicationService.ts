@@ -32,6 +32,10 @@ export const ApplicationService = {
         return api.get('/applications');
     },
 
+    getEmployerApplications: async (): Promise<Application[]> => {
+        return api.get('/applications/employer');
+    },
+
     updateStatus: async (id: string, status: 'pending' | 'reviewed' | 'rejected' | 'accepted'): Promise<void> => {
         return api.patch(`/applications/${id}/status`, { status });
     }

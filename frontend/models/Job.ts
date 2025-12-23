@@ -16,6 +16,14 @@ export interface Job {
     jobType?: string;
     views?: number;
     tags?: string[];
+    author?: {
+        id: string;
+        name: string;
+        email: string;
+        phone?: string;
+        avatarUrl?: string;
+        address?: string;
+    };
 }
 
 export interface JobFilter {

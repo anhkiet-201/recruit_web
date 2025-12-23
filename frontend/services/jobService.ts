@@ -2,10 +2,12 @@ import { api } from "@/lib/api";
 import { Job } from "@/models/Job";
 
 export const JobService = {
-    getAllJobs: async (query: { page?: number; limit?: number } = {}): Promise<{ items: Job[], total: number, lastPage: number }> => {
+    getAllJobs: async (query: { page?: number; limit?: number; status?: string; authorId?: string } = {}): Promise<{ items: Job[], total: number, lastPage: number }> => {
         const params = new URLSearchParams();
         if (query.page) params.append('page', query.page.toString());
         if (query.limit) params.append('limit', query.limit.toString());
+        if (query.status) params.append('status', query.status);
+        if (query.authorId) params.append('authorId', query.authorId);
         return api.get(`/jobs?${params.toString()}`);
     },
 
@@ -64,6 +66,10 @@ export const JobService = {
 
     deleteJob: async (id: string): Promise<void> => {
         return api.delete(`/jobs/${id}`);
+    },
+
+    approveJob: async (id: string, status: 'ACTIVE' | 'REJECTED' | 'DRAFT'): Promise<Job> => {
+        return api.patch(`/jobs/${id}/approve`, { status });
     },
 
     importJobs: async (file: File): Promise<{ count: number; errors: any[] }> => {

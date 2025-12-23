@@ -11,3 +11,12 @@ export const getJobStatusColor = (status: string | JobStatus): "green" | "gray" 
         default: return "gray";
     }
 };
+
+export const getRequestStatusColor = (status: string): "green" | "gray" | "red" | "yellow" | "blue" | "purple" => {
+    switch (status) {
+        case 'approved': return "green";
+        case 'rejected': return "red";
+        case 'pending': return "yellow";
+        default: return "gray";
+    }
+};

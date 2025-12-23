@@ -83,11 +83,14 @@ export class JobsService {
   }
 
   async create(createJobDto: any, user: any) {
+    // 1. Tách 'tags' ra khỏi DTO
+    const { tags, ...jobData } = createJobDto;
+
     // Determine default status based on role
     // If admin -> ACTIVE (or respect DTO), if others -> REVIEWING
     let status = 'REVIEWING';
     if (user?.role === 'admin') {
-      status = createJobDto.status || 'ACTIVE';
+      status = jobData.status || 'ACTIVE';
     } else {
       // Force REVIEWING for non-admins unless specific logic allows otherwise
       status = 'REVIEWING';
@@ -95,14 +98,22 @@ export class JobsService {
 
     const job = await this.prisma.job.create({
       data: {
-        title: createJobDto.title, content: createJobDto.content, location: createJobDto.location,
-        salaryMin: createJobDto.salaryMin ? parseInt(createJobDto.salaryMin) : null,
-        salaryMax: createJobDto.salaryMax ? parseInt(createJobDto.salaryMax) : null,
-        experienceYears: createJobDto.experienceYears ? parseInt(createJobDto.experienceYears) : null,
-        imageUrl: createJobDto.imageUrl, deadline: createJobDto.deadline ? new Date(createJobDto.deadline) : null,
-        jobType: createJobDto.jobType,
+        title: jobData.title, content: jobData.content, location: jobData.location,
+        salaryMin: jobData.salaryMin ? parseInt(jobData.salaryMin) : null,
+        salaryMax: jobData.salaryMax ? parseInt(jobData.salaryMax) : null,
+        experienceYears: jobData.experienceYears ? parseInt(jobData.experienceYears) : null,
+        imageUrl: jobData.imageUrl, deadline: jobData.deadline ? new Date(jobData.deadline) : null,
+        jobType: jobData.jobType,
         status: status as any, // enum casting
-        authorId: user?.userId // Set author
+        authorId: user?.userId, // Set author
+        // 2. Sử dụng nested create để thêm tags
+        jobTags: tags && Array.isArray(tags) ? {
+          create: tags.map((tagId: string) => ({
+            tag: {
+              connect: { id: tagId }
+            }
+          }))
+        } : undefined
       }
     });
 
@@ -111,11 +122,20 @@ export class JobsService {
     return job;
   }
 
-  async update(id: string, updateJobDto: any) {
+  async update(id: string, updateJobDto: any, user: any) {
+    // 1. Tách 'tags' ra khỏi DTO chính
+    const { tags, ...jobData } = updateJobDto;
+
+    // Logic: Nếu người sửa không phải Admin, luôn reset trạng thái về REVIEWING
+    // để Admin duyệt lại nội dung vừa sửa.
+    if (user && user.role !== 'admin') {
+      jobData.status = 'REVIEWING';
+    }
+
     // Check image cleanup logic...
-    if (updateJobDto.imageUrl !== undefined) {
+    if (jobData.imageUrl !== undefined) {
       const oldJob = await this.prisma.job.findUnique({ where: { id }, select: { imageUrl: true } });
-      if (oldJob?.imageUrl && oldJob.imageUrl !== updateJobDto.imageUrl) {
+      if (oldJob?.imageUrl && oldJob.imageUrl !== jobData.imageUrl) {
         try {
           const filename = oldJob.imageUrl.split('/').pop();
           if (filename) await this.minioService.deleteFile(filename);
@@ -126,13 +146,29 @@ export class JobsService {
     const job = await this.prisma.job.update({
       where: { id },
       data: {
-        ...updateJobDto,
-        salaryMin: updateJobDto.salaryMin ? parseInt(updateJobDto.salaryMin) : undefined,
-        salaryMax: updateJobDto.salaryMax ? parseInt(updateJobDto.salaryMax) : undefined,
-        experienceYears: updateJobDto.experienceYears ? parseInt(updateJobDto.experienceYears) : undefined,
-        deadline: updateJobDto.deadline ? new Date(updateJobDto.deadline) : undefined,
+        ...jobData,
+        salaryMin: jobData.salaryMin ? parseInt(jobData.salaryMin) : undefined,
+        salaryMax: jobData.salaryMax ? parseInt(jobData.salaryMax) : undefined,
+        experienceYears: jobData.experienceYears ? parseInt(jobData.experienceYears) : undefined,
+        deadline: jobData.deadline ? new Date(jobData.deadline) : undefined,
       }
     });
+
+    // 2. Xử lý logic cập nhật tags nếu có
+    if (tags && Array.isArray(tags)) {
+      // Bọc trong transaction để đảm bảo toàn vẹn dữ liệu
+      await this.prisma.$transaction([
+        // Xóa tất cả các JobTag cũ của Job này
+        this.prisma.jobTag.deleteMany({ where: { jobId: id } }),
+        // Tạo lại các JobTag mới từ mảng tags (mảng ID) được gửi lên
+        this.prisma.jobTag.createMany({
+          data: tags.map((tagId: string) => ({
+            jobId: id,
+            tagId: tagId,
+          })),
+        }),
+      ]);
+    }
 
     // Trigger background indexing
     this.indexJobWithAi(job);
@@ -140,14 +176,42 @@ export class JobsService {
   }
 
   // ... (Keep findAll, search, findOne, remove, getLocations, getSuggestions, getTrending, getHot as is)
-  async findAll(query: { page?: number; limit?: number } = {}) {
+  async findAll(query: { page?: number; limit?: number; status?: string; authorId?: string } = {}) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
+
+    const where: any = {};
+    if (query.status) where.status = query.status;
+    if (query.authorId) where.authorId = query.authorId;
+
     const [items, total] = await Promise.all([
-      this.prisma.job.findMany({ include: { jobTags: { include: { tag: true } }, _count: { select: { applications: true } } }, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit, }),
-      this.prisma.job.count(),
+      this.prisma.job.findMany({
+        where,
+        include: {
+          jobTags: { include: { tag: true } },
+          _count: { select: { applications: true } },
+          author: { select: { id: true, name: true, email: true } }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.job.count({ where }),
     ]);
     return { items, total, page, lastPage: Math.ceil(total / limit) };
+  }
+
+  async approveJob(id: string, status: 'ACTIVE' | 'REJECTED' | 'DRAFT') {
+    const job = await this.prisma.job.update({
+      where: { id },
+      data: { status: status as any },
+    });
+
+    if (status === 'ACTIVE') {
+      this.indexJobWithAi(job);
+    }
+
+    return job;
   }
 
   async search(query: { title?: string; location?: string; jobType?: string; page?: number; limit?: number; userId?: string; guestId?: string }) {
@@ -179,7 +243,26 @@ export class JobsService {
   }
 
   async findOne(id: string, incrementView: boolean = true) {
-    try { const data = incrementView ? { views: { increment: 1 } } : {}; return await this.prisma.job.update({ where: { id }, data, include: { jobTags: { include: { tag: true } } } }); } catch (error) { return null; }
+    try {
+      const data = incrementView ? { views: { increment: 1 } } : {};
+      return await this.prisma.job.update({
+        where: { id },
+        data,
+        include: {
+          jobTags: { include: { tag: true } },
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              avatarUrl: true,
+              address: true,
+            }
+          }
+        }
+      });
+    } catch (error) { return null; }
   }
   async remove(id: string) {
     const job = await this.prisma.job.findUnique({ where: { id }, select: { imageUrl: true } });
