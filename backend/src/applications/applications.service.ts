@@ -50,7 +50,7 @@ export class ApplicationsService {
     return this.prisma.application.findMany({
       include: {
         job: { select: { title: true } },
-        user: { select: { name: true, email: true } }
+        user: { select: { name: true, email: true, phone: true, address: true, avatarUrl: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
