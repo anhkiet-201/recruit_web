@@ -9,6 +9,7 @@ import AiChatBot from "@/components/AiChatBot";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from "next/navigation";
+import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,18 +37,20 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className={inter.className}>
         <NextIntlClientProvider messages={messages}>
-          <AuthProvider>
-            <ConfirmDialogProvider>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <main className="flex-grow bg-gray-50/50">
-                  {children}
-                </main>
-                <Footer />
-                <AiChatBot />
-              </div>
-            </ConfirmDialogProvider>
-          </AuthProvider>
+          <GoogleAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+            <AuthProvider>
+              <ConfirmDialogProvider>
+                <div className="flex flex-col min-h-screen">
+                  <Navbar />
+                  <main className="flex-grow bg-gray-50/50">
+                    {children}
+                  </main>
+                  <Footer />
+                  <AiChatBot />
+                </div>
+              </ConfirmDialogProvider>
+            </AuthProvider>
+          </GoogleAuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

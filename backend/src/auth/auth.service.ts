@@ -1,36 +1,45 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
+import { OAuth2Client } from 'google-auth-library';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private prisma: PrismaService,
-        private jwtService: JwtService,
-    ) { }
+  private googleClient: OAuth2Client;
 
-    async validateUser(email: string, pass: string): Promise<any> {
-        const user = await this.prisma.user.findUnique({ where: { email } });
-        if (user && user.password && (await bcrypt.compare(pass, user.password))) {
-            const { password, ...result } = user;
-            return result;
-        }
-        return null;
-    }
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {
+    this.googleClient = new OAuth2Client(
+      this.configService.get<string>('GOOGLE_CLIENT_ID'),
+    );
+  }
 
-    async login(user: any) {
-        const payload = { email: user.email, sub: user.id, role: user.role };
-        return {
-            access_token: this.jwtService.sign(payload),
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-            }
-        };
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (user && user.password && (await bcrypt.compare(pass, user.password))) {
+      const { password, ...result } = user;
+      return result;
     }
+    return null;
+  }
+
+  async login(user: any) {
+    const payload = { email: user.email, sub: user.id, role: user.role };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      }
+    };
+  }
 
   async register(email: string, pass: string, name: string, guestId?: string) {
     const hashedPassword = await bcrypt.hash(pass, 10);
@@ -54,7 +63,7 @@ export class AuthService {
           }
         });
         // Delete the guest record as it's no longer needed
-        await this.prisma.guest.delete({ where: { id: guestId } }).catch(() => {});
+        await this.prisma.guest.delete({ where: { id: guestId } }).catch(() => { });
       } catch (e) {
         console.warn('Migration of guest history failed', e);
       }
@@ -63,12 +72,56 @@ export class AuthService {
     return user;
   }
 
-    async getUserById(id: string) {
-        const user = await this.prisma.user.findUnique({ where: { id } });
-        if (user) {
-            const { password, ...result } = user;
-            return result;
-        }
-        return null;
+  async getUserById(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (user) {
+      const { password, ...result } = user;
+      return result;
     }
+    return null;
+  }
+
+  async loginWithGoogle(idToken: string, guestId?: string) {
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException('Invalid Google token');
+      }
+
+      const { email, name } = payload;
+      let user = await this.prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            name: name || email.split('@')[0],
+            role: 'candidate',
+          },
+        });
+
+        if (guestId) {
+          try {
+            await this.prisma.searchHistory.updateMany({
+              where: { guestId },
+              data: { userId: user.id, guestId: null },
+            });
+            await this.prisma.guest.delete({ where: { id: guestId } }).catch(() => { });
+          } catch (e) {
+            console.warn('Migration failed', e);
+          }
+        }
+      }
+
+      return this.login(user);
+    } catch (error) {
+      console.error('Google login error', error);
+      throw new UnauthorizedException('Google authentication failed');
+    }
+  }
 }
