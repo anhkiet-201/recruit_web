@@ -173,9 +173,9 @@ export class AiService {
 
   // --- UTILS ---
   async generateStructuredJobText(job: any): Promise<string> {
-    const prompt = `Phân tích job: ${job.title} ${job.content}`;
+    const prompt = `Phân tích job: \nTên: ${job.title} \nNội dung: ${job.content} \nKhu vực: ${job.location} \nLoại việc: ${job.jobType} \nMức lương: ${job.salaryMin} - ${job.salaryMax} \nKinh nghiệm: ${job.experience} \nHạn nộp: ${job.deadline}`;
     try { return (await this.aiProvider.generateText(prompt)).trim(); }
-    catch (e) { return `TITLE: ${job.title}. CONTENT: ${job.content.substring(0, 300)}`; }
+    catch (e) { return `TITLE: ${job.title}. CONTENT: ${job.content.substring(0, 300)} \nKhu vực: ${job.location} \nLoại việc: ${job.jobType} \nMức lương: ${job.salaryMin} - ${job.salaryMax} \nKinh nghiệm: ${job.experience} \nHạn nộp: ${job.deadline}`; }
   }
 
   async embedJob(jobId: string, text: string) {
