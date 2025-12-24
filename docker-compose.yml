@@ -18,17 +18,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: ttn-backend
+    env_file:
+      - ./.env
     ports:
       - "4001:4000"
-    environment:
-      DATABASE_URL: postgresql://user:password@ttn-postgres:5432/ttn_db
-      JWT_SECRET: super-secret-key
-      MINIO_ENDPOINT: ttn-minio
-      MINIO_PORT: 9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: ttn-bucket
-      MINIO_USE_SSL: "false"
     depends_on:
       - postgres
       - minio
@@ -71,8 +64,8 @@ services:
     container_name: ttn-web
     ports:
       - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4001
+    env_file:
+      - ./.env
     depends_on:
       - backend
       - postgres
@@ -82,7 +75,6 @@ services:
 volumes:
   postgres_data:
   minio_data:
-
 
 networks:
   app-network:
