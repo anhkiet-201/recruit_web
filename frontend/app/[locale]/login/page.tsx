@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { AuthService } from "@/services/auth";
 import { useAuth } from "@/components/AuthProvider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, LogIn, Chrome } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -13,6 +13,8 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "/";
     const t = useTranslations("Auth");
 
     const { refreshProfile } = useAuth();
@@ -22,7 +24,7 @@ export default function LoginPage() {
         try {
             await AuthService.login(email, password);
             await refreshProfile();
-            router.push("/");
+            router.push(callbackUrl);
         } catch (err: any) {
             setError(err.message);
         }
@@ -33,7 +35,7 @@ export default function LoginPage() {
             if (credentialResponse.credential) {
                 await AuthService.loginWithGoogle(credentialResponse.credential);
                 await refreshProfile();
-                router.push("/");
+                router.push(callbackUrl);
             }
         } catch (err: any) {
             setError(err.message);

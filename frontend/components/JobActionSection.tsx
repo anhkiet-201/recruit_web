@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "@/i18n/routing";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { ApplicationService } from "@/services/applicationService";
 import Button from "@/components/ui/Button";
@@ -13,6 +15,9 @@ export default function JobActionSection({ jobId, jobTitle, jobType = "unskilled
     const [isApplied, setIsApplied] = useState(false);
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsOpen] = useState(false);
+
+    const router = useRouter();
+    const pathname = usePathname();
 
     // Default title fallback if none provided
     const displayTitle = jobTitle || t('position');
@@ -51,7 +56,13 @@ export default function JobActionSection({ jobId, jobTitle, jobType = "unskilled
             <Button
                 icon={Zap}
                 className="w-full shadow-xl shadow-blue-200 py-4 text-lg"
-                onClick={() => setIsOpen(true)}
+                onClick={() => {
+                    if (!user) {
+                        router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+                        return;
+                    }
+                    setIsOpen(true);
+                }}
             >
                 {t('applyNow')}
             </Button>
