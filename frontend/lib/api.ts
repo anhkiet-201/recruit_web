@@ -1,4 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+const isServer = typeof window === 'undefined';
+const API_URL = (isServer && process.env.INTERNAL_API_URL) 
+    ? process.env.INTERNAL_API_URL 
+    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001');
 
 interface RequestOptions extends RequestInit {
     headers?: Record<string, string>;
