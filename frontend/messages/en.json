@@ -56,7 +56,8 @@
         "titlePlaceholder": "Job title, position, skills...",
         "locationPlaceholder": "City, location...",
         "suggestionsTitle": "Search suggestions",
-        "locationSuggestionsTitle": "Location suggestions"
+        "locationSuggestionsTitle": "Location suggestions",
+        "searching": "Searching..."
     },
     "JobDetail": {
         "back": "Back",

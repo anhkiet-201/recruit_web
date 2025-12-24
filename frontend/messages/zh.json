@@ -56,7 +56,8 @@
         "titlePlaceholder": "职位名称，职位，技能...",
         "locationPlaceholder": "城市，地点...",
         "suggestionsTitle": "搜索建议",
-        "locationSuggestionsTitle": "地点建议"
+        "locationSuggestionsTitle": "地点建议",
+        "searching": "搜索中..."
     },
     "JobDetail": {
         "back": "返回",

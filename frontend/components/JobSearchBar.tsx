@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, MapPin, Sparkles, Wand2, MessageSquare } from "lucide-react";
+import { Search, MapPin, Sparkles, Wand2, MessageSquare, Loader2 } from "lucide-react";
 import TitleSelector from "./TitleSelector";
 import LocationSelector from "./LocationSelector";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 interface JobSearchBarProps {
@@ -23,12 +23,19 @@ export default function JobSearchBar({
     initialAiMode = true
 }: JobSearchBarProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const t = useTranslations("JobSearchBar");
     // Default to AI Semantic Mode (true) for better user experience
     const [isAiMode, setIsAiMode] = useState(initialAiMode);
+    const [isSearching, setIsSearching] = useState(false);
 
     // Shared search term state for both modes
     const [searchTerm, setSearchTerm] = useState(defaultTitle);
+
+    // Reset loading state when search params change (navigation completed)
+    useEffect(() => {
+        setIsSearching(false);
+    }, [searchParams]);
 
     // Sync state when prop changes (e.g. Triggered by Chatbot AI Search)
     useEffect(() => {
@@ -38,6 +45,7 @@ export default function JobSearchBar({
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setIsSearching(true);
         const formData = new FormData(e.currentTarget);
         // Use state value for title instead of formData to ensure consistency
         const text = searchTerm;
@@ -112,9 +120,15 @@ export default function JobSearchBar({
 
                 <button
                     type="submit"
-                    className={`flex items-center justify-center gap-2 font-black px-12 py-4 rounded-[2rem] transition-all active:scale-95 shadow-xl whitespace-nowrap ${isAiMode ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30" : "bg-gray-900 hover:bg-black text-white"}`}
+                    disabled={isSearching}
+                    className={`flex items-center justify-center gap-2 font-black px-12 py-4 rounded-[2rem] transition-all active:scale-95 shadow-xl whitespace-nowrap ${isAiMode ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30" : "bg-gray-900 hover:bg-black text-white"} ${isSearching ? "opacity-80 cursor-not-allowed" : ""}`}
                 >
-                    {isAiMode ? (
+                    {isSearching ? (
+                        <>
+                            <Loader2 size={18} className="animate-spin" />
+                            <span>{t('searching')}</span>
+                        </>
+                    ) : isAiMode ? (
                         <>
                             <Wand2 size={18} />
                             <span>{t('aiAnalyze')}</span>

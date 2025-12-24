@@ -56,7 +56,8 @@
     "titlePlaceholder": "Tên công việc, vị trí, kỹ năng...",
     "locationPlaceholder": "Thành phố, địa điểm...",
     "suggestionsTitle": "Đề xuất tìm kiếm",
-    "locationSuggestionsTitle": "Gợi ý địa điểm"
+    "locationSuggestionsTitle": "Gợi ý địa điểm",
+    "searching": "Đang tìm kiếm..."
   },
   "JobDetail": {
     "back": "Quay lại",
