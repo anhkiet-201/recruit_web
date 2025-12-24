@@ -14,8 +14,8 @@ import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "RecruitWeb - Find Your Dream Job",
-  description: "The best place to find jobs.",
+  title: "TTN HR - Tìm công việc mơ ước",
+  description: "Nơi tìm kiếm công việc mơ ước",
 };
 
 export default async function RootLayout({
