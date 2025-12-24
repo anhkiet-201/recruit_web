@@ -11,25 +11,6 @@ services:
     networks:
       - app-network
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: ttn-backend
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    env_file:
-      - ./.env
-      - ./backend.env
-    ports:
-      - "4001:4000"
-    depends_on:
-      - postgres
-      - minio
-    networks:
-      - app-network
-
   minio:
     image: minio/minio:latest
     container_name: ttn-minio
@@ -55,25 +36,6 @@ services:
       /usr/bin/mc anonymous set public myminio/ttn-bucket;
       exit 0;
       "
-    networks:
-      - app-network
-
-  web:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: ttn-web
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./.env
-      - ./frontend.env
-    depends_on:
-      - backend
-      - postgres
     networks:
       - app-network
 
