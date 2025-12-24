@@ -46,11 +46,17 @@ export default function Navbar() {
                     {/* Logo Section */}
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center gap-2.5 group">
-                            <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform duration-500">
-                                <Briefcase className="text-white" size={20} />
+                            <div className="relative w-10 h-10 group-hover:scale-110 transition-transform duration-500">
+                                <Image
+                                    src="/logo.webp"
+                                    alt="TTN HR Logo"
+                                    fill
+                                    className="object-contain"
+                                />
                             </div>
-                            <span className="text-xl font-black text-gray-900 tracking-tighter group-hover:text-blue-600 transition-colors">
-                                Recruit<span className="text-blue-600">Web</span>
+                            <span className="text-xl font-black text-[#9a3709] tracking-tighter group-hover:text-[#0c2251] transition-colors">
+                                TTN
+                                <span className="text-[#0c2251]"> HR</span>
                             </span>
                         </Link>
                     </div>
@@ -68,16 +74,16 @@ export default function Navbar() {
                             <div className="flex items-center gap-3">
                                 {/* Become Employer Button */}
                                 {profile?.role === 'candidate' && !requestStatus && (
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
                                         className="hidden md:flex text-blue-600 font-bold"
                                         onClick={() => setIsDialogOpen(true)}
                                     >
                                         Tuyển dụng
                                     </Button>
                                 )}
-                                
+
                                 {requestStatus === 'pending' && (
                                     <span className="hidden md:block px-3 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-black uppercase rounded-lg border border-yellow-100">
                                         Đang chờ duyệt
@@ -139,9 +145,9 @@ export default function Navbar() {
                     </div>
                 </div>
             </div>
-            
-            <BecomeEmployerDialog 
-                isOpen={isDialogOpen} 
+
+            <BecomeEmployerDialog
+                isOpen={isDialogOpen}
                 onClose={() => setIsDialogOpen(false)}
                 onSuccess={() => setRequestStatus('pending')}
             />
