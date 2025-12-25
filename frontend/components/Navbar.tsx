@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 import { useRouter, usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
-import { LogOut, LayoutDashboard, ShieldCheck, User as UserIcon, Briefcase } from "lucide-react";
+import { LogOut, LayoutDashboard, ShieldCheck, User as UserIcon, Briefcase, Menu, X } from "lucide-react";
 import Image from "next/image";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
@@ -19,6 +19,7 @@ export default function Navbar() {
     const t = useTranslations("Navigation");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [requestStatus, setRequestStatus] = useState<string | null>(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
         if (user && profile?.role === 'candidate') {
@@ -55,8 +56,19 @@ export default function Navbar() {
                         </Link>
                     </div>
 
+                    {/* Mobile Menu Button */}
+                    <div className="flex md:hidden items-center">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={isMenuOpen ? X : Menu}
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="text-gray-600"
+                        />
+                    </div>
+
                     {/* Right Action Section */}
-                    <div className="flex items-center gap-4">
+                    <div className={`${isMenuOpen ? 'flex' : 'hidden'} md:flex absolute md:static top-20 left-0 w-full md:w-auto bg-white md:bg-transparent p-4 md:p-0 flex-col md:flex-row items-center gap-4 shadow-xl md:shadow-none border-b md:border-none border-gray-100`}>
                         <LanguageSwitcher />
 
                         {loading ? (
@@ -65,13 +77,13 @@ export default function Navbar() {
                                 <div className="w-24 h-9 bg-gray-100 animate-pulse rounded-xl"></div>
                             </div>
                         ) : user ? (
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                                 {/* Become Employer Button */}
                                 {profile?.role === 'candidate' && !requestStatus && (
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="hidden md:flex text-blue-600 font-bold"
+                                        className="text-blue-600 font-bold w-full md:w-auto justify-start md:justify-center"
                                         onClick={() => setIsDialogOpen(true)}
                                     >
                                         Tuyển dụng
@@ -79,24 +91,24 @@ export default function Navbar() {
                                 )}
                                 
                                 {requestStatus === 'pending' && (
-                                    <span className="hidden md:block px-3 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-black uppercase rounded-lg border border-yellow-100">
+                                    <span className="px-3 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-black uppercase rounded-lg border border-yellow-100">
                                         Đang chờ duyệt
                                     </span>
                                 )}
 
                                 {/* Admin Shortcut */}
                                 {profile?.role === 'admin' && (
-                                    <Link href="/admin">
-                                        <Button variant="ghost" size="sm" icon={ShieldCheck} className="hidden sm:flex text-blue-600 font-black">
+                                    <Link href="/admin" className="w-full md:w-auto">
+                                        <Button variant="ghost" size="sm" icon={ShieldCheck} className="text-blue-600 font-black w-full md:w-auto justify-start md:justify-center">
                                             Admin
                                         </Button>
                                     </Link>
                                 )}
 
                                 {/* Profile Shortcut */}
-                                <Link href="/dashboard">
-                                    <div className="flex items-center gap-3 pl-3 pr-1 py-1 bg-gray-50 hover:bg-blue-50 rounded-2xl border border-gray-100 transition-all group cursor-pointer">
-                                        <div className="hidden sm:block">
+                                <Link href="/dashboard" className="w-full md:w-auto">
+                                    <div className="flex items-center gap-3 pl-3 pr-1 py-1 bg-gray-50 hover:bg-blue-50 rounded-2xl border border-gray-100 transition-all group cursor-pointer w-full md:w-auto justify-between md:justify-start">
+                                        <div className="block">
                                             <p className="text-xs font-black text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1 max-w-[100px]">
                                                 {profile?.name || "Member"}
                                             </p>
@@ -119,18 +131,18 @@ export default function Navbar() {
                                     size="sm"
                                     icon={LogOut}
                                     onClick={handleLogout}
-                                    className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                                    className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl w-full md:w-auto"
                                 />
                             </div>
                         ) : (
-                            <div className="flex items-center gap-3">
-                                <Link href="/login">
-                                    <Button variant="ghost" className="text-gray-500 font-black">
+                            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                                <Link href="/login" className="w-full md:w-auto">
+                                    <Button variant="ghost" className="text-gray-500 font-black w-full md:w-auto">
                                         {t('login')}
                                     </Button>
                                 </Link>
-                                <Link href="/register">
-                                    <Button className="shadow-blue-200">
+                                <Link href="/register" className="w-full md:w-auto">
+                                    <Button className="shadow-blue-200 w-full md:w-auto">
                                         {t('register')}
                                     </Button>
                                 </Link>

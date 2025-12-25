@@ -207,7 +207,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
 
                     {/* 3. SIDEBAR - FIXED STICKY GROUP */}
                     <aside className="relative">
-                        <div className="sticky top-32 space-y-8">
+                        <div className="lg:sticky lg:top-32 space-y-8">
 
                             {/* Summary Card */}
                             <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/50 border border-gray-100 p-8">
