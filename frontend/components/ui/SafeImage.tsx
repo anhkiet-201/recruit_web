@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image, { ImageProps } from "next/image";
 import { ImageIcon } from "lucide-react";
 
@@ -18,12 +18,19 @@ export default function SafeImage({
     priority = false, // Added priority prop
     ...props
 }: SafeImageProps) {
+    const [prevSrc, setPrevSrc] = useState<string | null | undefined>(src);
     const [imgSrc, setImgSrc] = useState<string>(src || fallback);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    // Derived state pattern: adjust state during render if props change
+    if (src !== prevSrc) {
+        setPrevSrc(src);
         setImgSrc(src || fallback);
-    }, [src, fallback]);
+        // We might want to reset loading state too if src changes
+        // But if we do, we risk flickering if it's the same image.
+        // However, usually a new src means new loading.
+        setLoading(true);
+    }
 
     return (
         <div className={`relative w-full h-full overflow-hidden ${className}`}>
@@ -44,7 +51,6 @@ export default function SafeImage({
                         setImgSrc(fallback);
                         setLoading(false);
                     }}
-                    unoptimized
                     className={`object-cover transition-all duration-700 ease-out ${loading ? "blur-xl opacity-0 scale-110" : "blur-0 opacity-100 scale-100"} ${props.className || ""}`}
                     {...props}
                 />
