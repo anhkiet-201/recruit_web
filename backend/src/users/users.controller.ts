@@ -16,7 +16,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { RequestWithUser } from '../types/auth';
+import type { RequestWithUser } from '../types/auth';
 
 @ApiTags('users')
 @Controller('users')

@@ -1,4 +1,6 @@
 import { Controller, Post, Body, Request } from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
+import { ChatRequestDto } from './dto/chat-request.dto';
 import { AiService } from './ai.service';
 import { ApiTags, ApiBody } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
@@ -31,38 +33,35 @@ export class AiController {
     },
   })
   async chat(
-    @Request() req: any,
+    @Request() req: ExpressRequest,
 
-    @Body() body: { message: string; history: any[] },
+    @Body() body: ChatRequestDto,
   ) {
     try {
-      // Manual extraction of userId if present, allowing guestId as fallback
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment -- Reason: Accessing req.user manually
-      let userId = req.user?.userId;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment -- Reason: Accessing req.headers manually
-      const authHeader = req.headers.authorization;
-
-      // Manual Token Decoding (Soft Auth)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- Reason: Checking string methods on any
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- Reason: Splitting string
-        const token = authHeader.split(' ')[1] as string;
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Reason: JWT verify return type
-          const decoded = this.jwtService.verify(token);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Reason: Accessing decoded token props
-          userId = decoded.sub || decoded.id; // Support both conventions
-        } catch {
-          // Token invalid/expired - treat as guest
-        }
+      let userId: string | undefined;
+      const user = req.user as { userId: string } | undefined;
+      if (user?.userId) {
+        userId = user.userId;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Reason: Custom header
-      const guestId = req.headers['x-guest-id'] as string;
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+          const decoded = this.jwtService.verify<{
+            sub?: string;
+            id?: string;
+          }>(token);
+          userId = decoded.sub || decoded.id; // Support both conventions
+        } catch (e) {
+          console.error('Invalid token:', e);
+        }
+      }
+      const guestId = req.headers['x-guest-id'] as string | undefined;
       const response = await this.aiService.chat(
         body.message,
         body.history || [],
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Reason: userId might be extracted manually
+
         userId,
         guestId,
       );

@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import * as bcrypt from 'bcrypt';
+import { UserDto, LoginResponseDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -23,31 +24,23 @@ export class AuthService {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async validateUser(email: string, pass: string): Promise<any> {
+  async validateUser(email: string, pass: string): Promise<UserDto | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user && user.password && (await bcrypt.compare(pass, user.password))) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...result } = user;
+      const { ...result } = user;
       return result;
     }
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async login(user: any) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+  login(user: UserDto): LoginResponseDto {
     const payload = { email: user.email, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         id: user.id,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         email: user.email,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         name: user.name,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         role: user.role,
       },
     };
@@ -96,8 +89,7 @@ export class AuthService {
   async getUserById(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (user) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...result } = user;
+      const { ...result } = user;
       return result;
     }
     return null;

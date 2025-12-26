@@ -2,8 +2,8 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MinioService } from '../upload/minio.service';
 import { AiService } from '../ai/ai.service';
-import { ResumeAnalysisResult } from '../ai/dto/resume-analysis.dto';
-import pdf from 'pdf-parse';
+import { ResumeAnalysisResult } from 'src/ai/dto/resume-analysis.dto';
+import { PDFParse } from 'pdf-parse';
 
 @Injectable()
 export class UsersService {
@@ -19,8 +19,7 @@ export class UsersService {
       where: { id: userId },
     });
     if (!user) return null;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...result } = user;
+    const { ...result } = user;
     return result;
   }
 
@@ -131,8 +130,9 @@ export class UsersService {
     try {
       // Chỉ hỗ trợ PDF cho việc phân tích văn bản hiện tại
       if (file.mimetype === 'application/pdf') {
-        const pdfData = (await pdf(file.buffer)) as { text: string };
-        const cvText = pdfData.text;
+        const parser = new PDFParse({ data: file.buffer });
+        const result = await parser.getText();
+        const cvText = result.text;
 
         // Gọi AI để trích xuất thông tin
 

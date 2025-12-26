@@ -25,7 +25,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AiService } from '../ai/ai.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { RequestWithUser } from '../types/auth';
+import type { RequestWithUser } from '../types/auth';
 
 interface JobQuery {
   page?: number;
@@ -104,8 +104,8 @@ export class JobsController {
   @ApiQuery({ name: 'limit', required: false })
   async search(@Request() req: RequestWithUser, @Query() query: JobQuery) {
     const userId = req.user?.userId;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Reason: Accessing custom header from request
-    const guestId = (req as any).headers['x-guest-id'] as string;
+
+    const guestId = req.headers['x-guest-id'] as string;
     return this.jobsService.search({ ...query, userId, guestId });
   }
 

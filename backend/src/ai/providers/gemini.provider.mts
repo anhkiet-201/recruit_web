@@ -1,5 +1,13 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { IAiProvider, AiResponse } from '../interfaces/ai-provider.interface';
+import { IAiProvider, AiResponse } from '../interfaces/ai-provider.interface.js';
+import type { GoogleGenAI } from '@google/genai';
+import {
+  GeminiChatConfig,
+  GeminiFunctionDeclaration,
+  GeminiPart,
+  GeminiResponse,
+  GeminiFunctionCall,
+} from '../dto/gemini.dto.js';
 
 /**
  * Implementation của IAiProvider sử dụng Google Gemini (thông qua SDK @google/genai).
@@ -10,7 +18,7 @@ import { IAiProvider, AiResponse } from '../interfaces/ai-provider.interface';
  */
 @Injectable()
 export class GeminiProvider implements IAiProvider, OnModuleInit {
-  private client: any;
+  private client: GoogleGenAI;
   private embeddingModel: string;
   private chatModel: string;
 
@@ -78,12 +86,13 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
     systemInstruction: string,
     history: { role: string; parts: string }[],
     message: string,
-    tools?: any[],
+    tools?: GeminiFunctionDeclaration[],
   ): Promise<AiResponse> {
     if (!this.client) throw new Error('AI Provider not initialized');
 
     // 1. Cấu hình (Configuration)
-    const chatConfig: any = {
+    // 1. Cấu hình (Configuration)
+    const chatConfig: GeminiChatConfig = {
       systemInstruction: { parts: [{ text: systemInstruction }] },
       generationConfig: {
         maxOutputTokens: 2048,
@@ -116,27 +125,28 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
       }
 
       // 4. Gửi tin nhắn
-      const result = await chat.sendMessage({ message: message });
+      const rawResult = await chat.sendMessage({ message: message });
+      const result = rawResult as unknown as GeminiResponse;
 
       // 5. Xử lý phản hồi (Safe Parsing)
       // Do SDK @google/genai có thể thay đổi cấu trúc trả về, ta cần kiểm tra kỹ.
       let text = '';
-      let functionCalls: any[] = [];
+      let functionCalls: GeminiFunctionCall[] = [];
 
       // Kiểm tra Function Call (Hỗ trợ cả dạng hàm và dạng thuộc tính)
       if (typeof result.functionCalls === 'function') {
         const calls = result.functionCalls();
-        if (Array.isArray(calls)) functionCalls = calls;
+        if (Array.isArray(calls)) functionCalls = calls as GeminiFunctionCall[];
       } else if (Array.isArray(result.functionCalls)) {
-        functionCalls = result.functionCalls;
+        functionCalls = result.functionCalls as GeminiFunctionCall[];
       } else if (
         Array.isArray(result.candidates) &&
         result.candidates.length > 0
       ) {
         // Fallback: Kiểm tra thủ công trong candidates nếu method trên không trả về dữ liệu
         const parts = result.candidates[0]?.content?.parts || [];
-        const fcPart = parts.find((p: any) => p.functionCall);
-        if (fcPart) {
+        const fcPart = parts.find((p: GeminiPart) => p.functionCall);
+        if (fcPart && fcPart.functionCall) {
           functionCalls = [fcPart.functionCall];
         }
       }
@@ -149,7 +159,7 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
           text = result.text;
         } else if (result.candidates && result.candidates[0]?.content?.parts) {
           text = result.candidates[0].content.parts
-            .map((p: any) => p.text)
+            .map((p: GeminiPart) => p.text || '')
             .join('');
         }
       } catch (e) {

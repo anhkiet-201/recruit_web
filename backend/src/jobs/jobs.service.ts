@@ -2,10 +2,14 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MinioService } from '../upload/minio.service';
 import { AiService } from '../ai/ai.service';
-import * as XLSX from 'xlsx';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, JobStatus } from '@prisma/client';
+import { read, utils } from 'xlsx';
+import { JobExcelRow } from './dto/job-excel-row.dto';
+import { JobUpdateData } from './dto/job-update-data.dto';
+import { ImportError } from './dto/import-error.dto';
+import { JobStructuredInputDto } from 'src/ai/dto/ai-service.dto';
 
 @Injectable()
 export class JobsService {
@@ -19,25 +23,14 @@ export class JobsService {
   /**
    * Quy trình tạo Vector thông minh bằng AI (Chạy ngầm)
    */
-  indexJobWithAi(job: {
-    id: string;
-    title: string;
-    content: string;
-
-    [key: string]: any;
-  }) {
+  indexJobWithAi(job: JobStructuredInputDto) {
     // Fire-and-forget: Không await, để chạy nền
-
     this.processAiIndexing(job).catch((err: unknown) => {
       console.error(`Background AI Indexing failed for Job ${job.id}`, err);
     });
   }
 
-  private async processAiIndexing(job: {
-    id: string;
-    title: string;
-    content: string;
-  }) {
+  private async processAiIndexing(job: JobStructuredInputDto) {
     // 1. Dùng AI phân tách ý chính
     const optimizedText = await this.aiService.generateStructuredJobText(job);
     // 2. Tạo Vector từ văn bản đã tối ưu
@@ -54,12 +47,12 @@ export class JobsService {
   }
 
   async importFromExcel(file: Express.Multer.File) {
-    const workbook = XLSX.read(file.buffer, {
+    const workbook = read(file.buffer, {
       type: 'buffer',
       cellDates: true,
     });
 
-    const data = XLSX.utils.sheet_to_json(
+    const data = utils.sheet_to_json<JobExcelRow>(
       workbook.Sheets[workbook.SheetNames[0]],
     );
 
@@ -70,23 +63,23 @@ export class JobsService {
 
     for (const row of data) {
       try {
-        const title = row['Title'] as string;
+        const title = row['Title'];
 
-        const content = row['Description'] as string;
+        const content = row['Description'];
 
-        const location = (row['Location'] as string) || 'Remote';
+        const location = row['Location'] || 'Remote';
 
         const minSalary = row['MinSalary']
-          ? parseInt(row['MinSalary'] as string)
+          ? parseInt(row['MinSalary'].toString())
           : null;
 
         const maxSalary = row['MaxSalary']
-          ? parseInt(row['MaxSalary'] as string)
+          ? parseInt(row['MaxSalary'].toString())
           : null;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment -- Reason: Dynamic Excel row access
+
         const jobType = row['JobType']?.toLowerCase() || 'unskilled';
 
-        const imageUrl = (row['ImageURL'] as string) || null;
+        const imageUrl = row['ImageURL'] || null;
 
         const job = await this.prisma.job.create({
           data: {
@@ -96,7 +89,7 @@ export class JobsService {
             salaryMin: minSalary,
             salaryMax: maxSalary,
             jobType,
-            status: 'REVIEWING', // Default Draft
+            status: JobStatus.REVIEWING, // Default Draft
             views: 0,
             imageUrl,
           },
@@ -106,23 +99,19 @@ export class JobsService {
         this.indexJobWithAi(job);
 
         // Handle tags...
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Reason: Dynamic Excel row access
         const tagNames = row['Tags']
-          ? // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Reason: Dynamic Excel row access
-            row['Tags']
+          ? row['Tags']
               .toString()
               .split(',')
               .map((t: string) => t.trim())
           : [];
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Reason: Dynamic Excel row access
         if (tagNames.length > 0) {
           for (const tagName of tagNames) {
             if (!tagName) continue;
             const tag = await this.prisma.tag.upsert({
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Reason: Dynamic tag name
               where: { name: tagName },
               update: {},
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Reason: Dynamic tag name
+
               create: { name: tagName },
             });
             await this.prisma.jobTag.create({
@@ -133,10 +122,12 @@ export class JobsService {
 
         createdCount++;
       } catch (error: any) {
+        const importError = error as ImportError;
+        const errorMessage =
+          importError.message || (error as string) || 'Unknown error';
         errors.push({
           row: createdCount + 2,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Reason: Error object structure
-          error: error.message || 'Unknown error',
+          error: errorMessage,
         });
       }
     }
@@ -156,12 +147,12 @@ export class JobsService {
 
     // Determine default status based on role
     // If admin -> ACTIVE (or respect DTO), if others -> REVIEWING
-    let status = 'REVIEWING';
+    let status: JobStatus = JobStatus.REVIEWING;
     if (user?.role === 'admin') {
-      status = jobData.status || 'ACTIVE';
+      status = (jobData.status as JobStatus) || JobStatus.ACTIVE;
     } else {
       // Force REVIEWING for non-admins unless specific logic allows otherwise
-      status = 'REVIEWING';
+      status = JobStatus.REVIEWING;
     }
 
     const job = await this.prisma.job.create({
@@ -169,22 +160,15 @@ export class JobsService {
         title: jobData.title,
         content: jobData.content,
         location: jobData.location,
-        salaryMin: jobData.salaryMin
-          ? parseInt(jobData.salaryMin as unknown as string)
-          : null,
-        salaryMax: jobData.salaryMax
-          ? parseInt(jobData.salaryMax as unknown as string)
-          : null,
+        salaryMin: jobData.salaryMin ? Number(jobData.salaryMin) : null,
+        salaryMax: jobData.salaryMax ? Number(jobData.salaryMax) : null,
         experienceYears: jobData.experienceYears
-          ? parseInt(jobData.experienceYears as unknown as string)
+          ? Number(jobData.experienceYears)
           : null,
         imageUrl: jobData.imageUrl,
-        deadline: jobData.deadline
-          ? new Date(jobData.deadline as string | number | Date)
-          : null,
+        deadline: jobData.deadline ? new Date(jobData.deadline) : null,
         jobType: jobData.jobType,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Reason: Enum casting from DTO string
-        status: status as any,
+        status: status,
         authorId: user?.userId, // Set author
         // 2. Sử dụng nested create để thêm tags
         jobTags:
@@ -238,7 +222,10 @@ export class JobsService {
     const job = await this.prisma.job.update({
       where: { id },
       data: {
-        ...(jobData as any),
+        ...(jobData as unknown as JobUpdateData),
+        status: (jobData.status
+          ? jobData.status
+          : undefined) as Prisma.EnumJobStatusFieldUpdateOperationsInput,
         salaryMin: jobData.salaryMin
           ? parseInt(jobData.salaryMin as unknown as string)
           : undefined,
@@ -309,14 +296,13 @@ export class JobsService {
     return { items, total, page, lastPage: Math.ceil(total / limit) };
   }
 
-  async approveJob(id: string, status: 'ACTIVE' | 'REJECTED' | 'DRAFT') {
+  async approveJob(id: string, status: JobStatus) {
     const job = await this.prisma.job.update({
       where: { id },
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Reason: Enum casting
-      data: { status: status as any },
+      data: { status: status },
     });
 
-    if (status === 'ACTIVE') {
+    if (status === JobStatus.ACTIVE) {
       this.indexJobWithAi(job);
     }
 

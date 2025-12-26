@@ -12,7 +12,7 @@ import { ApplicationsService } from './applications.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateApplicationDto } from './dto/create-application.dto';
-import { RequestWithUser } from '../types/auth';
+import type { RequestWithUser } from '../types/auth';
 
 @ApiTags('applications')
 @Controller('applications')

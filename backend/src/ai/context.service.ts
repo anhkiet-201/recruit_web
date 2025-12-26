@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { AiJobRepository } from './ai.repository';
 
-export interface UserContext {
-  profile: any;
-  recentSearches: string[];
-  appliedJobs: string[];
-}
+import {
+  UserContext,
+  RawUserContextData,
+  SearchHistoryDto,
+  ApplicationContextDto,
+  UserProfileDto,
+} from './dto/context.dto';
 
 @Injectable()
 export class ContextService {
@@ -23,7 +25,8 @@ export class ContextService {
     }
 
     // Process Skills and Profile
-    const profile = {
+    // Process Skills and Profile
+    const profile: UserProfileDto = {
       name: rawData.name,
       skills: rawData.skills,
       education: rawData.education || 'Not specified',
@@ -31,15 +34,17 @@ export class ContextService {
     };
 
     // Extract recent search queries
-    const recentSearches = rawData.searchHistories
-      .map((h: any) => h.query)
+    const recentSearches = (
+      rawData as unknown as RawUserContextData
+    ).searchHistories
+      .map((h: SearchHistoryDto) => h.query)
       .filter((q: string) => q)
       .slice(0, 5);
 
     // Extract applied job titles to understand preference
-    const appliedJobs = rawData.applications
-      .map((a: any) => a.job?.title)
-      .filter((t: string) => t)
+    const appliedJobs = (rawData as unknown as RawUserContextData).applications
+      .map((a: ApplicationContextDto) => a.job?.title)
+      .filter((t): t is string => !!t)
       .slice(0, 5);
 
     return {

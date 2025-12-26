@@ -6,6 +6,14 @@ import {
 } from './interfaces/ai-provider.interface';
 import { PromptService } from './prompt.service';
 import { JobsService } from '../jobs/jobs.service';
+import { JobSearchResultDto } from './dto/job-search-result.dto';
+import {
+  ChatHistoryItemDto,
+  JobCvMatchDto,
+  JobStructuredInputDto,
+  PerformSearchToolArgs,
+  GetJobDetailToolArgs,
+} from './dto/ai-service.dto';
 
 /**
  * Service quản lý logic trí tuệ nhân tạo (AI) trung tâm.
@@ -25,7 +33,7 @@ export class AiService {
    */
   async chat(
     message: string,
-    history: any[],
+    history: ChatHistoryItemDto[],
     userId?: string,
     guestId?: string,
   ) {
@@ -131,7 +139,8 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
 
       if (response.toolCall) {
         if (response.toolCall.name === 'perform_search') {
-          const { query, mode } = response.toolCall.args;
+          const { query, mode } = response.toolCall
+            .args as unknown as PerformSearchToolArgs;
           const tag = mode === 'suggest' ? 'SUGGEST' : 'SEARCH';
 
           if (!finalResponse.trim()) {
@@ -142,7 +151,8 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
           }
           finalResponse += `\n[${tag}: ${query}]`;
         } else if (response.toolCall.name === 'get_job_detail') {
-          const { jobId } = response.toolCall.args;
+          const { jobId } = response.toolCall
+            .args as unknown as GetJobDetailToolArgs;
           try {
             const job = await this.jobsService.findOne(jobId);
             if (job) {
@@ -157,7 +167,8 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
               finalResponse =
                 'Xin lỗi, tôi không tìm thấy thông tin công việc này.';
             }
-          } catch (e) {
+          } catch (_e) {
+            console.error('Error fetching job detail:', _e);
             finalResponse =
               'Xin lỗi, có lỗi xảy ra khi lấy thông tin công việc.';
           }
@@ -257,41 +268,51 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     return this.promptService.getPrompt('user_context', defaultVars);
   }
 
-  private async getJobsMatchingCv(
-    userId: string,
-  ): Promise<{ title: string }[]> {
+  private async getJobsMatchingCv(userId: string): Promise<JobCvMatchDto[]> {
     try {
-      const jobs: any[] = await this.prisma.$queryRawUnsafe(`
+      const jobs = await this.prisma.$queryRawUnsafe<JobCvMatchDto[]>(`
             SELECT j.title FROM "Job" j, "User" u
             WHERE u.id = '${userId}' AND u.embedding IS NOT NULL AND j.embedding IS NOT NULL AND (j."status" = 'ACTIVE' OR j."status" = 'ACCEPTED')
             ORDER BY j.embedding <=> u.embedding LIMIT 3
         `);
       return jobs;
-    } catch (e) {
+    } catch (_e) {
+      console.error('Error fetching jobs matching CV:', _e);
       return [];
     }
   }
 
-  async analyzeResume(text: string) {
-    const prompt = `Trích xuất JSON (Họ tên, Kỹ năng, Học vấn) từ CV: ${text}`;
+  async analyzeResume(
+    text: string,
+  ): Promise<import('./dto/resume-analysis.dto').ResumeAnalysisResult | null> {
+    const prompt = `Trích xuất thông tin từ CV thành JSON với các trường sau: name (Họ tên), phone (SĐT), address (Địa chỉ), education (Học vấn), skills (Kỹ năng), experience (Kinh nghiệm), summary (Tóm tắt ngắn gọn). CV Content: ${text}`;
     try {
       const res = await this.aiProvider.generateText(prompt);
-      return JSON.parse(res.replace(/```json|```/g, '').trim());
+      return JSON.parse(
+        res.replace(/```json|```/g, '').trim(),
+      ) as import('./dto/resume-analysis.dto').ResumeAnalysisResult;
     } catch (_e) {
+      console.error('Error analyzing resume:', _e);
       return null;
     }
   }
 
   // --- UTILS ---
 
-  async generateStructuredJobText(job: any): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const prompt = `Phân tích job: \nTên: ${job.title} \nNội dung: ${job.content} \nKhu vực: ${job.location} \nLoại việc: ${job.jobType} \nMức lương: ${job.salaryMin} - ${job.salaryMax} \nKinh nghiệm: ${job.experience} \nHạn nộp: ${job.deadline}`;
+  async generateStructuredJobText(job: JobStructuredInputDto): Promise<string> {
+    const jobType = job.jobType || 'N/A';
+    const salaryMin = job.salaryMin ?? '0';
+    const salaryMax = job.salaryMax ?? 'Thỏa thuận';
+    const experience = job.experience || 'Không yêu cầu';
+    const deadline = job.deadline
+      ? new Date(job.deadline).toISOString().split('T')[0]
+      : 'Không thời hạn';
+
+    const prompt = `Phân tích job: \nTên: ${job.title} \nNội dung: ${job.content} \nKhu vực: ${job.location} \nLoại việc: ${jobType} \nMức lương: ${salaryMin} - ${salaryMax} \nKinh nghiệm: ${experience} \nHạn nộp: ${deadline}`;
     try {
       return (await this.aiProvider.generateText(prompt)).trim();
-    } catch (_e) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      return `TITLE: ${job.title}. CONTENT: ${job.content.substring(0, 300)} \nKhu vực: ${job.location} \nLoại việc: ${job.jobType} \nMức lương: ${job.salaryMin} - ${job.salaryMax} \nKinh nghiệm: ${job.experience} \nHạn nộp: ${job.deadline}`;
+    } catch {
+      return `TITLE: ${job.title}. CONTENT: ${job.content.substring(0, 300)} \nKhu vực: ${job.location} \nLoại việc: ${jobType} \nMức lương: ${salaryMin} - ${salaryMax} \nKinh nghiệm: ${experience} \nHạn nộp: ${deadline}`;
     }
   }
 
@@ -315,10 +336,13 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     return this.aiProvider.generateEmbedding(text);
   }
 
-  async findSimilarJobs(query: string, limit: number = 10) {
+  async findSimilarJobs(
+    query: string,
+    limit: number = 10,
+  ): Promise<JobSearchResultDto[]> {
     const vector = await this.aiProvider.generateEmbedding(query);
     const vectorStr = `[${vector.join(',')}]`;
-    const results: any[] = await this.prisma.$queryRawUnsafe(`
+    const results = await this.prisma.$queryRawUnsafe<JobSearchResultDto[]>(`
       SELECT id, title, content, location, "imageUrl", "jobType", "salaryMin", "salaryMax", 
              (1 - ("embedding" <=> '${vectorStr}'::vector)) as similarity
       FROM "Job" WHERE ("status" = 'ACTIVE' OR "status" = 'ACCEPTED') AND "embedding" IS NOT NULL
@@ -335,7 +359,7 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     try {
       const res = await this.aiProvider.generateText(rerankPrompt);
       const cleanJson = res.replace(/```json|```/g, '').trim();
-      const validIds: string[] = JSON.parse(cleanJson);
+      const validIds = JSON.parse(cleanJson) as string[];
       return results.filter((c) => validIds.includes(c.id)).slice(0, limit);
     } catch {
       return results.slice(0, limit);
