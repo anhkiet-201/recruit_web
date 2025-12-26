@@ -1,18 +1,24 @@
-import { COMPANY_INFO } from '../../constants/CompanyConstants';
+import { getCompanyInfo } from '../../constants/CompanyConstants';
 
-export default function JsonLdScript() {
+interface Props {
+  locale: string;
+}
+
+export default function JsonLdScript({ locale }: Props) {
+  const companyInfo = getCompanyInfo(locale);
+
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "@id": `${COMPANY_INFO.baseUrl}/#website`,
-    "url": COMPANY_INFO.baseUrl,
-    "inLanguage": "vi",
-    "name": COMPANY_INFO.name,
+    "@id": `${companyInfo.baseUrl}/#website`,
+    "url": companyInfo.baseUrl,
+    "inLanguage": locale,
+    "name": companyInfo.name,
     "potentialAction": {
       "@type": "SearchAction",
       "target": {
         "@type": "EntryPoint",
-        "urlTemplate": `${COMPANY_INFO.baseUrl}/jobs?title={search_term_string}`
+        "urlTemplate": `${companyInfo.baseUrl}/jobs?title={search_term_string}`
       },
       "query-input": "required name=search_term_string"
     }
@@ -21,43 +27,43 @@ export default function JsonLdScript() {
   const employmentAgencySchema = {
     "@context": "https://schema.org",
     "@type": "EmploymentAgency",
-    "@id": `${COMPANY_INFO.baseUrl}/#employmentagency`,
-    "inLanguage": "vi",
-    "name": COMPANY_INFO.name,
-    "legalName": COMPANY_INFO.legalName,
-    "alternateName": COMPANY_INFO.alternateNames,
-    "description": COMPANY_INFO.description,
-    "slogan": COMPANY_INFO.slogan,
-    "url": COMPANY_INFO.baseUrl,
-    "logo": COMPANY_INFO.logo,
-    "image": COMPANY_INFO.logo,
+    "@id": `${companyInfo.baseUrl}/#employmentagency`,
+    "inLanguage": locale,
+    "name": companyInfo.name,
+    "legalName": companyInfo.legalName,
+    "alternateName": companyInfo.alternateNames,
+    "description": companyInfo.description,
+    "slogan": companyInfo.slogan,
+    "url": companyInfo.baseUrl,
+    "logo": companyInfo.logo,
+    "image": companyInfo.logo,
     "sameAs": [
-      COMPANY_INFO.mainDomain,
-      ...COMPANY_INFO.socialLinks
+      companyInfo.mainDomain,
+      ...companyInfo.socialLinks
     ],
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": COMPANY_INFO.address.street,
-      "addressLocality": COMPANY_INFO.address.locality,
-      "addressRegion": COMPANY_INFO.address.region,
-      "postalCode": COMPANY_INFO.address.postalCode,
-      "addressCountry": COMPANY_INFO.address.country
+      "streetAddress": companyInfo.address.street,
+      "addressLocality": companyInfo.address.locality,
+      "addressRegion": companyInfo.address.region,
+      "postalCode": companyInfo.address.postalCode,
+      "addressCountry": companyInfo.address.country
     },
     "geo": {
       "@type": "GeoCoordinates",
-      "latitude": COMPANY_INFO.geo.latitude,
-      "longitude": COMPANY_INFO.geo.longitude
+      "latitude": companyInfo.geo.latitude,
+      "longitude": companyInfo.geo.longitude
     },
-    "hasMap": COMPANY_INFO.hasMap,
-    "telephone": COMPANY_INFO.contact.phone,
-    "email": COMPANY_INFO.contact.email,
+    "hasMap": companyInfo.hasMap,
+    "telephone": companyInfo.contact.phone,
+    "email": companyInfo.contact.email,
     "openingHoursSpecification": {
       "@type": "OpeningHoursSpecification",
-      "dayOfWeek": COMPANY_INFO.openingHours.days,
-      "opens": COMPANY_INFO.openingHours.opens,
-      "closes": COMPANY_INFO.openingHours.closes
+      "dayOfWeek": companyInfo.openingHours.days,
+      "opens": companyInfo.openingHours.opens,
+      "closes": companyInfo.openingHours.closes
     },
-    "areaServed": COMPANY_INFO.areaServed.map(area => ({
+    "areaServed": companyInfo.areaServed.map(area => ({
         "@type": "City",
         "name": area
     })),

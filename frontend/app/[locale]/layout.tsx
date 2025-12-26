@@ -14,11 +14,17 @@ import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "TTN HR - Tìm công việc mơ ước",
-  description: "Nơi tìm kiếm công việc mơ ước",
-  openGraph: { locale: 'vi_VN' },
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const companyInfo = getCompanyInfo(locale);
+  const ogLocale = locale === 'vi' ? 'vi_VN' : locale === 'zh' ? 'zh_CN' : 'en_US';
+
+  return {
+    title: "TTN HR - Tìm công việc mơ ước",
+    description: companyInfo.description,
+    openGraph: { locale: ogLocale },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -43,7 +49,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className={inter.className}>
-        <JsonLdScript />
+        <JsonLdScript locale={locale} />
         <NextIntlClientProvider messages={messages}>
           <GoogleAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
             <AuthProvider>

@@ -1,5 +1,41 @@
-export const COMPANY_INFO = {
-  // Identity
+export interface CompanyAddress {
+  street: string;
+  locality: string;
+  region: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface CompanyInfo {
+  name: string;
+  legalName: string;
+  alternateNames: readonly string[];
+  description: string;
+  slogan: string;
+  baseUrl: string;
+  mainDomain: string;
+  logo: string;
+  contact: {
+    phone: string;
+    email: string;
+    availableLanguage: readonly string[];
+  };
+  address: CompanyAddress;
+  geo: {
+    latitude: number;
+    longitude: number;
+  };
+  hasMap: string;
+  openingHours: {
+    days: readonly string[];
+    opens: string;
+    closes: string;
+  };
+  areaServed: readonly string[];
+  socialLinks: readonly string[];
+}
+
+const COMMON_DATA = {
   name: "TTN HR – Tuyển Dụng & Cung Ứng Nhân Lực",
   legalName: "CÔNG TY TNHH TTN HR",
   alternateNames: [
@@ -11,44 +47,24 @@ export const COMPANY_INFO = {
     "TTN HR",
     "HR TTN"
   ],
-  description: "TTN HR - Đối tác tin cậy về cung ứng lao động phổ thông và tuyển dụng tại Bình Dương, Hồ Chí Minh...",
-  slogan: "Đối tác nhân sự tin cậy - Giải pháp toàn diện",
-
-  // URLs & Assets
-  baseUrl: "https://timviec.vieclamhr.com", // Subdomain (Current Site)
-  mainDomain: "https://vieclamhr.com",      // Parent Domain
+  baseUrl: "https://timviec.vieclamhr.com",
+  mainDomain: "https://vieclamhr.com",
   logo: "https://vieclamhr.com/ttn-logo.webp",
-
-  // Contact
   contact: {
     phone: "+84-844-456-787",
     email: "hrlongtuyendung@gmail.com",
     availableLanguage: ["Vietnamese", "Chinese"]
-  },
-
-  // Location & Map
-  address: {
-    street: "Đường DB4, Vĩnh Tân",
-    locality: "Tân Uyên",
-    region: "Bình Dương",
-    postalCode: "82000",
-    country: "VN"
   },
   geo: {
     latitude: 11.1444095,
     longitude: 106.7019746
   },
   hasMap: "https://maps.app.goo.gl/RWd4A1JszUubM6ddA",
-
-  // Operations
   openingHours: {
     days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     opens: "08:00",
     closes: "17:00"
   },
-  areaServed: ["Bình Dương", "Thành phố Hồ Chí Minh", "Tân Uyên"],
-
-  // Social & External Links
   socialLinks: [
     "https://www.facebook.com/61585460484367",
     "https://www.tiktok.com/@vieclam.ttn.hr",
@@ -56,3 +72,36 @@ export const COMPANY_INFO = {
     "https://www.google.com/maps?cid=8824493389288761795"
   ]
 } as const;
+
+export const COMPANY_DATA: Record<string, CompanyInfo> = {
+  vi: {
+    ...COMMON_DATA,
+    description: "TTN HR - Đối tác tin cậy về cung ứng lao động phổ thông và tuyển dụng tại Bình Dương, Hồ Chí Minh...",
+    slogan: "Đối tác nhân sự tin cậy - Giải pháp toàn diện",
+    address: {
+      street: "Đường DB4, Vĩnh Tân",
+      locality: "Tân Uyên",
+      region: "Bình Dương",
+      postalCode: "82000",
+      country: "VN"
+    },
+    areaServed: ["Bình Dương", "Thành phố Hồ Chí Minh", "Tân Uyên"]
+  },
+  zh: {
+    ...COMMON_DATA,
+    description: "TTN HR - 平阳、胡志明市值得信赖的普工供应和招聘合作伙伴...",
+    slogan: "值得信赖的人力资源合作伙伴 - 全面解决方案",
+    address: {
+      street: "平阳省新渊市永新坊DB4路",
+      locality: "新渊市",
+      region: "平阳省",
+      postalCode: "82000",
+      country: "VN"
+    },
+    areaServed: ["平阳省", "胡志明市", "新渊市"]
+  }
+};
+
+export function getCompanyInfo(locale: string): CompanyInfo {
+  return COMPANY_DATA[locale] || COMPANY_DATA['vi'];
+}
