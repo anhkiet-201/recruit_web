@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ConfirmDialogProvider } from "@/contexts/ConfirmDialogContext";
 import AiChatBot from "@/components/AiChatBot";
+import JsonLdScript from "@/components/seo/JsonLdScript";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from "next/navigation";
@@ -16,6 +17,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "TTN HR - Tìm công việc mơ ước",
   description: "Nơi tìm kiếm công việc mơ ước",
+  openGraph: { locale: 'vi_VN' },
 };
 
 export default async function RootLayout({
@@ -36,6 +38,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className={inter.className}>
+        <JsonLdScript />
         <NextIntlClientProvider messages={messages}>
           <GoogleAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
             <AuthProvider>
