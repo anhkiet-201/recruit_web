@@ -1,7 +1,9 @@
 import { MetadataRoute } from 'next';
+import { getCompanyInfo } from '../constants/CompanyConstants';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recruitweb.com';
+  const companyInfo = getCompanyInfo('vi');
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || companyInfo.baseUrl;
 
   return {
     rules: {
