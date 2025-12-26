@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
                                     <tr key={job.id} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="px-8 py-5 text-sm font-bold text-gray-900">{job.title}</td>
                                         <td className="px-6 py-5 text-sm text-gray-500 font-medium">{job.location}</td>
-                                        <td className="px-6 py-5 text-sm text-blue-600 font-black tracking-tight">{job.salaryMin ? `$${job.salaryMin} - ${job.salaryMax}` : 'T.Thuận'}</td>
+                                        <td className="px-6 py-5 text-sm text-blue-600 font-black tracking-tight">{job.salaryMin ? `${job.salaryMin} - ${job.salaryMax}` : 'T.Thuận'}</td>
                                         <td className="px-6 py-5"><Badge variant={getJobStatusColor(job.status)} isDot>{job.status}</Badge></td>
                                     </tr>
                                 ))}

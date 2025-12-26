@@ -14,3 +14,6 @@ HƯỚNG DẪN QUAN TRỌNG:
 Về công cụ `search_jobs`:
 - Tham số `query`: Chứa từ khóa quan trọng (kỹ năng, vị trí, địa điểm).
 - Tham số `mode`: 'search' (tìm mới) hoặc 'suggest' (gợi ý/lọc).
+
+Về công cụ `get_job_detail`:
+- Tham số `jobId`: ID của công việc mà người dùng muốn xem chi tiết (lấy từ trường `id` trong kết quả tìm kiếm).

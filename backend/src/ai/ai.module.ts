@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { GeminiProvider } from './providers/gemini.provider';
@@ -7,9 +7,13 @@ import { AiJobRepository } from './ai.repository';
 import { JwtModule } from '@nestjs/jwt';
 import { PromptService } from './prompt.service';
 import { ContextService } from './context.service';
+import { JobsModule } from '../jobs/jobs.module';
 
 @Module({
-  imports: [JwtModule.register({})],
+  imports: [
+    JwtModule.register({}),
+    forwardRef(() => JobsModule),
+  ],
   controllers: [AiController],
   providers: [
     AiService,

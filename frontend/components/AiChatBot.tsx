@@ -20,7 +20,7 @@ interface Message {
 }
 
 const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 Giờ
-const MAX_HISTORY_CONTEXT = 15; // Chỉ gửi 15 tin gần nhất để tối ưu Token
+const MAX_HISTORY_CONTEXT = 50; // Chỉ gửi 50 tin gần nhất để tối ưu Token
 
 export default function AiChatBot() {
     const router = useRouter();
@@ -108,26 +108,36 @@ export default function AiChatBot() {
 
     // --- LOGIC HELPERS ---
 
+    // Helper to strip tags for display
+    const stripSystemTags = (text: string) => {
+        return text.replace(/\[(SEARCH|SUGGEST|NAVIGATE|ID):.*?\]/g, "").trim();
+    };
+
     const processBotResponse = (rawText: string) => {
         let text = rawText || "";
         let searchQuery = "";
         let isSuggest = false;
+        let navigateUrl = "";
 
-        const searchMatch = text.match(/\[(SEARCH|SUGGEST):\s*(.*?)\]/i);
-        if (searchMatch) {
-            const type = searchMatch[1].toUpperCase();
-            searchQuery = searchMatch[2];
-            isSuggest = type === 'SUGGEST';
+        // Match SEARCH, SUGGEST, or NAVIGATE tags
+        const tagMatch = text.match(/\[(SEARCH|SUGGEST|NAVIGATE):\s*(.*?)\]/i);
+        if (tagMatch) {
+            const type = tagMatch[1].toUpperCase();
+            const value = tagMatch[2];
+            
+            if (type === 'NAVIGATE') {
+                navigateUrl = value;
+            } else {
+                searchQuery = value;
+                isSuggest = type === 'SUGGEST';
+            }
         }
 
-        // Xóa sạch các thẻ trong ngoặc vuông
-        text = text.replace(/\[.*?\]/g, "").trim();
+        // NOTE: We do NOT strip tags here anymore. We keep them in the message state
+        // so they are preserved in the history sent back to the backend.
+        // Stripping is done only at the Render layer.
 
-        if (!text && searchQuery) {
-            text = isSuggest ? t('thinking') : t('thinking');
-        }
-
-        return { text, searchQuery, isSuggest };
+        return { text, searchQuery, isSuggest, navigateUrl };
     };
 
     const triggerSearch = (query: string, isSuggest: boolean) => {
@@ -162,9 +172,10 @@ export default function AiChatBot() {
 
         try {
             // Context Pruning: Chỉ lấy N tin nhắn gần nhất
+            // Pass RAW text (including [ID:...] tags) to backend
             const historyContext = messages.slice(-MAX_HISTORY_CONTEXT).map(msg => ({
                 role: msg.role === 'bot' ? 'assistant' : 'user',
-                parts: msg.text
+                parts: msg.text 
             }));
 
             const contextMessage = `[User Context: Page=${pathname}, Language=${locale}] ${content}`;
@@ -174,17 +185,29 @@ export default function AiChatBot() {
                 history: historyContext
             });
 
-            const { text, searchQuery, isSuggest } = processBotResponse(result.response);
+            const { text, searchQuery, isSuggest, navigateUrl } = processBotResponse(result.response);
 
+            // Store RAW text in state
             const botMsg: Message = {
                 role: "bot",
-                text: text,
+                text: text, // This is raw text with tags
                 searchQuery,
                 isSuggest,
                 timestamp: Date.now()
             };
 
             setMessages(prev => [...prev, botMsg]);
+
+            if (navigateUrl) {
+                router.push(navigateUrl);
+                if (window.innerWidth < 640) setIsOpen(false); // Close on mobile
+                
+                // Extract Job ID from URL (assuming /jobs/:id)
+                const match = navigateUrl.match(/\/jobs\/([a-zA-Z0-9-]+)/);
+                if (match && match[1]) {
+                    handleNavigateFollowUp(match[1], historyContext);
+                }
+            }
 
             if (searchQuery) {
                 triggerSearch(searchQuery, isSuggest);
@@ -193,14 +216,27 @@ export default function AiChatBot() {
         } catch (error) {
             console.error(error);
             setMessages(prev => [...prev, { role: "bot", text: t('error'), timestamp: Date.now() }]);
+            setLoading(false); // Ensure loading is Reset on error
         } finally {
             setLoading(false);
         }
     };
 
+    const handleNavigateFollowUp = async (jobId: string, currentHistory: any[]) => {
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const systemMsg = `[SYSTEM_EVENT: View Job ID: ${jobId} completed]`;
+            await api.post<{ response: string }>("/ai/chat", {
+                message: systemMsg,
+                history: currentHistory
+            });
+        } catch (e) {
+            console.error("Follow-up navigate error:", e);
+        }
+    };
+
     /**
-     * Vòng lặp phản hồi (Feedback Loop).
-     * Gửi yêu cầu ngầm để AI tự tra cứu Database và tóm tắt.
+     * Feedback Loop cho Search
      */
     const handleSearchFollowUp = async (query: string, currentHistory: any[]) => {
         try {
@@ -233,6 +269,8 @@ export default function AiChatBot() {
         e.preventDefault();
         sendMessage(input);
     };
+
+    // --- RENDER ---
 
     // --- RENDER ---
     if (pathname?.includes('/admin')) return null;
@@ -324,7 +362,7 @@ export default function AiChatBot() {
                                                 ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
                                                 : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
                                                 }`}>
-                                                <MarkdownRenderer content={msg.text} />
+                                                <MarkdownRenderer content={stripSystemTags(msg.text)} />
                                             </div>
 
                                             {/* Search Status Indicator */}

@@ -50,14 +50,10 @@ services:
     restart: always
     # Using root config file
     env_file:
+      - ./.env # Global env if needed
       - ./backend.env
     environment:
       NODE_ENV: production
-      PORT: 4000
-      # Overrides for Docker Internal Network
-      DATABASE_URL: postgresql://user:password@postgres:5432/ttn_db
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
     depends_on:
       - postgres
       - minio
@@ -76,6 +72,7 @@ services:
     restart: always
     # Using root config file
     env_file:
+      - ./.env # Global env if needed
       - ./frontend.env
     environment:
       NODE_ENV: production

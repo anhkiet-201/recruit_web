@@ -1,7 +1,8 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AI_PROVIDER_TOKEN, IAiProvider } from './interfaces/ai-provider.interface';
 import { PromptService } from './prompt.service';
+import { JobsService } from '../jobs/jobs.service';
 
 /**
  * Service quản lý logic trí tuệ nhân tạo (AI) trung tâm.
@@ -12,6 +13,8 @@ export class AiService {
     private prisma: PrismaService,
     private promptService: PromptService,
     @Inject(AI_PROVIDER_TOKEN) private aiProvider: IAiProvider,
+    @Inject(forwardRef(() => JobsService))
+    private jobsService: JobsService,
   ) { } 
 
   /**
@@ -23,8 +26,9 @@ export class AiService {
     
     let fullSystemInstruction = `${systemPrompt}\n\n${userContext}`;
 
-    // --- LOGIC: Xử lý sự kiện sau tìm kiếm ---
     const searchEventMatch = message.match(/\[SYSTEM_EVENT: Search for "(.*?)" completed/);
+    const viewJobEventMatch = message.match(/\[SYSTEM_EVENT: View Job ID: (.*?) completed\]/);
+
     if (searchEventMatch) {
         const query = searchEventMatch[1];
         try {
@@ -35,15 +39,28 @@ export class AiService {
                     const salary = (j.salaryMin || j.salaryMax) 
                         ? `${j.salaryMin || '0'}$ - ${j.salaryMax || '??'}$` 
                         : 'Thỏa thuận';
-                    return `- ${j.title} (Lương: ${salary}) tại ${j.location}`;
+                    return `- [ID: ${j.id}] ${j.title} (Lương: ${salary}) tại ${j.location}`;
                 }).join('\n');
 
-                fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ TỪ DATABASE (QUERY: "${query}") ===\n${jobData}\n\nNHIỆM VỤ: Dựa vào danh sách trên, hãy giới thiệu ngắn gọn cho người dùng. TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
+                fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ TỪ DATABASE (QUERY: "${query}") ===\n${jobData}\n\nNHIỆM VỤ: Dựa vào danh sách trên, hãy giới thiệu ngắn gọn cho người dùng.
+QUAN TRỌNG: Khi liệt kê công việc, BẮT BUỘC phải giữ nguyên thẻ [ID: ...] đi kèm tên công việc trong câu trả lời của bạn để hệ thống có thể theo dõi. Ví dụ: "* Lập trình viên [ID: xyz]...".
+TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
             } else {
                 fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ (QUERY: "${query}") ===\nKHÔNG TÌM THẤY CÔNG VIỆC NÀO TRONG DATABASE.\n\nNHIỆM VỤ: Hãy thông báo khéo léo cho người dùng là hiện tại chưa có vị trí phù hợp. Tuyệt đối không được bịa ra công việc ảo.`;
             }
         } catch (e) {
             console.error("Error fetching jobs for AI context:", e);
+        }
+    } else if (viewJobEventMatch) {
+        const jobId = viewJobEventMatch[1];
+        try {
+            const job = await this.jobsService.findOne(jobId);
+            if (job) {
+                const jobInfo = await this.generateStructuredJobText(job);
+                fullSystemInstruction += `\n\n=== NGƯỜI DÙNG ĐANG XEM CHI TIẾT CÔNG VIỆC (ID: ${jobId}) ===\n${jobInfo}\n\nNHIỆM VỤ: Hãy ghi nhớ thông tin job này vào bộ nhớ ngữ cảnh. Không cần phản hồi lại gì cả, trừ khi người dùng hỏi thêm.`;
+            }
+        } catch (e) {
+            console.error("Error fetching job detail for context:", e);
         }
     }
     // ------------------------------------------------------------------
@@ -59,6 +76,16 @@ export class AiService {
         },
         required: ["query", "mode"]
       }
+    }, {
+      name: "get_job_detail",
+      description: "Lấy thông tin chi tiết của một công việc cụ thể khi người dùng hỏi về nó (ID).",
+      parameters: {
+        type: "object",
+        properties: {
+          jobId: { type: "string", description: "ID của công việc (UUID). BẮT BUỘC phải lấy từ Context/History. Nếu không tìm thấy ID, TUYỆT ĐỐI KHÔNG được hỏi người dùng, mà phải dùng tool `perform_search` để tìm công việc trước." }
+        },
+        required: ["jobId"]
+      }
     }];
 
     try {
@@ -71,16 +98,36 @@ export class AiService {
 
       let finalResponse = response.text || "";
 
-      if (response.toolCall && response.toolCall.name === 'perform_search') {
-        const { query, mode } = response.toolCall.args;
-        const tag = mode === 'suggest' ? 'SUGGEST' : 'SEARCH';
-        
-        if (!finalResponse.trim()) {
-            finalResponse = mode === 'suggest' 
-                ? "Dựa trên sở thích của bạn, tôi tìm thấy một số công việc phù hợp:" 
-                : `Tôi đã tìm kiếm các vị trí "${query}" cho bạn:`
+    if (response.toolCall) {
+        if (response.toolCall.name === 'perform_search') {
+            const { query, mode } = response.toolCall.args;
+            const tag = mode === 'suggest' ? 'SUGGEST' : 'SEARCH';
+            
+            if (!finalResponse.trim()) {
+                finalResponse = mode === 'suggest' 
+                    ? "Dựa trên sở thích của bạn, tôi tìm thấy một số công việc phù hợp:" 
+                    : `Tôi đã tìm kiếm các vị trí "${query}" cho bạn:`
+            }
+            finalResponse += `\n[${tag}: ${query}]`;
+        } else if (response.toolCall.name === 'get_job_detail') {
+            const { jobId } = response.toolCall.args;
+            try {
+                const job = await this.jobsService.findOne(jobId);
+                if (job) {
+                    finalResponse =
+                        `- Tiêu đề: ${job.title}\n` +
+                        `- Công ty: ${job.author?.name || 'N/A'}\n` +
+                        `- Mức lương: ${job.salaryMin ? `${job.salaryMin}` : ''} - ${job.salaryMax ? `${job.salaryMax}` : ''}\n` +
+                        `- Địa điểm: ${job.location}\n` +
+                        `- Mô tả: ${job.content}\n` +
+                        `\n[NAVIGATE: /jobs/${job.id}]`;
+                } else {
+                    finalResponse = "Xin lỗi, tôi không tìm thấy thông tin công việc này.";
+                }
+            } catch (e) {
+                finalResponse = "Xin lỗi, có lỗi xảy ra khi lấy thông tin công việc.";
+            }
         }
-        finalResponse += `\n[${tag}: ${query}]`;
       }
 
       return finalResponse || "Xin lỗi, tôi không thể phản hồi lúc này.";
@@ -125,7 +172,7 @@ export class AiService {
              const lastJobs = await this.findSimilarJobs(lastQuery, 3);
              if (lastJobs.length > 0) {
                  lastSearchContext = `\n=== KẾT QUẢ TÌM KIẾM GẦN NHẤT CỦA USER ("${lastQuery}") ===\n` + 
-                 lastJobs.map(j => `- ${j.title} (${j.location})`).join('\n');
+                 lastJobs.map(j => `- [ID: ${j.id}] ${j.title} (${j.location})`).join('\n');
              }
         }
 
