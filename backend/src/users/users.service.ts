@@ -2,7 +2,8 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MinioService } from '../upload/minio.service';
 import { AiService } from '../ai/ai.service';
-const pdf = require('pdf-parse');
+import { ResumeAnalysisResult } from '../ai/dto/resume-analysis.dto';
+import pdf from 'pdf-parse';
 
 @Injectable()
 export class UsersService {
@@ -11,13 +12,14 @@ export class UsersService {
     private minioService: MinioService,
     @Inject(forwardRef(() => AiService))
     private aiService: AiService,
-  ) { }
+  ) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
     if (!user) return null;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;
     return result;
   }
@@ -26,10 +28,18 @@ export class UsersService {
     return this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       select: {
-        id: true, email: true, name: true, role: true, phone: true,
-        address: true, education: true, skills: true, cvUrl: true,
-        avatarUrl: true, createdAt: true
-      }
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        address: true,
+        education: true,
+        skills: true,
+        cvUrl: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
     });
   }
 
@@ -49,24 +59,47 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateUserDto: any) {
+  async update(
+    id: string,
+    updateUserDto: Partial<{
+      cvUrl: string;
+      avatarUrl: string;
+      name: string;
+      phone: string;
+      address: string;
+      education: string;
+      skills: string;
+    }>,
+  ) {
     const oldUser = await this.prisma.user.findUnique({
       where: { id },
-      select: { cvUrl: true, avatarUrl: true }
+      select: { cvUrl: true, avatarUrl: true },
     });
 
-    if (updateUserDto.cvUrl !== undefined && oldUser?.cvUrl && oldUser.cvUrl !== updateUserDto.cvUrl) {
+    if (
+      updateUserDto.cvUrl !== undefined &&
+      oldUser?.cvUrl &&
+      oldUser.cvUrl !== updateUserDto.cvUrl
+    ) {
       try {
         const filename = oldUser.cvUrl.split('/').pop();
         if (filename) await this.minioService.deleteFile(filename);
-      } catch (e) { console.warn("Cleanup failed for CV", e); }
+      } catch {
+        console.warn('Cleanup failed for CV');
+      }
     }
 
-    if (updateUserDto.avatarUrl !== undefined && oldUser?.avatarUrl && oldUser.avatarUrl !== updateUserDto.avatarUrl) {
+    if (
+      updateUserDto.avatarUrl !== undefined &&
+      oldUser?.avatarUrl &&
+      oldUser.avatarUrl !== updateUserDto.avatarUrl
+    ) {
       try {
         const filename = oldUser.avatarUrl.split('/').pop();
         if (filename) await this.minioService.deleteFile(filename);
-      } catch (e) { console.warn("Cleanup failed for Avatar", e); }
+      } catch {
+        console.warn('Cleanup failed for Avatar');
+      }
     }
 
     return this.prisma.user.update({
@@ -79,14 +112,16 @@ export class UsersService {
     // 1. Dọn dẹp file cũ
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { cvUrl: true }
+      select: { cvUrl: true },
     });
 
     if (user?.cvUrl) {
       try {
         const filename = user.cvUrl.split('/').pop();
         if (filename) await this.minioService.deleteFile(filename);
-      } catch (err) { console.warn(`Failed to delete old CV file`, err); }
+      } catch (err) {
+        console.warn(`Failed to delete old CV file`, err);
+      }
     }
 
     // 2. Upload file mới
@@ -96,11 +131,13 @@ export class UsersService {
     try {
       // Chỉ hỗ trợ PDF cho việc phân tích văn bản hiện tại
       if (file.mimetype === 'application/pdf') {
-        const pdfData = await pdf(file.buffer);
+        const pdfData = (await pdf(file.buffer)) as { text: string };
         const cvText = pdfData.text;
 
         // Gọi AI để trích xuất thông tin
-        const analysis = await this.aiService.analyzeResume(cvText);
+
+        const analysis: ResumeAnalysisResult | null =
+          await this.aiService.analyzeResume(cvText);
 
         if (analysis) {
           // Tự động cập nhật Profile dựa trên phân tích
@@ -114,42 +151,53 @@ export class UsersService {
               address: analysis.address || undefined,
               education: analysis.education || undefined,
               skills: analysis.skills || undefined,
-            }
+            },
           });
 
           // Tạo Vector Embedding cho nội dung CV để AI hiểu sâu người dùng
-          await this.aiService.embedUser(userId, `Profile of ${analysis.name}. Skills: ${analysis.skills}. Education: ${analysis.education}. Experience: ${analysis.experience}. Summary: ${analysis.summary}`);
+          await this.aiService.embedUser(
+            userId,
+            `Profile of ${analysis.name}. Skills: ${analysis.skills}. Education: ${analysis.education}. Experience: ${analysis.experience}. Summary: ${analysis.summary}`,
+          );
 
           return {
             url: uploadResult.url,
             analyzed: true,
-            message: "CV đã được tải lên và phân tích tự động thành công."
+            message: 'CV đã được tải lên và phân tích tự động thành công.',
           };
         }
       }
     } catch (error) {
-      console.error("AI CV Analysis failed", error);
+      console.error('AI CV Analysis failed', error);
     }
 
     // Fallback: Nếu phân tích lỗi hoặc không phải PDF, chỉ update URL
     await this.prisma.user.update({
       where: { id: userId },
-      data: { cvUrl: uploadResult.url }
+      data: { cvUrl: uploadResult.url },
     });
 
     return { url: uploadResult.url, analyzed: false };
   }
 
   async updateAvatar(userId: string, file: Express.Multer.File) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true },
+    });
     if (user?.avatarUrl) {
       try {
         const filename = user.avatarUrl.split('/').pop();
         if (filename) await this.minioService.deleteFile(filename);
-      } catch (err) { console.warn(`Failed to delete old avatar file`, err); }
+      } catch (err) {
+        console.warn(`Failed to delete old avatar file`, err);
+      }
     }
     const uploadResult = await this.minioService.uploadFile(file);
-    await this.prisma.user.update({ where: { id: userId }, data: { avatarUrl: uploadResult.url } });
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: uploadResult.url },
+    });
     return { url: uploadResult.url };
   }
 
@@ -167,7 +215,9 @@ export class UsersService {
     }
 
     if (!user.name || !user.phone || !user.address) {
-      throw new Error('Vui lòng cập nhật đầy đủ thông tin: Tên, Số điện thoại và Địa chỉ trước khi đăng ký làm nhà tuyển dụng.');
+      throw new Error(
+        'Vui lòng cập nhật đầy đủ thông tin: Tên, Số điện thoại và Địa chỉ trước khi đăng ký làm nhà tuyển dụng.',
+      );
     }
 
     // Check if there is already a pending request
@@ -212,7 +262,10 @@ export class UsersService {
     });
   }
 
-  async handleEmployerRequest(requestId: string, status: 'approved' | 'rejected' | 'pending') {
+  async handleEmployerRequest(
+    requestId: string,
+    status: 'approved' | 'rejected' | 'pending',
+  ) {
     const request = await this.prisma.employerRequest.findUnique({
       where: { id: requestId },
     });
@@ -243,12 +296,25 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id }, select: { cvUrl: true, avatarUrl: true } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { cvUrl: true, avatarUrl: true },
+    });
     if (user?.cvUrl) {
-      try { const filename = user.cvUrl.split('/').pop(); if (filename) await this.minioService.deleteFile(filename); } catch (e) { }
+      try {
+        const filename = user.cvUrl.split('/').pop();
+        if (filename) await this.minioService.deleteFile(filename);
+      } catch {
+        // ignore
+      }
     }
     if (user?.avatarUrl) {
-      try { const filename = user.avatarUrl.split('/').pop(); if (filename) await this.minioService.deleteFile(filename); } catch (e) { }
+      try {
+        const filename = user.avatarUrl.split('/').pop();
+        if (filename) await this.minioService.deleteFile(filename);
+      } catch {
+        // ignore
+      }
     }
     return this.prisma.user.delete({ where: { id } });
   }

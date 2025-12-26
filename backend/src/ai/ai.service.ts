@@ -1,6 +1,9 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AI_PROVIDER_TOKEN, IAiProvider } from './interfaces/ai-provider.interface';
+import {
+  AI_PROVIDER_TOKEN,
+  IAiProvider,
+} from './interfaces/ai-provider.interface';
 import { PromptService } from './prompt.service';
 import { JobsService } from '../jobs/jobs.service';
 
@@ -15,199 +18,258 @@ export class AiService {
     @Inject(AI_PROVIDER_TOKEN) private aiProvider: IAiProvider,
     @Inject(forwardRef(() => JobsService))
     private jobsService: JobsService,
-  ) { } 
+  ) {}
 
   /**
    * Xử lý hội thoại chính với người dùng.
    */
-  async chat(message: string, history: any[], userId?: string, guestId?: string) {
+  async chat(
+    message: string,
+    history: any[],
+    userId?: string,
+    guestId?: string,
+  ) {
     const systemPrompt = await this.promptService.getPrompt('system');
     const userContext = await this.buildUserContext(userId, guestId);
-    
+
     let fullSystemInstruction = `${systemPrompt}\n\n${userContext}`;
 
-    const searchEventMatch = message.match(/\[SYSTEM_EVENT: Search for "(.*?)" completed/);
-    const viewJobEventMatch = message.match(/\[SYSTEM_EVENT: View Job ID: (.*?) completed\]/);
+    const searchEventMatch = message.match(
+      /\[SYSTEM_EVENT: Search for "(.*?)" completed/,
+    );
+    const viewJobEventMatch = message.match(
+      /\[SYSTEM_EVENT: View Job ID: (.*?) completed\]/,
+    );
 
     if (searchEventMatch) {
-        const query = searchEventMatch[1];
-        try {
-            const jobs = await this.findSimilarJobs(query, 5);
-            
-            if (jobs.length > 0) {
-                const jobData = jobs.map(j => {
-                    const salary = (j.salaryMin || j.salaryMax) 
-                        ? `${j.salaryMin || '0'}$ - ${j.salaryMax || '??'}$` 
-                        : 'Thỏa thuận';
-                    return `- [ID: ${j.id}] ${j.title} (Lương: ${salary}) tại ${j.location}`;
-                }).join('\n');
+      const query = searchEventMatch[1];
+      try {
+        const jobs = await this.findSimilarJobs(query, 5);
 
-                fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ TỪ DATABASE (QUERY: "${query}") ===\n${jobData}\n\nNHIỆM VỤ: Dựa vào danh sách trên, hãy giới thiệu ngắn gọn cho người dùng.
+        if (jobs.length > 0) {
+          const jobData = jobs
+            .map((j) => {
+              const salary =
+                j.salaryMin || j.salaryMax
+                  ? `${j.salaryMin || '0'}$ - ${j.salaryMax || '??'}$`
+                  : 'Thỏa thuận';
+              return `- [ID: ${j.id}] ${j.title} (Lương: ${salary}) tại ${j.location}`;
+            })
+            .join('\n');
+
+          fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ TỪ DATABASE (QUERY: "${query}") ===\n${jobData}\n\nNHIỆM VỤ: Dựa vào danh sách trên, hãy giới thiệu ngắn gọn cho người dùng.
 QUAN TRỌNG: Khi liệt kê công việc, BẮT BUỘC phải giữ nguyên thẻ [ID: ...] đi kèm tên công việc trong câu trả lời của bạn để hệ thống có thể theo dõi. Ví dụ: "* Lập trình viên [ID: xyz]...".
 TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
-            } else {
-                fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ (QUERY: "${query}") ===\nKHÔNG TÌM THẤY CÔNG VIỆC NÀO TRONG DATABASE.\n\nNHIỆM VỤ: Hãy thông báo khéo léo cho người dùng là hiện tại chưa có vị trí phù hợp. Tuyệt đối không được bịa ra công việc ảo.`;
-            }
-        } catch (e) {
-            console.error("Error fetching jobs for AI context:", e);
+        } else {
+          fullSystemInstruction += `\n\n=== KẾT QUẢ TÌM KIẾM THỰC TẾ (QUERY: "${query}") ===\nKHÔNG TÌM THẤY CÔNG VIỆC NÀO TRONG DATABASE.\n\nNHIỆM VỤ: Hãy thông báo khéo léo cho người dùng là hiện tại chưa có vị trí phù hợp. Tuyệt đối không được bịa ra công việc ảo.`;
         }
+      } catch (e) {
+        console.error('Error fetching jobs for AI context:', e);
+      }
     } else if (viewJobEventMatch) {
-        const jobId = viewJobEventMatch[1];
-        try {
-            const job = await this.jobsService.findOne(jobId);
-            if (job) {
-                const jobInfo = await this.generateStructuredJobText(job);
-                fullSystemInstruction += `\n\n=== NGƯỜI DÙNG ĐANG XEM CHI TIẾT CÔNG VIỆC (ID: ${jobId}) ===\n${jobInfo}\n\nNHIỆM VỤ: Hãy ghi nhớ thông tin job này vào bộ nhớ ngữ cảnh. Không cần phản hồi lại gì cả, trừ khi người dùng hỏi thêm.`;
-            }
-        } catch (e) {
-            console.error("Error fetching job detail for context:", e);
+      const jobId = viewJobEventMatch[1];
+      try {
+        const job = await this.jobsService.findOne(jobId);
+        if (job) {
+          const jobInfo = await this.generateStructuredJobText(job);
+          fullSystemInstruction += `\n\n=== NGƯỜI DÙNG ĐANG XEM CHI TIẾT CÔNG VIỆC (ID: ${jobId}) ===\n${jobInfo}\n\nNHIỆM VỤ: Hãy ghi nhớ thông tin job này vào bộ nhớ ngữ cảnh. Không cần phản hồi lại gì cả, trừ khi người dùng hỏi thêm.`;
         }
+      } catch (e) {
+        console.error('Error fetching job detail for context:', e);
+      }
     }
     // ------------------------------------------------------------------
 
-    const tools = [{
-      name: "perform_search",
-      description: "Thực hiện tìm kiếm hoặc gợi ý việc làm dựa trên nhu cầu của người dùng.",
-      parameters: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "Chuỗi từ khóa tìm kiếm đã được tối ưu hóa." },
-          mode: { type: "string", enum: ["search", "suggest"], description: "Chế độ tìm kiếm." }
+    const tools = [
+      {
+        name: 'perform_search',
+        description:
+          'Thực hiện tìm kiếm hoặc gợi ý việc làm dựa trên nhu cầu của người dùng.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Chuỗi từ khóa tìm kiếm đã được tối ưu hóa.',
+            },
+            mode: {
+              type: 'string',
+              enum: ['search', 'suggest'],
+              description: 'Chế độ tìm kiếm.',
+            },
+          },
+          required: ['query', 'mode'],
         },
-        required: ["query", "mode"]
-      }
-    }, {
-      name: "get_job_detail",
-      description: "Lấy thông tin chi tiết của một công việc cụ thể khi người dùng hỏi về nó (ID).",
-      parameters: {
-        type: "object",
-        properties: {
-          jobId: { type: "string", description: "ID của công việc (UUID). BẮT BUỘC phải lấy từ Context/History. Nếu không tìm thấy ID, TUYỆT ĐỐI KHÔNG được hỏi người dùng, mà phải dùng tool `perform_search` để tìm công việc trước." }
+      },
+      {
+        name: 'get_job_detail',
+        description:
+          'Lấy thông tin chi tiết của một công việc cụ thể khi người dùng hỏi về nó (ID).',
+        parameters: {
+          type: 'object',
+          properties: {
+            jobId: {
+              type: 'string',
+              description:
+                'ID của công việc (UUID). BẮT BUỘC phải lấy từ Context/History. Nếu không tìm thấy ID, TUYỆT ĐỐI KHÔNG được hỏi người dùng, mà phải dùng tool `perform_search` để tìm công việc trước.',
+            },
+          },
+          required: ['jobId'],
         },
-        required: ["jobId"]
-      }
-    }];
+      },
+    ];
 
     try {
       const response = await this.aiProvider.chat(
-        fullSystemInstruction, 
-        history, 
-        message, 
-        tools
+        fullSystemInstruction,
+        history,
+        message,
+        tools,
       );
 
-      let finalResponse = response.text || "";
+      let finalResponse = response.text || '';
 
-    if (response.toolCall) {
+      if (response.toolCall) {
         if (response.toolCall.name === 'perform_search') {
-            const { query, mode } = response.toolCall.args;
-            const tag = mode === 'suggest' ? 'SUGGEST' : 'SEARCH';
-            
-            if (!finalResponse.trim()) {
-                finalResponse = mode === 'suggest' 
-                    ? "Dựa trên sở thích của bạn, tôi tìm thấy một số công việc phù hợp:" 
-                    : `Tôi đã tìm kiếm các vị trí "${query}" cho bạn:`
-            }
-            finalResponse += `\n[${tag}: ${query}]`;
+          const { query, mode } = response.toolCall.args;
+          const tag = mode === 'suggest' ? 'SUGGEST' : 'SEARCH';
+
+          if (!finalResponse.trim()) {
+            finalResponse =
+              mode === 'suggest'
+                ? 'Dựa trên sở thích của bạn, tôi tìm thấy một số công việc phù hợp:'
+                : `Tôi đã tìm kiếm các vị trí "${query}" cho bạn:`;
+          }
+          finalResponse += `\n[${tag}: ${query}]`;
         } else if (response.toolCall.name === 'get_job_detail') {
-            const { jobId } = response.toolCall.args;
-            try {
-                const job = await this.jobsService.findOne(jobId);
-                if (job) {
-                    finalResponse =
-                        `- Tiêu đề: ${job.title}\n` +
-                        `- Công ty: ${job.author?.name || 'N/A'}\n` +
-                        `- Mức lương: ${job.salaryMin ? `${job.salaryMin}` : ''} - ${job.salaryMax ? `${job.salaryMax}` : ''}\n` +
-                        `- Địa điểm: ${job.location}\n` +
-                        `- Mô tả: ${job.content}\n` +
-                        `\n[NAVIGATE: /jobs/${job.id}]`;
-                } else {
-                    finalResponse = "Xin lỗi, tôi không tìm thấy thông tin công việc này.";
-                }
-            } catch (e) {
-                finalResponse = "Xin lỗi, có lỗi xảy ra khi lấy thông tin công việc.";
+          const { jobId } = response.toolCall.args;
+          try {
+            const job = await this.jobsService.findOne(jobId);
+            if (job) {
+              finalResponse =
+                `- Tiêu đề: ${job.title}\n` +
+                `- Công ty: ${job.author?.name || 'N/A'}\n` +
+                `- Mức lương: ${job.salaryMin ? `${job.salaryMin}` : ''} - ${job.salaryMax ? `${job.salaryMax}` : ''}\n` +
+                `- Địa điểm: ${job.location}\n` +
+                `- Mô tả: ${job.content}\n` +
+                `\n[NAVIGATE: /jobs/${job.id}]`;
+            } else {
+              finalResponse =
+                'Xin lỗi, tôi không tìm thấy thông tin công việc này.';
             }
+          } catch (e) {
+            finalResponse =
+              'Xin lỗi, có lỗi xảy ra khi lấy thông tin công việc.';
+          }
         }
       }
 
-      return finalResponse || "Xin lỗi, tôi không thể phản hồi lúc này.";
+      return finalResponse || 'Xin lỗi, tôi không thể phản hồi lúc này.';
     } catch (error) {
-      console.error("AiService Chat Error:", error);
+      console.error('AiService Chat Error:', error);
       throw error;
     }
   }
 
-  private async buildUserContext(userId?: string, guestId?: string): Promise<string> {
+  private async buildUserContext(
+    userId?: string,
+    guestId?: string,
+  ): Promise<string> {
     const defaultVars = {
-        name: 'Khách',
-        skills: 'N/A',
-        education: 'N/A',
-        experience: 'N/A',
-        search_history: 'Chưa có dữ liệu',
-        application_history: 'Chưa có dữ liệu',
-        current_page: 'Trang chủ',
-        current_time: new Date().toLocaleString('vi-VN'),
-        cv_analysis: 'Chưa có dữ liệu.'
+      name: 'Khách',
+      skills: 'N/A',
+      education: 'N/A',
+      experience: 'N/A',
+      search_history: 'Chưa có dữ liệu',
+      application_history: 'Chưa có dữ liệu',
+      current_page: 'Trang chủ',
+      current_time: new Date().toLocaleString('vi-VN'),
+      cv_analysis: 'Chưa có dữ liệu.',
     };
 
     if (userId) {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         include: {
-          applications: { take: 5, orderBy: { createdAt: 'desc' }, select: { status: true, job: { select: { title: true } } } },
-          searchHistories: { take: 5, orderBy: { createdAt: 'desc' }, select: { query: true } }
-        }
+          applications: {
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { status: true, job: { select: { title: true } } },
+          },
+          searchHistories: {
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { query: true },
+          },
+        },
       });
 
       if (user) {
         const cvMatches = await this.getJobsMatchingCv(userId);
-        const cvAnalysisText = cvMatches.length > 0 
-            ? `Hệ thống nhận thấy CV tương đồng với: ${cvMatches.map(j => j.title).join(', ')}.`
+        const cvAnalysisText =
+          cvMatches.length > 0
+            ? `Hệ thống nhận thấy CV tương đồng với: ${cvMatches.map((j) => j.title).join(', ')}.`
             : 'Chưa có dữ liệu phân tích CV.';
 
         // FEATURE: Persistent Search Context
-        let lastSearchContext = "";
+        let lastSearchContext = '';
         if (user.searchHistories.length > 0) {
-             const lastQuery = user.searchHistories[0].query;
-             const lastJobs = await this.findSimilarJobs(lastQuery, 3);
-             if (lastJobs.length > 0) {
-                 lastSearchContext = `\n=== KẾT QUẢ TÌM KIẾM GẦN NHẤT CỦA USER ("${lastQuery}") ===\n` + 
-                 lastJobs.map(j => `- [ID: ${j.id}] ${j.title} (${j.location})`).join('\n');
-             }
+          const lastQuery = user.searchHistories[0].query;
+          const lastJobs = await this.findSimilarJobs(lastQuery, 3);
+          if (lastJobs.length > 0) {
+            lastSearchContext =
+              `\n=== KẾT QUẢ TÌM KIẾM GẦN NHẤT CỦA USER ("${lastQuery}") ===\n` +
+              lastJobs
+                .map((j) => `- [ID: ${j.id}] ${j.title} (${j.location})`)
+                .join('\n');
+          }
         }
 
         return this.promptService.getPrompt('user_context', {
-            ...defaultVars,
-            name: user.name || 'Thành viên',
-            skills: user.skills || 'N/A',
-            education: user.education || 'N/A',
-            search_history: user.searchHistories.map(s => s.query).join(', ') || 'Chưa có dữ liệu',
-            application_history: user.applications.map(a => `${a.job.title} (${a.status})`).join(', ') || 'Chưa có dữ liệu',
-            cv_analysis: cvAnalysisText + lastSearchContext
+          ...defaultVars,
+          name: user.name || 'Thành viên',
+          skills: user.skills || 'N/A',
+          education: user.education || 'N/A',
+          search_history:
+            user.searchHistories.map((s) => s.query).join(', ') ||
+            'Chưa có dữ liệu',
+          application_history:
+            user.applications
+              .map((a) => `${a.job.title} (${a.status})`)
+              .join(', ') || 'Chưa có dữ liệu',
+          cv_analysis: cvAnalysisText + lastSearchContext,
         });
       }
     } else if (guestId) {
       const guestHistory = await this.prisma.searchHistory.findMany({
-        where: { guestId }, take: 5, orderBy: { createdAt: 'desc' }, select: { query: true } 
+        where: { guestId },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: { query: true },
       });
       return this.promptService.getPrompt('user_context', {
         ...defaultVars,
         name: 'Khách vãng lai',
-        search_history: guestHistory.map(s => s.query).join(', ') || 'Chưa có dữ liệu',
+        search_history:
+          guestHistory.map((s) => s.query).join(', ') || 'Chưa có dữ liệu',
       });
     }
     return this.promptService.getPrompt('user_context', defaultVars);
   }
 
-  private async getJobsMatchingCv(userId: string): Promise<{ title: string }[]> {
+  private async getJobsMatchingCv(
+    userId: string,
+  ): Promise<{ title: string }[]> {
     try {
-        const jobs: any[] = await this.prisma.$queryRawUnsafe(`
+      const jobs: any[] = await this.prisma.$queryRawUnsafe(`
             SELECT j.title FROM "Job" j, "User" u
             WHERE u.id = '${userId}' AND u.embedding IS NOT NULL AND j.embedding IS NOT NULL AND (j."status" = 'ACTIVE' OR j."status" = 'ACCEPTED')
             ORDER BY j.embedding <=> u.embedding LIMIT 3
         `);
-        return jobs;
-    } catch (e) { return []; }
+      return jobs;
+    } catch (e) {
+      return [];
+    }
   }
 
   async analyzeResume(text: string) {
@@ -215,26 +277,42 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     try {
       const res = await this.aiProvider.generateText(prompt);
       return JSON.parse(res.replace(/```json|```/g, '').trim());
-    } catch (e) { return null; }
+    } catch (_e) {
+      return null;
+    }
   }
 
   // --- UTILS ---
+
   async generateStructuredJobText(job: any): Promise<string> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const prompt = `Phân tích job: \nTên: ${job.title} \nNội dung: ${job.content} \nKhu vực: ${job.location} \nLoại việc: ${job.jobType} \nMức lương: ${job.salaryMin} - ${job.salaryMax} \nKinh nghiệm: ${job.experience} \nHạn nộp: ${job.deadline}`;
-    try { return (await this.aiProvider.generateText(prompt)).trim(); }
-    catch (e) { return `TITLE: ${job.title}. CONTENT: ${job.content.substring(0, 300)} \nKhu vực: ${job.location} \nLoại việc: ${job.jobType} \nMức lương: ${job.salaryMin} - ${job.salaryMax} \nKinh nghiệm: ${job.experience} \nHạn nộp: ${job.deadline}`; }
+    try {
+      return (await this.aiProvider.generateText(prompt)).trim();
+    } catch (_e) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      return `TITLE: ${job.title}. CONTENT: ${job.content.substring(0, 300)} \nKhu vực: ${job.location} \nLoại việc: ${job.jobType} \nMức lương: ${job.salaryMin} - ${job.salaryMax} \nKinh nghiệm: ${job.experience} \nHạn nộp: ${job.deadline}`;
+    }
   }
 
   async embedJob(jobId: string, text: string) {
     const vector = await this.aiProvider.generateEmbedding(text);
     const vectorStr = `[${vector.join(',')}]`;
-    await this.prisma.$executeRawUnsafe(`UPDATE "Job" SET "embedding" = '${vectorStr}'::vector WHERE "id" = '${jobId}'::uuid`);
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE "Job" SET "embedding" = '${vectorStr}'::vector WHERE "id" = '${jobId}'::uuid`,
+    );
   }
-  
+
   async embedUser(userId: string, text: string) {
     const vector = await this.aiProvider.generateEmbedding(text);
     const vectorStr = `[${vector.join(',')}]`;
-    await this.prisma.$executeRawUnsafe(`UPDATE "User" SET "embedding" = '${vectorStr}'::vector WHERE "id" = '${userId}'`);
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE "User" SET "embedding" = '${vectorStr}'::vector WHERE "id" = '${userId}'`,
+    );
+  }
+
+  async generateEmbedding(text: string) {
+    return this.aiProvider.generateEmbedding(text);
   }
 
   async findSimilarJobs(query: string, limit: number = 10) {
@@ -250,15 +328,17 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
       ) DESC LIMIT 20
     `);
     if (!results.length) return [];
-    
-    const jobList = results.map(c => `ID:${c.id}|${c.title}`).join('\n');
+
+    const jobList = results.map((c) => `ID:${c.id}|${c.title}`).join('\n');
     const rerankPrompt = `Lọc Job phù hợp với "${query}". Trả về JSON array ID. Danh sách:\n${jobList}`;
-    
+
     try {
       const res = await this.aiProvider.generateText(rerankPrompt);
       const cleanJson = res.replace(/```json|```/g, '').trim();
       const validIds: string[] = JSON.parse(cleanJson);
-      return results.filter(c => validIds.includes(c.id)).slice(0, limit);
-    } catch { return results.slice(0, limit); }
+      return results.filter((c) => validIds.includes(c.id)).slice(0, limit);
+    } catch {
+      return results.slice(0, limit);
+    }
   }
 }

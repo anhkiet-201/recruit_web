@@ -2,32 +2,35 @@
 
 import { useState, useEffect } from "react";
 import { JobService } from "@/services/jobService";
-import { getAllTags, createTag, addTagToJob, deleteTag, removeTagFromJob, getJobTags } from "@/services/tagService";
+import { getAllTags, createTag, deleteTag, getJobTags } from "@/services/tagService";
 import { Tag } from "@/models/Tag";
-import { X, Save, Upload, MapPin, DollarSign, Calendar, Briefcase, Hash, Plus, Image as ImageIcon, User, AlertCircle, Zap, Award, GraduationCap, Type, FileText, AlignLeft, RefreshCw } from "lucide-react";
+import { Job } from "@/models/Job";
+import { X, Save, Upload, MapPin, DollarSign, Calendar, Briefcase, Hash, Plus, Image as ImageIcon, User, AlertCircle, RefreshCw, Type, AlignLeft, Award, GraduationCap, Zap, FileText } from "lucide-react";
 import { useConfirm } from "@/contexts/ConfirmDialogContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Dropdown from "@/components/ui/Dropdown";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
+import Image from "next/image";
 
 import { useAuth } from "../AuthProvider";
 
 interface JobFormProps {
-    initialData?: any;
+    initialData?: Partial<Job>;
     jobId?: string;
-    onSubmit: (data: any, selectedTags: string[], initialTags: string[]) => Promise<void>;
+    onSubmit: (data: Partial<Job>, selectedTags: string[], initialTags: string[]) => Promise<void>;
     submitLabel: string;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     title: string;
 }
 
-export default function JobForm({ initialData, jobId, onSubmit, submitLabel, title }: JobFormProps) {
+export default function JobForm({ initialData, jobId, onSubmit, submitLabel }: JobFormProps) {
     const { confirm } = useConfirm();
     const { profile } = useAuth();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<Partial<Job>>({
         title: "", content: "", location: "", salaryMin: 0, salaryMax: 0,
         experienceYears: 0, imageUrl: "", deadline: "", jobType: "unskilled"
     });
@@ -38,44 +41,58 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
     const [newTagName, setNewTagName] = useState("");
 
     useEffect(() => {
-        loadBaseData();
+        const fetchTags = async () => {
+            try {
+                const allTags = await getAllTags();
+                setAvailableTags(allTags);
+            } catch (e) {
+                console.error("Load tags failed", e);
+            }
+        };
+        fetchTags();
     }, []);
 
-    const loadBaseData = async () => {
-        try {
-            const allTags = await getAllTags();
-            setAvailableTags(allTags);
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                title: initialData.title || "",
+                content: initialData.content || "",
+                location: initialData.location || "",
+                salaryMin: initialData.salaryMin || 0,
+                salaryMax: initialData.salaryMax || 0,
+                experienceYears: initialData.experienceYears || 0,
+                imageUrl: initialData.imageUrl || "",
+                deadline: initialData.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : "",
+                jobType: initialData.jobType || "unskilled"
+            });
+        }
 
-            if (initialData) {
-                setFormData({
-                    title: initialData.title || "",
-                    content: initialData.content || "",
-                    location: initialData.location || "",
-                    salaryMin: initialData.salaryMin || 0,
-                    salaryMax: initialData.salaryMax || 0,
-                    experienceYears: initialData.experienceYears || 0,
-                    imageUrl: initialData.imageUrl || "",
-                    deadline: initialData.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : "",
-                    jobType: initialData.jobType || "unskilled"
-                });
-
-                if (jobId) {
+        const fetchJobTags = async () => {
+             if (jobId) {
+                try {
                     const jobTags = await getJobTags(jobId);
                     const tagIds = jobTags.map(t => t.id);
                     setSelectedTags(tagIds);
                     setInitialTags(tagIds);
+                } catch (e) {
+                    console.error("Load job tags failed", e);
                 }
             }
-        } catch (e) { console.error("Load form data failed", e); }
-    };
+        };
+        fetchJobTags();
+    }, [initialData, jobId]);
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setUploading(true);
             try {
                 const url = await JobService.uploadJobImage(e.target.files[0]);
-                setFormData({ ...formData, imageUrl: url });
-            } catch (error) { alert("Failed to upload image"); } finally { setUploading(false); }
+                setFormData(prev => ({ ...prev, imageUrl: url }));
+            } catch {
+                alert("Failed to upload image");
+            } finally {
+                setUploading(false);
+            }
         }
     };
 
@@ -83,10 +100,10 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
         if (!newTagName.trim()) return;
         try {
             const newTag = await createTag(newTagName.trim());
-            setAvailableTags([...availableTags, newTag]);
-            setSelectedTags([...selectedTags, newTag.id]);
+            setAvailableTags(prev => [...prev, newTag]);
+            setSelectedTags(prev => [...prev, newTag.id]);
             setNewTagName("");
-        } catch (error) { alert("Failed to create tag"); }
+        } catch { alert("Failed to create tag"); }
     };
 
     const handleDeleteTag = async (tagId: string, e: React.MouseEvent) => {
@@ -100,9 +117,9 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
         if (!ok) return;
         try {
             await deleteTag(tagId);
-            setAvailableTags(availableTags.filter(t => t.id !== tagId));
-            setSelectedTags(selectedTags.filter(id => id !== tagId));
-        } catch (error) { alert("Failed to delete tag"); }
+            setAvailableTags(prev => prev.filter(t => t.id !== tagId));
+            setSelectedTags(prev => prev.filter(id => id !== tagId));
+        } catch { alert("Failed to delete tag"); }
     };
 
     const toggleTag = (tagId: string) => {
@@ -178,7 +195,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
                             <div className="flex flex-col items-center justify-center border-4 border-dashed border-gray-100 rounded-[2rem] p-12 hover:bg-gray-50/50 hover:border-blue-100 transition-all cursor-pointer relative overflow-hidden group">
                                 {formData.imageUrl ? (
                                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg">
-                                        <img src={formData.imageUrl} alt="Job Cover" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                        <Image src={formData.imageUrl} alt="Job Cover" fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
                                             <p className="text-white font-black uppercase tracking-widest text-sm flex items-center gap-2">
                                                 <Upload size={18} /> Thay đổi ảnh
@@ -226,7 +243,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
                     </div>
                     <Card noPadding className="border-none shadow-xl shadow-gray-100/50 overflow-hidden">
                         <div className="p-6 space-y-6">
-                            <Dropdown icon={User} label="Loại hình công việc" options={jobTypeOptions} value={formData.jobType} onChange={val => setFormData({ ...formData, jobType: val })} />
+                            <Dropdown icon={User} label="Loại hình công việc" options={jobTypeOptions} value={formData.jobType || 'unskilled'} onChange={val => setFormData({ ...formData, jobType: val })} />
 
                             <div className="space-y-2">
                                 <label className="block text-xs font-black text-gray-400 uppercase tracking-[0.15em] ml-2">Mức lương (VND)</label>
@@ -264,7 +281,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
 
                             <Input icon={MapPin} label="Địa điểm làm việc" required value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
                             <Input icon={Briefcase} label="Kinh nghiệm (Năm)" type="number" min={0} value={formData.experienceYears} onChange={e => setFormData({ ...formData, experienceYears: Math.max(0, Number(e.target.value)) })} />
-                            <Input icon={Calendar} label="Hạn nộp hồ sơ" type="date" value={formData.deadline} onChange={e => setFormData({ ...formData, deadline: e.target.value })} />
+                            <Input icon={Calendar} label="Hạn nộp hồ sơ" type="date" value={formData.deadline as string} onChange={e => setFormData({ ...formData, deadline: e.target.value })} />
                         </div>
                     </Card>
                 </div>
@@ -323,6 +340,3 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel, tit
         </form>
     );
 }
-
-// Add custom scrollbar styles or ensure they exist globally
-// .custom-scrollbar::-webkit-scrollbar { width: 4px; }

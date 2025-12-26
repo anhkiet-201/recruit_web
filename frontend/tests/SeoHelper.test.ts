@@ -20,7 +20,7 @@ const testGenerateSeoMetadata = () => {
     assert.strictEqual(result1.description, SEO_CONSTANTS.DEFAULT_DESCRIPTION, "Should use default description");
 
     // Check default OG image
-    // @ts-ignore - access internal structure
+    // @ts-expect-error - access internal structure
     const ogImages = result1.openGraph?.images;
     assert.ok(Array.isArray(ogImages), "OG images should be an array");
     assert.strictEqual(ogImages[0].url, SEO_CONSTANTS.DEFAULT_OG_IMAGE, "Should use default OG image");
@@ -40,15 +40,15 @@ const testGenerateSeoMetadata = () => {
     assert.strictEqual(result2.title, `Senior Engineer${SEO_CONSTANTS.SEPARATOR}${SEO_CONSTANTS.DEFAULT_TITLE}`, "Title matches");
     assert.strictEqual(result2.description, "Great job opportunity", "Description matches");
 
-    // @ts-ignore
+    // @ts-expect-error
     assert.strictEqual(result2.openGraph.images[0].url, "https://example.com/image.jpg", "Custom OG image matches");
 
-    // @ts-ignore
+    // @ts-expect-error
     assert.strictEqual(result2.alternates.canonical, "https://example.com/job/1", "Canonical URL matches");
 
     assert.deepStrictEqual(result2.keywords, ["tech", "job"], "Keywords match");
 
-    // @ts-ignore
+    // @ts-expect-error
     assert.strictEqual(result2.robots.index, false, "NoIndex applied");
 
     console.log("SeoHelper tests passed!");

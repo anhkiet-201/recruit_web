@@ -40,6 +40,7 @@ export default function Input({
                     </div>
                 )}
                 <Component
+                    rows={isTextArea ? rows : undefined}
                     className={`
                         block w-full bg-white text-gray-900 text-sm font-medium
                         rounded-2xl border-none shadow-xl shadow-gray-100/50
@@ -51,6 +52,7 @@ export default function Input({
                         ${props.readOnly ? "bg-gray-50/50 shadow-none cursor-default" : ""}
                         ${inputClassName}
                     `}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     {...(props as any)}
                 />
             </div>

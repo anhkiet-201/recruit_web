@@ -25,16 +25,20 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
     }
 
     try {
-      const { GoogleGenAI } = await import("@google/genai");
+      const { GoogleGenAI } = await import('@google/genai');
       this.client = new GoogleGenAI({
         apiKey: apiKey || '',
       });
     } catch (error) {
-      console.error("Failed to load GoogleGenAI SDK:", error);
+      console.error('Failed to load GoogleGenAI SDK:', error);
     }
 
-    this.embeddingModel = (process.env.AI_EMBEDDING_MODEL || "text-embedding-004").trim();
-    this.chatModel = (process.env.AI_CHAT_MODEL || "gemini-2.0-flash-exp").trim();
+    this.embeddingModel = (
+      process.env.AI_EMBEDDING_MODEL || 'text-embedding-004'
+    ).trim();
+    this.chatModel = (
+      process.env.AI_CHAT_MODEL || 'gemini-2.0-flash-exp'
+    ).trim();
   }
 
   /**
@@ -42,10 +46,10 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
    * Dùng để so sánh độ tương đồng ngữ nghĩa.
    */
   async generateEmbedding(text: string): Promise<number[]> {
-    if (!this.client) throw new Error("AI Provider not initialized");
+    if (!this.client) throw new Error('AI Provider not initialized');
     const result = await this.client.models.embedContent({
       model: this.embeddingModel,
-      contents: [text]
+      contents: [text],
     });
     return result.embeddings?.[0]?.values || [];
   }
@@ -54,17 +58,17 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
    * Tạo văn bản đơn giản (One-shot generation).
    */
   async generateText(prompt: string): Promise<string> {
-    if (!this.client) throw new Error("AI Provider not initialized");
+    if (!this.client) throw new Error('AI Provider not initialized');
     const result = await this.client.models.generateContent({
       model: this.chatModel,
-      contents: [prompt]
+      contents: [prompt],
     });
-    return result.text || "";
+    return result.text || '';
   }
 
   /**
    * Xử lý hội thoại Chat với đầy đủ ngữ cảnh và công cụ.
-   * 
+   *
    * @param systemInstruction Hướng dẫn hệ thống (Persona, Rules).
    * @param history Lịch sử chat (đã được map sang format của Gemini).
    * @param message Tin nhắn mới nhất của người dùng.
@@ -74,16 +78,16 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
     systemInstruction: string,
     history: { role: string; parts: string }[],
     message: string,
-    tools?: any[]
+    tools?: any[],
   ): Promise<AiResponse> {
-    if (!this.client) throw new Error("AI Provider not initialized");
+    if (!this.client) throw new Error('AI Provider not initialized');
 
     // 1. Cấu hình (Configuration)
     const chatConfig: any = {
       systemInstruction: { parts: [{ text: systemInstruction }] },
       generationConfig: {
         maxOutputTokens: 2048,
-        temperature: 0
+        temperature: 0,
       },
     };
 
@@ -94,21 +98,21 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
 
     // 2. Chuẩn bị Lịch sử (Map roles)
     // Gemini dùng 'model' cho bot, trong khi app dùng 'assistant'.
-    const formattedHistory = history.map(h => ({
-        role: h.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: h.parts }]
+    const formattedHistory = history.map((h) => ({
+      role: h.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: h.parts }],
     }));
 
     // 3. Khởi tạo phiên Chat
     const chat = this.client.chats.create({
       model: this.chatModel,
       history: formattedHistory,
-      config: chatConfig, 
+      config: chatConfig,
     });
 
     try {
       if (!message || message.trim() === '') {
-          throw new Error("Message content cannot be empty");
+        throw new Error('Message content cannot be empty');
       }
 
       // 4. Gửi tin nhắn
@@ -116,7 +120,7 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
 
       // 5. Xử lý phản hồi (Safe Parsing)
       // Do SDK @google/genai có thể thay đổi cấu trúc trả về, ta cần kiểm tra kỹ.
-      let text = "";
+      let text = '';
       let functionCalls: any[] = [];
 
       // Kiểm tra Function Call (Hỗ trợ cả dạng hàm và dạng thuộc tính)
@@ -125,44 +129,49 @@ export class GeminiProvider implements IAiProvider, OnModuleInit {
         if (Array.isArray(calls)) functionCalls = calls;
       } else if (Array.isArray(result.functionCalls)) {
         functionCalls = result.functionCalls;
-      } else if (Array.isArray(result.candidates) && result.candidates.length > 0) {
+      } else if (
+        Array.isArray(result.candidates) &&
+        result.candidates.length > 0
+      ) {
         // Fallback: Kiểm tra thủ công trong candidates nếu method trên không trả về dữ liệu
         const parts = result.candidates[0]?.content?.parts || [];
         const fcPart = parts.find((p: any) => p.functionCall);
         if (fcPart) {
-            functionCalls = [fcPart.functionCall];
+          functionCalls = [fcPart.functionCall];
         }
       }
 
       // Trích xuất Text
       try {
         if (typeof result.text === 'function') {
-             text = result.text();
+          text = result.text();
         } else if (typeof result.text === 'string') {
-             text = result.text;
+          text = result.text;
         } else if (result.candidates && result.candidates[0]?.content?.parts) {
-             text = result.candidates[0].content.parts.map((p: any) => p.text).join('');
+          text = result.candidates[0].content.parts
+            .map((p: any) => p.text)
+            .join('');
         }
       } catch (e) {
-          if (functionCalls.length === 0) console.warn("Gemini: Could not extract text", e);
+        if (functionCalls.length === 0)
+          console.warn('Gemini: Could not extract text', e);
       }
 
       // Trả về kết quả
       if (functionCalls.length > 0) {
         return {
-          text: text || "",
+          text: text || '',
           toolCall: {
             name: functionCalls[0].name,
-            args: functionCalls[0].args
-          }
+            args: functionCalls[0].args,
+          },
         };
       }
 
       return { text: text };
-
     } catch (error) {
-      console.error("Gemini Chat Critical Error:", error);
-      return { text: "Xin lỗi, hệ thống AI đang gặp sự cố kết nối." };
+      console.error('Gemini Chat Critical Error:', error);
+      return { text: 'Xin lỗi, hệ thống AI đang gặp sự cố kết nối.' };
     }
   }
 }

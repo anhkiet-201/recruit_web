@@ -9,6 +9,6 @@ import { AiModule } from '../ai/ai.module';
   imports: [PrismaModule, UploadModule, AiModule],
   controllers: [UsersController],
   providers: [UsersService],
-  exports: [UsersService]
+  exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

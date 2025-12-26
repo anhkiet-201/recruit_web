@@ -3,11 +3,11 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TagsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-  create(createTagDto: any) {
+  create(createTagDto: { name: string }) {
     return this.prisma.tag.create({
-      data: { name: createTagDto.name }
+      data: { name: createTagDto.name },
     });
   }
 
@@ -17,26 +17,26 @@ export class TagsService {
 
   async addTagToJob(jobId: string, tagId: string) {
     return this.prisma.jobTag.create({
-      data: { jobId, tagId }
+      data: { jobId, tagId },
     });
   }
 
   async removeTagFromJob(jobId: string, tagId: string) {
     return this.prisma.jobTag.delete({
-      where: { jobId_tagId: { jobId, tagId } }
+      where: { jobId_tagId: { jobId, tagId } },
     });
   }
 
   async getJobTags(jobId: string) {
     return this.prisma.jobTag.findMany({
       where: { jobId },
-      include: { tag: true }
+      include: { tag: true },
     });
   }
 
   async remove(id: string) {
     return this.prisma.tag.delete({
-      where: { id }
+      where: { id },
     });
   }
 }

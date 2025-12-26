@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Search, Briefcase, Sparkles } from "lucide-react";
 import { JobService } from "@/services/jobService";
 import { useTranslations } from "next-intl";
@@ -16,7 +16,6 @@ export default function TitleSelector({ defaultValue = "", value, onChange }: Ti
     // Ưu tiên dùng value từ props nếu có (controlled), ngược lại dùng defaultValue
     const [inputValue, setInputValue] = useState(value !== undefined ? value : defaultValue);
     const [suggestions, setSuggestions] = useState<string[]>([]);
-    const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -32,15 +31,15 @@ export default function TitleSelector({ defaultValue = "", value, onChange }: Ti
         JobService.getSuggestions().then(setSuggestions).catch(console.error);
     }, []);
 
-    useEffect(() => {
+    const filteredSuggestions = useMemo(() => {
         // Filter based on input
         if (inputValue.trim() === "") {
-            setFilteredSuggestions(suggestions.slice(0, 5));
+            return suggestions.slice(0, 5);
         } else {
             const filtered = suggestions.filter(item =>
                 item.toLowerCase().includes(inputValue.toLowerCase())
             );
-            setFilteredSuggestions(filtered.slice(0, 8)); // Limit to 8 results
+            return filtered.slice(0, 8); // Limit to 8 results
         }
     }, [inputValue, suggestions]);
 

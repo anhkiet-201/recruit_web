@@ -1,17 +1,21 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateApplicationDto } from './dto/create-application.dto';
 
 @Injectable()
 export class ApplicationsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-  async submitApplication(userId: string, createApplicationDto: any) {
+  async submitApplication(
+    userId: string,
+    createApplicationDto: CreateApplicationDto,
+  ) {
     // 1. Check if user already applied for this job
     const existing = await this.prisma.application.findFirst({
       where: {
         jobId: createApplicationDto.jobId,
-        userId: userId
-      }
+        userId: userId,
+      },
     });
 
     if (existing) {
@@ -25,12 +29,14 @@ export class ApplicationsService {
           jobId: createApplicationDto.jobId,
           userId: userId,
           cvUrl: createApplicationDto.cvUrl,
-          status: 'pending'
-        }
+          status: 'pending',
+        },
       });
     } catch (error) {
       console.error('Prisma Error:', error);
-      throw new BadRequestException('Không thể gửi hồ sơ. Vui lòng kiểm tra lại thông tin.');
+      throw new BadRequestException(
+        'Không thể gửi hồ sơ. Vui lòng kiểm tra lại thông tin.',
+      );
     }
   }
 
@@ -39,10 +45,10 @@ export class ApplicationsService {
       where: { userId },
       include: {
         job: {
-          select: { title: true }
-        }
+          select: { title: true },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -50,14 +56,22 @@ export class ApplicationsService {
     return this.prisma.application.findMany({
       where: {
         job: {
-          authorId: employerId
-        }
+          authorId: employerId,
+        },
       },
       include: {
         job: { select: { title: true, authorId: true } },
-        user: { select: { name: true, email: true, phone: true, address: true, avatarUrl: true } }
+        user: {
+          select: {
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            avatarUrl: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -65,16 +79,25 @@ export class ApplicationsService {
     return this.prisma.application.findMany({
       include: {
         job: { select: { title: true } },
-        user: { select: { name: true, email: true, phone: true, address: true, avatarUrl: true } }
+        user: {
+          select: {
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            avatarUrl: true,
+            createdAt: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   async updateStatus(id: string, status: string) {
     return this.prisma.application.update({
       where: { id },
-      data: { status }
+      data: { status },
     });
   }
 }

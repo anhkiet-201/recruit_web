@@ -13,11 +13,11 @@ export const JobService = {
 
     getJobById: async (id: string, options?: { incrementView?: boolean }): Promise<Job | null> => {
         try {
-            const url = options?.incrementView === false 
-                ? `/jobs/${id}?incrementView=false` 
+            const url = options?.incrementView === false
+                ? `/jobs/${id}?incrementView=false`
                 : `/jobs/${id}`;
             return await api.get<Job>(url);
-        } catch (error) {
+        } catch {
             return null;
         }
     },
@@ -56,7 +56,7 @@ export const JobService = {
         return api.get<Job[]>(`/jobs/hot?limit=${limit}`);
     },
 
-    createJob: async (jobData: any): Promise<Job> => {
+    createJob: async (jobData: Partial<Job>): Promise<Job> => {
         return api.post<Job>('/jobs', jobData);
     },
 
@@ -72,7 +72,7 @@ export const JobService = {
         return api.patch(`/jobs/${id}/approve`, { status });
     },
 
-    importJobs: async (file: File): Promise<{ count: number; errors: any[] }> => {
+    importJobs: async (file: File): Promise<{ count: number; errors: { row: number; error: string }[] }> => {
         const formData = new FormData();
         formData.append('file', file);
         return api.post('/jobs/import', formData);
@@ -84,9 +84,10 @@ export const JobService = {
 
         const response = await api.post<{ url: string }>('/upload', formData);
 
-        return (response as any).url || "https://placehold.co/800x400";
+        return response.url || "https://placehold.co/800x400";
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     deleteJobImage: async (imageUrl: string): Promise<void> => {
         // Implementation depends on backend, often just ignoring for now or calling a specific endpoint
         console.log('Delete image not fully implemented in backend yet');

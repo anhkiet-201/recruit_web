@@ -42,6 +42,7 @@ export default function Dropdown({
     const selectedOption = options.find(opt => opt.value === value);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
     }, []);
 
