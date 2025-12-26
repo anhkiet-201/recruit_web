@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { Job } from "@/models/Job";
 import { MapPin, DollarSign, Zap, GraduationCap, Award, ChevronRight, Clock, Briefcase, Eye, Sparkles, ArrowRight, Calendar } from "lucide-react";
@@ -9,7 +10,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { formatSalaryRange } from "@/utils/currency";
 import { JobStatus } from "@/models/JobStatus";
 
-export default function JobCard({ job, isApplied = false, priority = false }: { job: Job; isApplied?: boolean; priority?: boolean; }) {
+const JobCard = memo(function JobCard({ job, isApplied = false, priority = false }: { job: Job; isApplied?: boolean; priority?: boolean; }) {
     const t = useTranslations("JobCard");
     const tDetail = useTranslations("JobDetail");
     const locale = useLocale();
@@ -124,14 +125,14 @@ export default function JobCard({ job, isApplied = false, priority = false }: { 
                     </div>
 
                     {/* Tags */}
-                    {(job as any).jobTags && (job as any).jobTags.length > 0 && (
+                    {job.jobTags && job.jobTags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-8">
-                            {(job as any).jobTags.slice(0, 3).map((jt: any) => (
+                            {job.jobTags.slice(0, 3).map((jt) => (
                                 <span key={jt.tagId} className="px-2.5 py-1 bg-gray-100/80 text-[10px] font-bold text-gray-400 group-hover:text-gray-500 group-hover:bg-white border border-transparent group-hover:border-gray-100 rounded-lg tracking-wide transition-all shadow-sm">
                                     #{jt.tag.name}
                                 </span>
                             ))}
-                            {(job as any).jobTags.length > 3 && (
+                            {job.jobTags.length > 3 && (
                                 <span className="text-[10px] font-black text-gray-300 px-1 py-1">...</span>
                             )}
                         </div>
@@ -151,4 +152,6 @@ export default function JobCard({ job, isApplied = false, priority = false }: { 
             </div>
         </Link>
     );
-}
+});
+
+export default JobCard;

@@ -16,6 +16,12 @@ export interface Job {
     jobType?: string;
     views?: number;
     tags?: string[];
+    jobTags?: {
+        tagId: string;
+        tag: {
+            name: string;
+        };
+    }[];
     author?: {
         id: string;
         name: string;
