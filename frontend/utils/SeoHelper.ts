@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { SEO_CONSTANTS } from "../constants/SeoConstants";
+import { getSeoConstants } from "../constants/SeoConstants";
 
 export interface SeoDto {
     title?: string;
@@ -11,16 +11,18 @@ export interface SeoDto {
 }
 
 export class SeoHelper {
-    static generateSeoMetadata(dto: SeoDto): Metadata {
-        const title = dto.title
-            ? `${dto.title}${SEO_CONSTANTS.SEPARATOR}${SEO_CONSTANTS.DEFAULT_TITLE}`
-            : SEO_CONSTANTS.DEFAULT_TITLE;
+    static generateSeoMetadata(dto: SeoDto, locale: string = 'vi'): Metadata {
+        const constants = getSeoConstants(locale);
 
-        const description = dto.description || SEO_CONSTANTS.DEFAULT_DESCRIPTION;
+        const title = dto.title
+            ? `${dto.title}${constants.SEPARATOR}${constants.DEFAULT_TITLE}`
+            : constants.DEFAULT_TITLE;
+
+        const description = dto.description || constants.DEFAULT_DESCRIPTION;
 
         const images = dto.ogImage
             ? [{ url: dto.ogImage }]
-            : [{ url: SEO_CONSTANTS.DEFAULT_OG_IMAGE }];
+            : [{ url: constants.DEFAULT_OG_IMAGE }];
 
         const metadata: Metadata = {
             title,
@@ -28,7 +30,7 @@ export class SeoHelper {
             openGraph: {
                 title,
                 description,
-                siteName: SEO_CONSTANTS.SITE_NAME,
+                siteName: constants.SITE_NAME,
                 images: images,
                 type: "website",
             },
@@ -37,7 +39,7 @@ export class SeoHelper {
                 title,
                 description,
                 images: images,
-                creator: SEO_CONSTANTS.TWITTER_HANDLE,
+                creator: constants.TWITTER_HANDLE,
             },
         };
 

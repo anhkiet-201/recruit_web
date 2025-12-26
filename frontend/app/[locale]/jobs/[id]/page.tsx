@@ -13,7 +13,7 @@ export async function generateMetadata(
     { params, searchParams }: Props,
     parent: ResolvingMetadata
 ): Promise<Metadata> {
-    const { id } = await params;
+    const { id, locale } = await params;
 
     // IncrementView: false because crawlers/metadata generation shouldn't count as a view
     const job = await JobService.getJobById(id, { incrementView: false });
@@ -28,7 +28,7 @@ export async function generateMetadata(
         title: job.title,
         description: job.content ? job.content.substring(0, 160) + "..." : undefined,
         ogImage: job.imageUrl,
-    });
+    }, locale);
 }
 
 export default async function JobDetailPage({ params }: Props) {

@@ -12,18 +12,49 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from "next/navigation";
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 import { getCompanyInfo } from "@/constants/CompanyConstants";
+import { getSeoConstants } from "@/constants/SeoConstants";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const companyInfo = getCompanyInfo(locale);
+  const seoData = getSeoConstants(locale);
   const ogLocale = locale === 'vi' ? 'vi_VN' : locale === 'zh' ? 'zh_CN' : 'en_US';
 
   return {
-    title: "TTN HR - Tìm công việc mơ ước",
-    description: companyInfo.description,
-    openGraph: { locale: ogLocale },
+    title: {
+      default: seoData.DEFAULT_TITLE,
+      template: `%s | ${seoData.SITE_NAME}`,
+    },
+    description: companyInfo.description || seoData.DEFAULT_DESCRIPTION,
+    keywords: companyInfo.areaServed ? [...companyInfo.areaServed, "Tuyển dụng", "Việc làm", "Human Resources"] : ["Tuyển dụng", "Việc làm"],
+    authors: [{ name: companyInfo.legalName }],
+    openGraph: {
+      title: seoData.DEFAULT_TITLE,
+      description: companyInfo.description || seoData.DEFAULT_DESCRIPTION,
+      locale: ogLocale,
+      siteName: seoData.SITE_NAME,
+      images: [
+        {
+          url: companyInfo.logo,
+          width: 1200,
+          height: 630,
+          alt: companyInfo.name,
+        },
+      ],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seoData.DEFAULT_TITLE,
+      description: companyInfo.description || seoData.DEFAULT_DESCRIPTION,
+      images: [companyInfo.logo],
+      creator: seoData.TWITTER_HANDLE,
+    },
+    icons: {
+        icon: '/favicon.ico',
+    }
   };
 }
 
