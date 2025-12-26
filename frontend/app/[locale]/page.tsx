@@ -1,10 +1,9 @@
 import { JobService } from "@/services/jobService";
 import JobFeed from "@/components/JobFeed";
 import JobCard from "@/components/JobCard";
-import { Search, Briefcase, Users, Building2, MapPin, TrendingUp, Flame, Sparkles, Zap, Award, GraduationCap } from "lucide-react";
+import { Briefcase, Building2, TrendingUp, Flame, Sparkles, Zap, Award, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import JobSearchBar from "@/components/JobSearchBar";
-import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 
 export const dynamic = 'force-dynamic';
@@ -67,7 +66,7 @@ export default async function HomePage({
 
             {/* 2. MAIN CONTENT SECTION - Unified background */}
             <main className="relative">
-                <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-white to-transparent pointer-events-none"></div>
+                <div className="absolute top-0 left-0 right-0 h-40 bg-linear-to-b from-white to-transparent pointer-events-none"></div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
                     <div className="space-y-32">
@@ -75,7 +74,7 @@ export default async function HomePage({
                             <>
                                 <section>
                                     <div className="flex items-center gap-4 mb-12">
-                                        <div className="p-4 bg-white rounded-[1.5rem] shadow-xl text-blue-600 border border-gray-100"><TrendingUp size={28} /></div>
+                                        <div className="p-4 bg-white rounded-3xl shadow-xl text-blue-600 border border-gray-100"><TrendingUp size={28} /></div>
                                         <div>
                                             <h2 className="text-3xl font-black text-gray-900 tracking-tight">{t('trendingTitle')}</h2>
                                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1 ml-0.5">{t('trendingSubtitle')}</p>
@@ -88,7 +87,7 @@ export default async function HomePage({
 
                                 <section>
                                     <div className="flex items-center gap-4 mb-12">
-                                        <div className="p-4 bg-white rounded-[1.5rem] shadow-xl text-orange-600 border border-gray-100"><Flame size={28} /></div>
+                                        <div className="p-4 bg-white rounded-3xl shadow-xl text-orange-600 border border-gray-100"><Flame size={28} /></div>
                                         <div>
                                             <h2 className="text-3xl font-black text-gray-900 tracking-tight">{t('hotTitle')}</h2>
                                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1 ml-0.5">{t('hotSubtitle')}</p>
@@ -104,7 +103,7 @@ export default async function HomePage({
                         <section>
                             <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
                                 <div className="flex items-center gap-4 w-full md:w-auto">
-                                    <div className="p-4 bg-white rounded-[1.5rem] shadow-xl text-indigo-600 border border-gray-100">
+                                    <div className="p-4 bg-white rounded-3xl shadow-xl text-indigo-600 border border-gray-100">
                                         <Briefcase size={28} />
                                     </div>
                                     <div>
@@ -118,7 +117,7 @@ export default async function HomePage({
                                 </div>
 
                                 <div className="w-full md:w-auto relative">
-                                    <div className="p-1 bg-white/60 backdrop-blur-xl rounded-[1.5rem] md:rounded-[2rem] shadow-xl border border-gray-100 flex items-center overflow-x-auto no-scrollbar scroll-smooth">
+                                    <div className="p-1 bg-white/60 backdrop-blur-xl rounded-3xl md:rounded-4xl shadow-xl border border-gray-100 flex items-center overflow-x-auto no-scrollbar scroll-smooth">
                                         <div className="flex items-center gap-1 md:gap-2 px-1">
                                             {[
                                                 { id: 'all', label: 'tabs.all', icon: Briefcase },
@@ -130,7 +129,7 @@ export default async function HomePage({
                                                 const isActive = currentJobType === tab.id;
                                                 return (
                                                     <Link key={tab.id} href={getFilterUrl(tab.id)} scroll={false}
-                                                        className={`flex items-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl md:rounded-[1.5rem] transition-all whitespace-nowrap ${isActive ? "bg-blue-600 text-white shadow-xl" : "text-gray-400 hover:text-gray-900 hover:bg-white/50"
+                                                        className={`flex items-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl md:rounded-3xl transition-all whitespace-nowrap ${isActive ? "bg-blue-600 text-white shadow-xl" : "text-gray-400 hover:text-gray-900 hover:bg-white/50"
                                                             }`}
                                                     >
                                                         <Icon size={14} /> {t(tab.label)}
@@ -147,7 +146,7 @@ export default async function HomePage({
                     </div>
                 </div>
 
-                <div className="h-64 bg-gradient-to-b from-transparent to-blue-600 mt-20"></div>
+                <div className="h-64 bg-linear-to-b from-transparent to-blue-600 mt-20"></div>
             </main>
 
             <section className="bg-blue-600 py-32 relative overflow-hidden">
@@ -155,7 +154,7 @@ export default async function HomePage({
                     <div className="bg-white/10 backdrop-blur-3xl rounded-[4rem] p-12 md:p-24 border border-white/20 shadow-2xl">
                         <div className="flex flex-col lg:flex-row items-center justify-between gap-16">
                             <div className="text-center lg:text-left">
-                                <h2 className="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter leading-[1]">{t('employerSection.title')}</h2>
+                                <h2 className="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter leading-none">{t('employerSection.title')}</h2>
                                 <p className="text-blue-100 text-xl md:text-2xl mb-12 max-w-xl font-medium leading-relaxed opacity-90">
                                     {t('employerSection.subtitle')}
                                 </p>

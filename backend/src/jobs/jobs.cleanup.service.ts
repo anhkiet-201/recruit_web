@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class JobsCleanupService {
   private readonly logger = new Logger(JobsCleanupService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCleanup() {
@@ -20,14 +20,20 @@ export class JobsCleanupService {
     const now = new Date();
     const expiredJobs = await this.prisma.job.updateMany({
       where: { status: JobStatus.ACTIVE, deadline: { lt: now } },
-      data: { status: JobStatus.EXPIRED }
+      data: { status: JobStatus.EXPIRED },
     });
 
     if (expiredJobs.count > 0) {
-      const closedJobIds = await this.prisma.job.findMany({ where: { status: JobStatus.EXPIRED, deadline: { lt: now } }, select: { id: true } });
-      const ids = closedJobIds.map(j => j.id);
+      const closedJobIds = await this.prisma.job.findMany({
+        where: { status: JobStatus.EXPIRED, deadline: { lt: now } },
+        select: { id: true },
+      });
+      const ids = closedJobIds.map((j) => j.id);
       if (ids.length > 0) {
-        await this.prisma.application.updateMany({ where: { jobId: { in: ids }, status: 'pending' }, data: { status: 'expired' } });
+        await this.prisma.application.updateMany({
+          where: { jobId: { in: ids }, status: 'pending' },
+          data: { status: 'expired' },
+        });
       }
     }
   }
@@ -39,8 +45,8 @@ export class JobsCleanupService {
     // Delete guests who haven't been active for 7 days
     const deleted = await this.prisma.guest.deleteMany({
       where: {
-        lastActive: { lt: sevenDaysAgo }
-      }
+        lastActive: { lt: sevenDaysAgo },
+      },
     });
 
     if (deleted.count > 0) {

@@ -1,9 +1,14 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import * as bcrypt from 'bcrypt';
+import { UserDto, LoginResponseDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,16 +24,16 @@ export class AuthService {
     );
   }
 
-  async validateUser(email: string, pass: string): Promise<any> {
+  async validateUser(email: string, pass: string): Promise<UserDto | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user && user.password && (await bcrypt.compare(pass, user.password))) {
-      const { password, ...result } = user;
+      const { ...result } = user;
       return result;
     }
     return null;
   }
 
-  async login(user: any) {
+  login(user: UserDto): LoginResponseDto {
     const payload = { email: user.email, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
@@ -37,12 +42,14 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-      }
+      },
     };
   }
 
   async register(email: string, pass: string, name: string, guestId?: string) {
-    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
@@ -64,11 +71,13 @@ export class AuthService {
           where: { guestId },
           data: {
             userId: user.id,
-            guestId: null // Clear guest link
-          }
+            guestId: null, // Clear guest link
+          },
         });
         // Delete the guest record as it's no longer needed
-        await this.prisma.guest.delete({ where: { id: guestId } }).catch(() => { });
+        await this.prisma.guest
+          .delete({ where: { id: guestId } })
+          .catch(() => {});
       } catch (e) {
         console.warn('Migration of guest history failed', e);
       }
@@ -80,7 +89,7 @@ export class AuthService {
   async getUserById(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (user) {
-      const { password, ...result } = user;
+      const { ...result } = user;
       return result;
     }
     return null;
@@ -116,7 +125,9 @@ export class AuthService {
               where: { guestId },
               data: { userId: user.id, guestId: null },
             });
-            await this.prisma.guest.delete({ where: { id: guestId } }).catch(() => { });
+            await this.prisma.guest
+              .delete({ where: { id: guestId } })
+              .catch(() => {});
           } catch (e) {
             console.warn('Migration failed', e);
           }

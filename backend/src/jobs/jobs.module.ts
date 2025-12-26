@@ -9,6 +9,6 @@ import { AiModule } from '../ai/ai.module';
   imports: [UploadModule, forwardRef(() => AiModule)],
   controllers: [JobsController],
   providers: [JobsService, JobsCleanupService],
-  exports: [JobsService]
+  exports: [JobsService],
 })
-export class JobsModule { }
+export class JobsModule {}

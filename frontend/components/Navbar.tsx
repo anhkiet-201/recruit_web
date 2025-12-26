@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 import { useRouter, usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
-import { LogOut, LayoutDashboard, ShieldCheck, User as UserIcon, Briefcase } from "lucide-react";
+import { LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
 import Image from "next/image";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
@@ -39,7 +39,7 @@ export default function Navbar() {
     if (isAdminPage) return null;
 
     return (
-        <nav className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-xl border-b border-gray-100/50 transition-all duration-300">
+        <nav className="sticky top-0 z-100 w-full bg-white/70 backdrop-blur-xl border-b border-gray-100/50 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-20">
 

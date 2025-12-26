@@ -18,7 +18,7 @@ export abstract class IAiProvider {
     systemInstruction: string,
     history: { role: string; parts: string }[],
     message: string,
-    tools?: any[]
+    tools?: any[],
   ): Promise<AiResponse>;
 }
 

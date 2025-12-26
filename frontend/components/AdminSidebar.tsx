@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, FileText, Users, Settings, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText, Users, LogOut, ShieldCheck } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 
 export default function AdminSidebar() {

@@ -2,7 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/routing";
-import { ChangeEvent, useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { Globe, Check } from "lucide-react";
 
 export default function LanguageSwitcher() {

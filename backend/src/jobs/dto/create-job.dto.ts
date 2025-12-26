@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, IsBoolean, IsUrl, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsInt,
+  IsUrl,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateJobDto {
@@ -47,8 +54,19 @@ export class CreateJobDto {
   @IsOptional()
   jobType?: string;
 
-  @ApiProperty({ example: 'ACTIVE', required: false, enum: ['DRAFT', 'ACTIVE', 'EXPIRED', 'REVIEWING', 'ACCEPTED', 'REJECTED'] })
+  @ApiProperty({
+    example: 'ACTIVE',
+    required: false,
+    enum: ['DRAFT', 'ACTIVE', 'EXPIRED', 'REVIEWING', 'ACCEPTED', 'REJECTED'],
+  })
   @IsString()
   @IsOptional()
   status?: string;
+
+  @ApiProperty({
+    example: ['uuid1', 'uuid2'],
+    required: false,
+  })
+  @IsOptional()
+  tags?: string[];
 }

@@ -2,7 +2,6 @@
 
 import Image, { ImageProps } from "next/image";
 import { useState } from "react";
-import { ImageIcon } from "lucide-react";
 
 interface ImageComponentProps extends Omit<ImageProps, "onError"> {
     fallbackSrc?: string;

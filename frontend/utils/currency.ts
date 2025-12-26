@@ -32,6 +32,7 @@ export const formatCurrency = (amount: number, locale: string): string => {
     try {
         return new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : (locale === 'en' ? 'en-US' : 'zh-CN'), options).format(convertedAmount);
     } catch (error) {
+        console.error("Format currency failed", error);
         return `${amount}`;
     }
 };

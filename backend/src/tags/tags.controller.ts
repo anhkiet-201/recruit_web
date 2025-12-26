@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -6,12 +14,12 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 @ApiTags('tags')
 @Controller('tags')
 export class TagsController {
-  constructor(private readonly tagsService: TagsService) { }
+  constructor(private readonly tagsService: TagsService) {}
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Post()
-  create(@Body() createTagDto: any) {
+  create(@Body() createTagDto: { name: string }) {
     return this.tagsService.create(createTagDto);
   }
 
@@ -42,7 +50,10 @@ export class TagsController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Delete('job/:jobId/:tagId')
-  removeTagFromJob(@Param('jobId') jobId: string, @Param('tagId') tagId: string) {
+  removeTagFromJob(
+    @Param('jobId') jobId: string,
+    @Param('tagId') tagId: string,
+  ) {
     return this.tagsService.removeTagFromJob(jobId, tagId);
   }
 }

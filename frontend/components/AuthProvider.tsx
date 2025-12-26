@@ -4,7 +4,7 @@ import { UserProfile } from "@/models/User";
 import { AuthService } from "@/services/auth";
 
 interface AuthContextType {
-    user: any | null; // Keeps 'user' for compatibility
+    user: UserProfile | null;
     profile: UserProfile | null;
     loading: boolean;
     refreshProfile: () => Promise<void>;
@@ -14,7 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({ user: null, profile: null, loading: true, refreshProfile: async () => { }, logout: () => { } });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<any | null>(null);
+    const [user, setUser] = useState<UserProfile | null>(null);
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 

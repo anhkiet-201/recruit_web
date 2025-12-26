@@ -17,16 +17,19 @@ export class MinioService implements OnModuleInit {
       useSSL: process.env.MINIO_USE_SSL === 'true',
       accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
       secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
-      region: process.env.MINIO_REGION, 
+      region: process.env.MINIO_REGION,
     });
 
     try {
       const exists = await this.minioClient.bucketExists(this.bucketName);
       if (!exists) {
-        await this.minioClient.makeBucket(this.bucketName, process.env.MINIO_REGION || 'us-east-1');
+        await this.minioClient.makeBucket(
+          this.bucketName,
+          process.env.MINIO_REGION || 'us-east-1',
+        );
         console.log(`Bucket ${this.bucketName} created successfully.`);
       } else {
-          console.log(`Bucket ${this.bucketName} already exists.`);
+        console.log(`Bucket ${this.bucketName} already exists.`);
       }
 
       // Always ensure policy is public readonly on startup
@@ -41,7 +44,10 @@ export class MinioService implements OnModuleInit {
           },
         ],
       };
-      await this.minioClient.setBucketPolicy(this.bucketName, JSON.stringify(policy));
+      await this.minioClient.setBucketPolicy(
+        this.bucketName,
+        JSON.stringify(policy),
+      );
       console.log(`Bucket policy enforced to public.`);
     } catch (err) {
       console.error('Error initializing MinIO:', err);
@@ -51,7 +57,7 @@ export class MinioService implements OnModuleInit {
   async uploadFile(file: Express.Multer.File) {
     const timestamp = Date.now();
     const filename = `${timestamp}-${file.originalname.replace(/\s+/g, '-')}`;
-    
+
     await this.minioClient.putObject(
       this.bucketName,
       filename,
@@ -64,7 +70,7 @@ export class MinioService implements OnModuleInit {
 
     return {
       url: this.getFileUrl(filename),
-      filename: filename
+      filename: filename,
     };
   }
 
@@ -87,9 +93,11 @@ export class MinioService implements OnModuleInit {
     const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
     const host = process.env.MINIO_ENDPOINT || 'localhost';
     const port = process.env.MINIO_PORT || '9000';
-    
+
     // Check if port is standard (80/443) to hide it in URL
-    const isStandardPort = (protocol === 'http' && port == '80') || (protocol === 'https' && port == '443');
+    const isStandardPort =
+      (protocol === 'http' && port == '80') ||
+      (protocol === 'https' && port == '443');
     const portString = isStandardPort ? '' : `:${port}`;
 
     return `${protocol}://${host}${portString}/${this.bucketName}/${filename}`;

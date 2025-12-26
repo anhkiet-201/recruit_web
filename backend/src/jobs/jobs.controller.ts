@@ -1,23 +1,54 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+  UseInterceptors,
+  UploadedFile,
+  Request,
+} from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AiService } from '../ai/ai.service';
+import { CreateJobDto } from './dto/create-job.dto';
+import { UpdateJobDto } from './dto/update-job.dto';
+import type { RequestWithUser } from '../types/auth';
+
+interface JobQuery {
+  page?: number;
+  limit?: number;
+  status?: string;
+  authorId?: string;
+  title?: string;
+  location?: string;
+  jobType?: string;
+}
 
 @ApiTags('jobs')
 @Controller('jobs')
 export class JobsController {
   constructor(
     private readonly jobsService: JobsService,
-    private readonly aiService: AiService
-  ) { }
+    private readonly aiService: AiService,
+  ) {}
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Post()
-  @Post()
-  create(@Request() req, @Body() createJobDto: any) {
+  create(@Request() req: RequestWithUser, @Body() createJobDto: CreateJobDto) {
     return this.jobsService.create(createJobDto, req.user);
   }
 
@@ -47,16 +78,18 @@ export class JobsController {
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'authorId', required: false })
-  findAll(@Query() query: any) {
-    // If not admin/employer and status not provided, default to ACTIVE
-    // However, for simplicity, let's just pass query to service
+  findAll(@Query() query: JobQuery) {
     return this.jobsService.findAll(query);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Patch(':id/approve')
-  approve(@Param('id') id: string, @Body('status') status: 'ACTIVE' | 'REJECTED' | 'DRAFT', @Request() req) {
+  approve(
+    @Param('id') id: string,
+    @Body('status') status: 'ACTIVE' | 'REJECTED' | 'DRAFT',
+    @Request() req: RequestWithUser,
+  ) {
     if (req.user.role !== 'admin') {
       throw new Error('Bạn không có quyền thực hiện hành động này.');
     }
@@ -69,8 +102,9 @@ export class JobsController {
   @ApiQuery({ name: 'jobType', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  async search(@Request() req, @Query() query: any) {
+  async search(@Request() req: RequestWithUser, @Query() query: JobQuery) {
     const userId = req.user?.userId;
+
     const guestId = req.headers['x-guest-id'] as string;
     return this.jobsService.search({ ...query, userId, guestId });
   }
@@ -102,7 +136,10 @@ export class JobsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Query('incrementView') incrementView?: string) {
+  findOne(
+    @Param('id') id: string,
+    @Query('incrementView') incrementView?: string,
+  ) {
     const shouldIncrement = incrementView !== 'false';
     return this.jobsService.findOne(id, shouldIncrement);
   }
@@ -110,7 +147,11 @@ export class JobsController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateJobDto: any, @Request() req) {
+  update(
+    @Param('id') id: string,
+    @Body() updateJobDto: UpdateJobDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.jobsService.update(id, updateJobDto, req.user);
   }
 
