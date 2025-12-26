@@ -54,7 +54,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     icons: {
         icon: '/favicon.ico',
-    }
+    },
+    alternates: {
+        canonical: `${companyInfo.baseUrl}${locale === 'vi' ? '' : `/${locale}`}`,
+        languages: {
+            'vi-VN': `${companyInfo.baseUrl}`,
+            'en-US': `${companyInfo.baseUrl}/en`,
+            'zh-CN': `${companyInfo.baseUrl}/zh`,
+            'x-default': `${companyInfo.baseUrl}`,
+        },
+    },
   };
 }
 

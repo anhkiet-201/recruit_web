@@ -1,10 +1,12 @@
 import { MetadataRoute } from 'next';
 import { JobService } from '@/services/jobService';
+import { getCompanyInfo } from '@/constants/CompanyConstants';
 
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recruitweb.com';
+  const companyInfo = getCompanyInfo('vi');
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || companyInfo.baseUrl;
 
   // Static routes
   const routes: MetadataRoute.Sitemap = [
@@ -19,12 +21,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/employers`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.7,
     },
   ];
 
