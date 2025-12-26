@@ -20,7 +20,6 @@ interface JobFormProps {
     jobId?: string;
     onSubmit: (data: Partial<Job>, selectedTags: string[], initialTags: string[]) => Promise<void>;
     submitLabel: string;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     title: string;
 }
 
@@ -192,7 +191,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel }: J
                     </div>
                     <Card noPadding className="border-none shadow-xl shadow-gray-100/50 overflow-hidden">
                         <div className="p-8">
-                            <div className="flex flex-col items-center justify-center border-4 border-dashed border-gray-100 rounded-[2rem] p-12 hover:bg-gray-50/50 hover:border-blue-100 transition-all cursor-pointer relative overflow-hidden group">
+                            <div className="flex flex-col items-center justify-center border-4 border-dashed border-gray-100 rounded-4xl p-12 hover:bg-gray-50/50 hover:border-blue-100 transition-all cursor-pointer relative overflow-hidden group">
                                 {formData.imageUrl ? (
                                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg">
                                         <Image src={formData.imageUrl} alt="Job Cover" fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -257,7 +256,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel }: J
                                                         icon={DollarSign}
                                                         value={formData.salaryMin ? formData.salaryMin.toLocaleString('vi-VN') : ''}
                                                         onChange={e => setFormData({ ...formData, salaryMin: Number(e.target.value.replace(/\./g, '')) })}
-                                                        className="!space-y-0"
+                                                        className="space-y-0!"
                                                         inputClassName="!border-none !shadow-none !rounded-lg focus:!ring-0 !bg-transparent text-xs !font-bold text-gray-700 w-full text-right"
                                                     />
                                                 </td>
@@ -269,7 +268,7 @@ export default function JobForm({ initialData, jobId, onSubmit, submitLabel }: J
                                                         icon={DollarSign}
                                                         value={formData.salaryMax ? formData.salaryMax.toLocaleString('vi-VN') : ''}
                                                         onChange={e => setFormData({ ...formData, salaryMax: Number(e.target.value.replace(/\./g, '')) })}
-                                                        className="!space-y-0"
+                                                        className="space-y-0!"
                                                         inputClassName="!border-none !shadow-none !rounded-lg focus:!ring-0 !bg-transparent text-xs !font-bold text-gray-700 w-full text-right"
                                                     />
                                                 </td>

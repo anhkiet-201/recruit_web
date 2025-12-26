@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { 
     X, Send, Mail, Phone, GraduationCap, AlertCircle, 
-    FileText, CheckCircle, Upload, Check, Loader2 
+    FileText, Upload, Check,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { UserService } from "@/services/userService";
@@ -120,9 +120,9 @@ export default function ApplyJobDialog({ jobId, jobTitle, jobType, isOpen, onClo
             
             await refreshProfile();
             onSuccess();
-        } catch (error: any) {
+        } catch (error) {
             console.error("Application failed", error);
-            const message = error.message || "Ứng tuyển thất bại. Vui lòng thử lại sau.";
+            const message = error instanceof Error ? error.message : "Ứng tuyển thất bại. Vui lòng thử lại sau.";
             alert(message);
         } finally {
             setSubmitting(false);
@@ -130,11 +130,11 @@ export default function ApplyJobDialog({ jobId, jobTitle, jobType, isOpen, onClo
     };
 
     const modalContent = (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-300">
             <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden transform transition-all scale-100 border border-gray-100 flex flex-col max-h-[90vh]">
                 
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between flex-shrink-0">
+                <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-100">
                             <Send className="text-white" size={24} />
@@ -198,7 +198,7 @@ export default function ApplyJobDialog({ jobId, jobTitle, jobType, isOpen, onClo
                                         />
                                         <label 
                                             htmlFor="cv-upload"
-                                            className="flex items-center justify-center gap-3 w-full p-6 border-2 border-dashed border-gray-200 rounded-[1.5rem] hover:bg-gray-50 transition-colors cursor-pointer"
+                                            className="flex items-center justify-center gap-3 w-full p-6 border-2 border-dashed border-gray-200 rounded-3xl hover:bg-gray-50 transition-colors cursor-pointer"
                                         >
                                             <Upload size={20} className="text-gray-400" />
                                             <span className="text-sm font-bold text-gray-600">
@@ -207,7 +207,7 @@ export default function ApplyJobDialog({ jobId, jobTitle, jobType, isOpen, onClo
                                         </label>
                                         {!profile?.cvUrl && (
                                             <div className="mt-3 flex items-start gap-2 bg-amber-50 p-3 rounded-xl border border-amber-100">
-                                                <AlertCircle size={14} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                                                <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
                                                 <p className="text-[10px] text-amber-700 font-bold leading-tight">
                                                     Bạn chưa có CV trong hồ sơ. File này sẽ được lưu làm CV chính của bạn.
                                                 </p>
@@ -243,7 +243,7 @@ export default function ApplyJobDialog({ jobId, jobTitle, jobType, isOpen, onClo
                     </div>
 
                     {/* Footer */}
-                    <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
+                    <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between shrink-0">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Hành động</span>
                             <span className="text-xs font-bold text-blue-600">Xác nhận nộp đơn</span>
