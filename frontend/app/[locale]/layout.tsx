@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "../globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   title: "TTN HR - Tìm công việc mơ ước",
   description: "Nơi tìm kiếm công việc mơ ước",
   openGraph: { locale: 'vi_VN' },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({

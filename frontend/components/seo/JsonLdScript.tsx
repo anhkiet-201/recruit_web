@@ -6,6 +6,7 @@ export default function JsonLdScript() {
     "@type": "WebSite",
     "@id": `${COMPANY_INFO.baseUrl}/#website`,
     "url": COMPANY_INFO.baseUrl,
+    "inLanguage": "vi",
     "name": COMPANY_INFO.name,
     "potentialAction": {
       "@type": "SearchAction",
@@ -21,6 +22,7 @@ export default function JsonLdScript() {
     "@context": "https://schema.org",
     "@type": "EmploymentAgency",
     "@id": `${COMPANY_INFO.baseUrl}/#employmentagency`,
+    "inLanguage": "vi",
     "name": COMPANY_INFO.name,
     "legalName": COMPANY_INFO.legalName,
     "alternateName": COMPANY_INFO.alternateNames,
