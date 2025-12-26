@@ -11,6 +11,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from "next/navigation";
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
+import { getCompanyInfo } from "@/constants/CompanyConstants";
 
 const inter = Inter({ subsets: ["latin"] });
 
