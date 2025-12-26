@@ -183,7 +183,17 @@
     "passwordMinLength": "Tối thiểu 6 ký tự"
   },
   "Footer": {
-    "copyright": "© {year} RecruitWeb. All rights reserved."
+    "companyName": "CÔNG TY TNHH TTN HR",
+    "description": "Đối tác nhân sự tin cậy của bạn. Cung cấp giải pháp nhân lực toàn diện và hiệu quả.",
+    "address": "Đường DB4, Vĩnh Tân, Tân Uyên, Bình Dương",
+    "hotline": "0844 456 787",
+    "email": "hrlongtuyendung@gmail.com",
+    "quickLinksTitle": "Liên Kết Nhanh",
+    "contactTitle": "Liên Hệ",
+    "socialTitle": "Mạng Xã Hội",
+    "referenceTitle": "Đối Tác Chiến Lược",
+    "referenceButton": "Ghé thăm VieclamHR",
+    "copyright": "© {year} {company}. All rights reserved."
   },
   "Common": {
     "loading": "Đang tải...",
