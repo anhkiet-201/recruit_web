@@ -17,6 +17,7 @@ build/
 .env
 *.env.local
 *.env
+.env.development
 backend/*.env
 frontend/*.env
 
@@ -44,3 +45,8 @@ certbot/conf
 
 # Tools
 tools/
+
+# Google Indexing
+gen-lang-client-0527244450-9920e4bcae01.json
+
+docker-compose.prod.yaml

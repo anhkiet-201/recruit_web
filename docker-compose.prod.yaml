@@ -51,7 +51,6 @@ services:
     # Using root config file
     env_file:
       - ./.env # Global env if needed
-      - ./backend.env
     environment:
       NODE_ENV: production
     depends_on:
@@ -71,14 +70,11 @@ services:
     container_name: ttn-web-prod
     restart: always
     # Using root config file
-    env_file:
-      - ./.env # Global env if needed
-      - ./frontend.env
     environment:
       NODE_ENV: production
       # Nginx will handle routing, so API URL is relative or through Nginx port
-      NEXT_PUBLIC_API_URL: /api
-      INTERNAL_API_URL: http://backend:4000
+      NEXT_PUBLIC_API_ENDPOINT: http://backend:4000
+      NEXT_PUBLIC_APP_URL: https://timviec.vieclamhr.com
     depends_on:
       - backend
     # NO PORTS EXPOSED (Internal only)
@@ -115,7 +111,6 @@ services:
 volumes:
   postgres_data_prod:
   minio_data_prod:
-
 
 networks:
   app-network:

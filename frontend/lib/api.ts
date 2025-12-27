@@ -1,8 +1,8 @@
 const isServer = typeof window === "undefined";
 const API_URL =
-  isServer && process.env.INTERNAL_API_URL
-    ? process.env.INTERNAL_API_URL
-    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001";
+  (isServer ? process.env.INTERNAL_API_URL : null) ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:4000/api";
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
@@ -24,7 +24,7 @@ async function fetchClient<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
-
+  console.log("url", url);
   const headers: Record<string, string> = {
     ...options.headers,
   };
@@ -52,7 +52,7 @@ async function fetchClient<T>(
     ...options,
     headers,
   });
-
+  console.log("response", response);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "API request failed");
@@ -69,8 +69,7 @@ async function fetchClient<T>(
 type ApiBody = Record<string, unknown> | FormData;
 
 export const api = {
-  get: <T>(endpoint: string) =>
-    fetchClient<T>(endpoint, { method: "GET" }),
+  get: <T>(endpoint: string) => fetchClient<T>(endpoint, { method: "GET" }),
   post: <T>(endpoint: string, body: ApiBody) => {
     const isFormData =
       typeof FormData !== "undefined" && body instanceof FormData;

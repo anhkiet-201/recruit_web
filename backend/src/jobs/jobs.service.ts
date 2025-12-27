@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MinioService } from '../upload/minio.service';
 import { AiService } from '../ai/ai.service';
 import { TelegramService } from '../notifications/telegram.service';
+import { GoogleIndexingService } from '../google-indexing/google-indexing.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { Prisma, JobStatus } from '@prisma/client';
@@ -20,6 +21,7 @@ export class JobsService {
     @Inject(forwardRef(() => AiService))
     private aiService: AiService,
     private telegramService: TelegramService,
+    private googleIndexingService: GoogleIndexingService,
   ) {}
 
   /**
@@ -60,8 +62,7 @@ export class JobsService {
 
     let createdCount = 0;
     const errors: { row: number; error: string }[] = [];
-
-    // Process imports in chunks to avoid overwhelming DB, but trigger AI in parallel
+    const indexingBatch: { url: string; type: 'URL_UPDATED' }[] = [];
 
     for (const row of data) {
       try {
@@ -98,10 +99,15 @@ export class JobsService {
           },
         });
 
-        // Trigger background AI indexing immediately
         this.indexJobWithAi(job);
 
-        // Handle tags...
+        const frontendUrl =
+          process.env.NEXT_PUBLIC_APP_URL || 'https://timviec.vieclamhr.com';
+        indexingBatch.push({
+          url: `${frontendUrl}/jobs/${job.id}`,
+          type: 'URL_UPDATED',
+        });
+
         const tagNames = row['Tags']
           ? row['Tags']
               .toString()
@@ -134,6 +140,18 @@ export class JobsService {
         });
       }
     }
+
+    if (indexingBatch.length > 0) {
+      this.googleIndexingService
+        .sendBatchIndexing(indexingBatch)
+        .catch((err: unknown) =>
+          console.error(
+            'Failed to send batch indexing:',
+            err instanceof Error ? err.message : err,
+          ),
+        );
+    }
+
     return {
       success: true,
       count: createdCount,
@@ -222,6 +240,16 @@ export class JobsService {
       }
     }
 
+    // Google Indexing & Sitemap Ping
+    const frontendUrl =
+      process.env.NEXT_PUBLIC_APP_URL || 'https://timviec.vieclamhr.com';
+    const jobUrl = `${frontendUrl}/jobs/${job.id}`;
+
+    this.googleIndexingService
+      .publishUrl({ url: jobUrl, type: 'URL_UPDATED' })
+      .catch((err) =>
+        console.error('Failed to publish URL to Google Indexing:', err),
+      );
     return job;
   }
 
@@ -298,7 +326,6 @@ export class JobsService {
     return job;
   }
 
-  // ... (Keep findAll, search, findOne, remove, getLocations, getSuggestions, getTrending, getHot as is)
   async findAll(
     query: {
       page?: number;
@@ -438,6 +465,7 @@ export class JobsService {
       return null;
     }
   }
+
   async remove(id: string) {
     const job = await this.prisma.job.findUnique({
       where: { id },
@@ -451,8 +479,22 @@ export class JobsService {
         // ignore
       }
     }
+
+    const frontendUrl =
+      process.env.NEXT_PUBLIC_APP_URL || 'https://timviec.vieclamhr.com';
+    const jobUrl = `${frontendUrl}/jobs/${id}`;
+
+    this.googleIndexingService
+      .publishUrl({ url: jobUrl, type: 'URL_DELETED' })
+      .catch((err) =>
+        console.error(
+          'Failed to publish URL deletion to Google Indexing:',
+          err,
+        ),
+      );
     return this.prisma.job.delete({ where: { id } });
   }
+
   async getLocations() {
     const jobs = await this.prisma.job.findMany({
       where: { status: 'ACTIVE' },
@@ -461,6 +503,7 @@ export class JobsService {
     });
     return jobs.map((j) => j.location);
   }
+
   async getSuggestions() {
     const [jobs, tags] = await Promise.all([
       this.prisma.job.findMany({
@@ -475,6 +518,7 @@ export class JobsService {
       new Set([...jobs.map((j) => j.title), ...tags.map((t) => t.name)]),
     );
   }
+
   async getTrendingJobs(limit: number = 6) {
     return this.prisma.job.findMany({
       where: { status: 'ACTIVE' },
@@ -486,6 +530,7 @@ export class JobsService {
       take: Number(limit),
     });
   }
+
   async getHotJobs(limit: number = 6) {
     return this.prisma.job.findMany({
       where: { status: 'ACTIVE' },
