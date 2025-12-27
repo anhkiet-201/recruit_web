@@ -15,7 +15,7 @@ import { AiModule } from './ai/ai.module';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ['../.env', '.env'] }),
     PrismaModule,
     AuthModule,
     UsersModule,

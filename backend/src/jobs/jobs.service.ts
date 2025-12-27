@@ -2,6 +2,7 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MinioService } from '../upload/minio.service';
 import { AiService } from '../ai/ai.service';
+import { TelegramService } from '../notifications/telegram.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { Prisma, JobStatus } from '@prisma/client';
@@ -18,6 +19,7 @@ export class JobsService {
     private minioService: MinioService,
     @Inject(forwardRef(() => AiService))
     private aiService: AiService,
+    private telegramService: TelegramService,
   ) {}
 
   /**
@@ -203,6 +205,23 @@ export class JobsService {
 
     // Trigger background indexing
     this.indexJobWithAi(job);
+
+    // Notify Telegram if author is not admin
+    if (user?.role !== 'admin') {
+      const author = await this.prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { name: true, email: true, phone: true },
+      });
+
+      if (author) {
+        this.telegramService
+          .sendNewJobNotification(job, author)
+          .catch((err) =>
+            console.error('Failed to send new job notification:', err),
+          );
+      }
+    }
+
     return job;
   }
 
