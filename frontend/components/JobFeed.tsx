@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Job } from "@/models/Job";
 import JobCard from "@/components/JobCard";
 import { useAuth } from "@/components/AuthProvider";

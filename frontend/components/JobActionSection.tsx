@@ -1,37 +1,30 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
-import { ApplicationService } from "@/services/applicationService";
+import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { CheckCircle, Zap } from "lucide-react";
 import ApplyJobDialog from "./ApplyJobDialog";
 import { useTranslations } from "next-intl";
 
-export default function JobActionSection({ jobId, jobTitle, jobType = "unskilled" }: { jobId: string; jobTitle?: string; jobType?: string }) {
+interface JobActionSectionProps {
+    jobId: string;
+    jobTitle?: string;
+    jobType?: string;
+    isApplied?: boolean;
+    onApplySuccess?: () => void;
+}
+
+export default function JobActionSection({
+    jobId,
+    jobTitle,
+    jobType = "unskilled",
+    isApplied = false,
+    onApplySuccess
+}: JobActionSectionProps) {
     const t = useTranslations("JobDetail");
-    const { user } = useAuth();
-    const [isApplied, setIsApplied] = useState(false);
-    const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsOpen] = useState(false);
 
     // Default title fallback if none provided
     const displayTitle = jobTitle || t('position');
-
-    useEffect(() => {
-        if (user) {
-            ApplicationService.getMyApplications(user.uid).then((apps) => {
-                const applied = apps.some(app => app.jobId === jobId);
-                setIsApplied(applied);
-                setLoading(false);
-            });
-        } else {
-            setLoading(false);
-        }
-    }, [user, jobId]);
-
-    if (loading) {
-        return <div className="w-full h-14 bg-gray-100 animate-pulse rounded-2xl"></div>;
-    }
 
     if (isApplied) {
         return (
@@ -63,7 +56,7 @@ export default function JobActionSection({ jobId, jobTitle, jobType = "unskilled
                 isOpen={isDialogOpen}
                 onClose={() => setIsOpen(false)}
                 onSuccess={() => {
-                    setIsApplied(true);
+                    if (onApplySuccess) onApplySuccess();
                     setIsOpen(false);
                 }}
             />

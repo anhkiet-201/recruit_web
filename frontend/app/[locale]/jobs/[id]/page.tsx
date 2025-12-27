@@ -13,6 +13,8 @@ import { Job } from "@/models/Job";
 import JobCard from "@/components/JobCard";
 import { useTranslations, useLocale } from "next-intl";
 import { formatSalaryRange } from "@/utils/currency";
+import { ApplicationService } from "@/services/applicationService";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function JobDetailPage() {
     const router = useRouter();
@@ -20,6 +22,7 @@ export default function JobDetailPage() {
     const id = params?.id as string;
     const t = useTranslations("JobDetail");
     const locale = useLocale();
+    const { user } = useAuth();
 
     const [job, setJob] = useState<Job | null>(null);
     const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
@@ -27,6 +30,7 @@ export default function JobDetailPage() {
     const [translatedContent, setTranslatedContent] = useState<string | null>(null);
     const [isTranslating, setIsTranslating] = useState(false);
     const [showTranslated, setShowTranslated] = useState(false);
+    const [isApplied, setIsApplied] = useState(false);
 
     const getJobTypeLabel = (type?: string) => {
         switch (type) {
@@ -50,6 +54,15 @@ export default function JobDetailPage() {
                 });
         }
     }, [id]);
+
+    useEffect(() => {
+        if (user && job) {
+            ApplicationService.getMyApplications(user.uid).then((apps) => {
+                const applied = apps.some(app => app.jobId === job.id);
+                setIsApplied(applied);
+            }).catch(console.error);
+        }
+    }, [user, job]);
 
     useEffect(() => {
         if (job) {
@@ -90,11 +103,6 @@ export default function JobDetailPage() {
                 history: []
             });
 
-            // The AI chat endpoint might wrap response in JSON or return text. 
-            // Based on AiChatBot.tsx, it returns { response: string }
-            // formatting might differ based on model. 
-            // Let's assume response.response is the text.
-
             setTranslatedContent(res.response);
             setShowTranslated(true);
         } catch (error) {
@@ -123,7 +131,7 @@ export default function JobDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-32">
+        <div className="min-h-screen bg-gray-50/50 pb-24 lg:pb-32">
 
             {/* 1. PREMIUM STICKY HEADER */}
             <header className="bg-white/70 backdrop-blur-xl border-b border-gray-100/50 sticky top-0 z-30 transition-all duration-300">
@@ -162,7 +170,7 @@ export default function JobDetailPage() {
             </header>
 
             {/* 2. PAGE CONTENT */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+            <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-8 mt-12">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
                     {/* Main Content Card */}
@@ -179,7 +187,7 @@ export default function JobDetailPage() {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10 pointer-events-none"></div>
                                 <div className="absolute bottom-8 left-8 right-8 z-20">
-                                    <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">
+                                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">
                                         {job.title}
                                     </h1>
                                 </div>
@@ -267,9 +275,17 @@ export default function JobDetailPage() {
                                     </div>
                                 </div>
 
-                                <div className="pt-8 border-t border-gray-50">
-                                    <JobActionSection jobId={job.id} jobTitle={job.title} jobType={job.jobType || 'unskilled'} />
-                                </div>                                <p className="text-[10px] text-gray-400 text-center mt-8 font-medium leading-relaxed uppercase tracking-wider">
+                                <div className="pt-8 border-t border-gray-50 hidden lg:block">
+                                    <JobActionSection
+                                        jobId={job.id}
+                                        jobTitle={job.title}
+                                        jobType={job.jobType || 'unskilled'}
+                                        isApplied={isApplied}
+                                        onApplySuccess={() => setIsApplied(true)}
+                                    />
+                                </div>
+
+                                <p className="text-[10px] text-gray-400 text-center mt-8 font-medium leading-relaxed uppercase tracking-wider">
                                     {t('recruitedVia')} <span className="text-blue-600 font-black">RecruitWeb</span>
                                 </p>
                             </div>
@@ -316,6 +332,17 @@ export default function JobDetailPage() {
                         </div>
                     </div>
                 )}
+            </div>
+
+            {/* Sticky Bottom Bar for Mobile */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-4 lg:hidden shadow-lg">
+                 <JobActionSection
+                    jobId={job.id}
+                    jobTitle={job.title}
+                    jobType={job.jobType || 'unskilled'}
+                    isApplied={isApplied}
+                    onApplySuccess={() => setIsApplied(true)}
+                />
             </div>
         </div>
     );
