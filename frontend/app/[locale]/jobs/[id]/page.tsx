@@ -2,6 +2,7 @@ import { JobService } from "@/services/jobService";
 import { notFound } from "next/navigation";
 import JobDetailClient from "./JobDetailClient";
 import { SeoHelper } from "@/utils/SeoHelper";
+import { getJobBreadcrumbSchema } from "@/constants/SeoConstants";
 import { Metadata } from "next";
 
 type Props = {
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function JobDetailPage({ params }: Props) {
-  const { id } = await params;
+  const { id, locale } = await params;
   let job;
 
   try {
@@ -47,5 +48,15 @@ export default async function JobDetailPage({ params }: Props) {
     notFound();
   }
 
-  return <JobDetailClient initialJob={job} />;
+  const jsonLd = getJobBreadcrumbSchema(job, locale);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <JobDetailClient initialJob={job} />
+    </>
+  );
 }

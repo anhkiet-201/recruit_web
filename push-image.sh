@@ -26,8 +26,23 @@ else
 fi
 
 # 3. Build & Push Backend
+# Load .env variables
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
+
+# Copy .env to backend for build (so prisma generate can read it "in code")
+if [ -f .env ]; then
+  cp .env backend/.env
+fi
+
 echo "2. Building & Pushing Backend ($BACKEND_IMAGE)..."
 docker buildx build --platform linux/amd64 -f ./backend/Dockerfile.prod -t $BACKEND_IMAGE ./backend --push
+
+# Cleanup .env in backend
+if [ -f backend/.env ]; then
+  rm backend/.env
+fi
 
 # 4. Build & Push Web (Frontend)
 echo "3. Building & Pushing Frontend ($WEB_IMAGE)..."

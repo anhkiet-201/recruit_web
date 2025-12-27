@@ -60,7 +60,8 @@ const COMMON_DATA = {
     "https://www.facebook.com/vieclamhrttn",
     "https://www.tiktok.com/@vieclam.ttn.hr",
     "https://zalo.me/0844456787",
-    "https://www.google.com/maps?cid=8824493389288761795"
+    "https://www.google.com/maps?cid=8824493389288761795",
+    "https://x.com/vieclamhr_ttn"
   ]
 } as const;
 

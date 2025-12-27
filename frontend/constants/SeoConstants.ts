@@ -8,8 +8,8 @@ export interface SeoData {
 }
 
 const COMMON_DATA = {
-  DEFAULT_OG_IMAGE: "https://placehold.co/1200x630?text=TTN+HR",
-  TWITTER_HANDLE: "@ttnhr", // Updated from @TTN-Hr to likely handle
+  DEFAULT_OG_IMAGE: "https://timviec.vieclamhr.com/logo.webp",
+  TWITTER_HANDLE: "@vieclamhr_ttn",
   SEPARATOR: " | ",
 };
 
@@ -42,3 +42,60 @@ export const getSeoConstants = (locale: string): SeoData => {
 
 // Deprecated: Backwards compatibility if needed, but better to remove
 // export const SEO_CONSTANTS = SEO_DATA['vi'];
+
+export const getJobBreadcrumbSchema = (
+  job: { id: string; title: string },
+  locale: string
+) => {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: locale === "vi" ? "Trang chủ" : "Home",
+        item: `https://timviec.vieclamhr.com/${locale}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: locale === "vi" ? "Việc làm" : "Jobs",
+        item: `https://timviec.vieclamhr.com/${locale}/jobs`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: job.title,
+        item: `https://timviec.vieclamhr.com/${locale}/jobs/${job.id}`,
+      },
+    ],
+  };
+};
+
+export const getHomeBreadcrumbSchema = (locale: string) => {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: locale === "vi" ? "Trang chủ" : "Home",
+        item: `https://timviec.vieclamhr.com/${locale}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: locale === "vi" ? "Đăng nhập" : "Login",
+        item: `https://timviec.vieclamhr.com/${locale}/auth/login`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: locale === "vi" ? "Đăng ký" : "Register",
+        item: `https://timviec.vieclamhr.com/${locale}/auth/register`,
+      },
+    ],
+  };
+};

@@ -1,4 +1,5 @@
-import { getCompanyInfo } from '../../constants/CompanyConstants';
+import { getCompanyInfo } from "../../constants/CompanyConstants";
+import { getHomeBreadcrumbSchema } from "../../constants/SeoConstants";
 
 interface Props {
   locale: string;
@@ -11,67 +12,60 @@ export default function JsonLdScript({ locale }: Props) {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": `${companyInfo.baseUrl}/#website`,
-    "url": companyInfo.baseUrl,
-    "inLanguage": locale,
-    "name": companyInfo.name,
-    "potentialAction": {
+    url: companyInfo.baseUrl,
+    inLanguage: locale,
+    name: companyInfo.name,
+    potentialAction: {
       "@type": "SearchAction",
-      "target": {
+      target: {
         "@type": "EntryPoint",
-        "urlTemplate": `${companyInfo.baseUrl}/jobs?title={search_term_string}`
+        urlTemplate: `${companyInfo.baseUrl}/jobs?title={search_term_string}`,
       },
-      "query-input": "required name=search_term_string"
-    }
+      "query-input": "required name=search_term_string",
+    },
   };
 
   const employmentAgencySchema = {
     "@context": "https://schema.org",
     "@type": "EmploymentAgency",
     "@id": `${companyInfo.baseUrl}/#employmentagency`,
-    "inLanguage": locale,
-    "name": companyInfo.name,
-    "legalName": companyInfo.legalName,
-    "alternateName": companyInfo.alternateNames,
-    "description": companyInfo.description,
-    "slogan": companyInfo.slogan,
-    "url": companyInfo.baseUrl,
-    "logo": companyInfo.logo,
-    "image": companyInfo.logo,
-    "sameAs": [
-      companyInfo.mainDomain,
-      ...companyInfo.socialLinks
-    ],
-    "address": {
+    inLanguage: locale,
+    name: companyInfo.name,
+    legalName: companyInfo.legalName,
+    alternateName: companyInfo.alternateNames,
+    description: companyInfo.description,
+    slogan: companyInfo.slogan,
+    url: companyInfo.baseUrl,
+    logo: companyInfo.logo,
+    image: companyInfo.logo,
+    sameAs: [companyInfo.mainDomain, ...companyInfo.socialLinks],
+    address: {
       "@type": "PostalAddress",
-      "streetAddress": companyInfo.address.street,
-      "addressLocality": companyInfo.address.locality,
-      "addressRegion": companyInfo.address.region,
-      "postalCode": companyInfo.address.postalCode,
-      "addressCountry": companyInfo.address.country
+      streetAddress: companyInfo.address.street,
+      addressLocality: companyInfo.address.locality,
+      addressRegion: companyInfo.address.region,
+      postalCode: companyInfo.address.postalCode,
+      addressCountry: companyInfo.address.country,
     },
-    "geo": {
+    geo: {
       "@type": "GeoCoordinates",
-      "latitude": companyInfo.geo.latitude,
-      "longitude": companyInfo.geo.longitude
+      latitude: companyInfo.geo.latitude,
+      longitude: companyInfo.geo.longitude,
     },
-    "hasMap": companyInfo.hasMap,
-    "telephone": companyInfo.contact.phone,
-    "email": companyInfo.contact.email,
-    "openingHoursSpecification": {
+    hasMap: companyInfo.hasMap,
+    telephone: companyInfo.contact.phone,
+    email: companyInfo.contact.email,
+    openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
-      "dayOfWeek": companyInfo.openingHours.days,
-      "opens": companyInfo.openingHours.opens,
-      "closes": companyInfo.openingHours.closes
+      dayOfWeek: companyInfo.openingHours.days,
+      opens: companyInfo.openingHours.opens,
+      closes: companyInfo.openingHours.closes,
     },
-    "areaServed": companyInfo.areaServed.map(area => ({
-        "@type": "City",
-        "name": area
+    areaServed: companyInfo.areaServed.map((area) => ({
+      "@type": "City",
+      name: area,
     })),
-    "knowsAbout": [
-      "Cung ứng nhân lực",
-      "Tuyển dụng",
-      "Lao động phổ thông"
-    ]
+    knowsAbout: ["Cung ứng nhân lực", "Tuyển dụng", "Lao động phổ thông"],
   };
 
   return (
@@ -82,7 +76,15 @@ export default function JsonLdScript({ locale }: Props) {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(employmentAgencySchema) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(employmentAgencySchema),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(getHomeBreadcrumbSchema(locale)),
+        }}
       />
     </>
   );
