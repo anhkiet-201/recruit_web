@@ -21,6 +21,9 @@ import {
   RefreshCw,
   Languages,
   Phone,
+  Zap,
+  Award,
+  GraduationCap
 } from "lucide-react";
 import { api } from "@/lib/api";
 import ImageComponent from "@/components/ui/ImageComponent";
@@ -42,9 +45,6 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
   const locale = useLocale();
   const { user } = useAuth();
 
-  // We use initialJob as the starting state, but might still need to update it if we want live view counts
-  // or if the server data is stale (though usually server data is fresh enough).
-  // For now, let's trust initialJob is good.
   const [job] = useState<Job>(initialJob);
   const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
   const [translatedContent, setTranslatedContent] = useState<string | null>(
@@ -58,23 +58,22 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
   const getJobTypeLabel = (type?: string) => {
     switch (type) {
       case "unskilled":
-        return t("types.unskilled");
+        return { label: t("types.unskilled"), icon: Zap, color: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-700/10" };
       case "professional":
-        return t("types.professional");
+        return { label: t("types.professional"), icon: Award, color: "bg-blue-50 text-blue-700 ring-1 ring-blue-700/10" };
       case "skilled":
-        return t("types.skilled");
+        return { label: t("types.skilled"), icon: GraduationCap, color: "bg-fuchsia-50 text-fuchsia-700 ring-1 ring-fuchsia-700/10" };
       default:
-        return t("types.default");
+        return { label: t("types.default"), icon: Zap, color: "bg-gray-50 text-gray-700 ring-1 ring-gray-700/10" };
     }
   };
+
+  const typeInfo = getJobTypeLabel(job.jobType);
 
   // Increment view count on mount
   useEffect(() => {
     if (job?.id) {
-      // Fire and forget view increment
-      JobService.getJobById(job.id, { incrementView: true }).catch(
-        console.error
-      );
+      JobService.getJobById(job.id, { incrementView: true }).catch(console.error);
     }
   }, [job.id]);
 
@@ -169,9 +168,10 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
               <h2 className="text-sm font-black text-gray-900 line-clamp-1 max-w-[300px]">
                 {job.title}
               </h2>
-              <Badge variant="blue" className="text-[9px]">
-                {getJobTypeLabel(job.jobType)}
-              </Badge>
+              <div className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1.5 uppercase tracking-wider ${typeInfo.color}`}>
+                 <typeInfo.icon size={12} />
+                 {typeInfo.label}
+              </div>
             </div>
           </nav>
 
@@ -203,7 +203,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Main Content Card */}
           <div className="lg:col-span-2 space-y-10">
-            <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden relative group">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group">
               {/* Image Container - Fixed Overflow */}
               <div className="relative h-72 sm:h-[400px] w-full bg-gray-100 overflow-hidden">
                 <ImageComponent
@@ -227,7 +227,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
 
               <div className="p-8 sm:p-12 relative z-10">
                 <div className="flex flex-wrap gap-4 mb-12">
-                  <div className="flex items-center gap-3 bg-gray-50 px-5 py-3 rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-3 bg-gray-50 px-5 py-3 rounded-xl border border-gray-100 shadow-sm">
                     <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
                       <MapPin size={18} />
                     </div>
@@ -240,7 +240,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 bg-blue-50/50 px-5 py-3 rounded-2xl border border-blue-100 shadow-sm">
+                  <div className="flex items-center gap-3 bg-blue-50/50 px-5 py-3 rounded-xl border border-blue-100 shadow-sm">
                     <div className="p-1.5 bg-blue-600 rounded-lg text-white">
                       <DollarSign size={18} />
                     </div>
@@ -258,13 +258,26 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                       </p>
                     </div>
                   </div>
+                   <div className="flex items-center gap-3 bg-gray-50 px-5 py-3 rounded-xl border border-gray-100 shadow-sm">
+                    <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
+                      <typeInfo.icon size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        {t("manpowerType")}
+                      </p>
+                      <p className="text-sm font-bold text-gray-700">
+                        {typeInfo.label}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="prose max-w-none">
                   <div className="flex items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-8 bg-blue-600 rounded-full shadow-lg shadow-blue-200"></div>
-                      <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+                      <div className="w-1.5 h-6 bg-blue-600 rounded-full shadow-lg shadow-blue-200"></div>
+                      <h3 className="text-xl font-black text-gray-900 tracking-tight">
                         {t("jobDetails")}
                       </h3>
                     </div>
@@ -295,7 +308,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
           <aside className="relative">
             <div className="sticky top-32 space-y-8">
               {/* Summary Card */}
-              <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/50 border border-gray-100 p-8">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
                 <div className="mb-10">
                   <h3 className="font-black text-gray-900 mb-8 uppercase tracking-[0.2em] text-[10px] opacity-40">
                     {t("summaryInfo")}
@@ -325,7 +338,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                           {t("manpowerType")}
                         </p>
                         <p className="text-sm font-bold text-gray-700">
-                          {getJobTypeLabel(job.jobType)}
+                          {typeInfo.label}
                         </p>
                       </div>
                     </div>
@@ -363,7 +376,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
               </div>
 
               {/* Company Card - Inside Sticky Wrapper */}
-              <div className="bg-white rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100 p-10 relative overflow-hidden group">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-10 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-blue-50 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                 <div className="relative z-10">
                   <div className="flex items-center gap-4 mb-10">
