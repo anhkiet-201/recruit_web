@@ -19,7 +19,7 @@ export class AiJobRepository {
 
   async updateJobEmbedding(jobId: string, vectorString: string) {
     return this.prisma
-      .$executeRaw`UPDATE "Job" SET "embedding" = ${vectorString}::vector WHERE "id" = ${jobId}::uuid`;
+      .$executeRaw`UPDATE "Job" SET "embedding" = ${vectorString}::vector WHERE "id" = ${jobId}`;
   }
 
   async findSimilarJobs(

@@ -320,7 +320,7 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     const vector = await this.aiProvider.generateEmbedding(text);
     const vectorStr = `[${vector.join(',')}]`;
     await this.prisma.$executeRawUnsafe(
-      `UPDATE "Job" SET "embedding" = '${vectorStr}'::vector WHERE "id" = '${jobId}'::uuid`,
+      `UPDATE "Job" SET "embedding" = '${vectorStr}'::vector WHERE "id" = '${jobId}'`,
     );
   }
 

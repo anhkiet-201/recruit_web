@@ -1,33 +1,33 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+  engineType      = "client"
 }
 
 datasource db {
   provider   = "postgresql"
-  url        = env("DATABASE_URL")
   extensions = [vector]
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String?  // Hashed password
-  role      String   // 'candidate' | 'admin'
+  id        String                      @id @default(uuid())
+  email     String                      @unique
+  password  String? // Hashed password
+  role      String // 'candidate' | 'admin'
   name      String?
   phone     String?
   address   String?
   education String?
-  skills    String?  // Store as comma-separated or JSON string
+  skills    String? // Store as comma-separated or JSON string
   cvUrl     String?
   avatarUrl String?
-  createdAt DateTime @default(now())
+  createdAt DateTime                    @default(now())
   embedding Unsupported("vector(768)")?
 
-  applications    Application[]
-  searchHistories SearchHistory[]
-  jobs            Job[]           @relation("JobAuthor")
+  applications     Application[]
+  searchHistories  SearchHistory[]
+  jobs             Job[]             @relation("JobAuthor")
   employerRequests EmployerRequest[]
 }
 
@@ -39,15 +39,15 @@ model Guest {
 }
 
 model SearchHistory {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String                      @id @default(uuid()) @db.Uuid
   userId    String?
-  guestId   String?  @db.Uuid
+  guestId   String?                     @db.Uuid
   query     String
-  createdAt DateTime @default(now())
+  createdAt DateTime                    @default(now())
   embedding Unsupported("vector(768)")?
 
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  guest     Guest?   @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guest Guest? @relation(fields: [guestId], references: [id], onDelete: Cascade)
 }
 
 model EmployerRequest {
@@ -68,55 +68,54 @@ enum JobStatus {
   REJECTED
 }
 
-
 model Job {
-  id              String   @id @default(uuid()) @db.Uuid
+  id              String                      @id // Removed @default(uuid()) @db.Uuid to allow custom string IDs
   title           String
   content         String
   location        String
   salaryMin       Int?
   salaryMax       Int?
   experienceYears Int?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime? @updatedAt
-  deadline        DateTime? 
-  status          JobStatus @default(DRAFT)
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime?                   @updatedAt
+  deadline        DateTime?
+  status          JobStatus                   @default(DRAFT)
   imageUrl        String?
-  jobType         String?  // 'unskilled' | 'skilled' | 'professional'
-  views           Int      @default(0)
+  jobType         String? // 'unskilled' | 'skilled' | 'professional'
+  views           Int                         @default(0)
   embedding       Unsupported("vector(768)")?
   authorId        String?
 
-  applications    Application[]
-  jobTags         JobTag[]
-  author          User?    @relation("JobAuthor", fields: [authorId], references: [id])
+  applications Application[]
+  jobTags      JobTag[]
+  author       User?         @relation("JobAuthor", fields: [authorId], references: [id])
 }
 
 model Application {
   id        String   @id @default(uuid()) @db.Uuid
-  jobId     String   @db.Uuid
+  jobId     String // Removed @db.Uuid to match Job.id
   userId    String
   cvUrl     String
   status    String   @default("pending") // 'pending' | 'reviewed' | 'rejected' | 'accepted' | 'expired'
   createdAt DateTime @default(now())
 
-  job       Job      @relation(fields: [jobId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  job  Job  @relation(fields: [jobId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Tag {
-  id      String   @id @default(uuid()) @db.Uuid
-  name    String   @unique
+  id   String @id @default(uuid()) @db.Uuid
+  name String @unique
 
   jobTags JobTag[]
 }
 
 model JobTag {
-  jobId String @db.Uuid
+  jobId String // Removed @db.Uuid to match Job.id
   tagId String @db.Uuid
 
-  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  tag   Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([jobId, tagId])
 }

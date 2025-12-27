@@ -83,6 +83,7 @@ export class JobsService {
 
         const job = await this.prisma.job.create({
           data: {
+            id: this.generateJobId(title),
             title,
             content,
             location,
@@ -138,6 +139,21 @@ export class JobsService {
     };
   }
 
+  private generateJobId(title: string): string {
+    const slug = title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+
+    // Generate 6 random digits
+    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+    return `${slug}_${randomSuffix}`;
+  }
+
   async create(
     createJobDto: CreateJobDto,
     user: { role: string; userId: string },
@@ -157,6 +173,7 @@ export class JobsService {
 
     const job = await this.prisma.job.create({
       data: {
+        id: this.generateJobId(jobData.title),
         title: jobData.title,
         content: jobData.content,
         location: jobData.location,
