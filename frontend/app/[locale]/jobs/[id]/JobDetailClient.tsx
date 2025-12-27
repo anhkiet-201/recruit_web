@@ -5,6 +5,8 @@ import { JobService } from "@/services/jobService";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import JobActionSection from "@/components/JobActionSection";
+import { useAuth } from "@/components/AuthProvider";
+import { ApplicationService } from "@/services/applicationService";
 import {
   MapPin,
   DollarSign,
@@ -38,6 +40,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
   const router = useRouter();
   const t = useTranslations("JobDetail");
   const locale = useLocale();
+  const { user } = useAuth();
 
   // We use initialJob as the starting state, but might still need to update it if we want live view counts
   // or if the server data is stale (though usually server data is fresh enough).
@@ -49,6 +52,8 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
   );
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
+  const [isApplied, setIsApplied] = useState(false);
+  const [checkingApplication, setCheckingApplication] = useState(true);
 
   const getJobTypeLabel = (type?: string) => {
     switch (type) {
@@ -72,6 +77,20 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
       );
     }
   }, [job.id]);
+
+  useEffect(() => {
+    if (user && job?.id) {
+      ApplicationService.getMyApplications()
+        .then((apps) => {
+          const applied = apps.some((app) => app.jobId === job.id);
+          setIsApplied(applied);
+          setCheckingApplication(false);
+        })
+        .catch(() => setCheckingApplication(false));
+    } else {
+      setCheckingApplication(false);
+    }
+  }, [user, job.id]);
 
   useEffect(() => {
     if (job) {
@@ -200,7 +219,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent z-10 pointer-events-none"></div>
                 <div className="absolute bottom-8 left-8 right-8 z-20">
-                  <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">
+                  <h1 className="text-2xl sm:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">
                     {job.title}
                   </h1>
                 </div>
@@ -327,11 +346,14 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                     </div>
                   </div>
                 </div>
-                <div className="pt-8 border-t border-gray-50">
+                <div className="hidden lg:block pt-8 border-t border-gray-50">
                   <JobActionSection
                     jobId={job.id}
                     jobTitle={job.title}
                     jobType={job.jobType || "unskilled"}
+                    isApplied={isApplied}
+                    onApplySuccess={() => setIsApplied(true)}
+                    isLoading={checkingApplication}
                   />
                 </div>{" "}
                 <p className="text-[10px] text-gray-400 text-center mt-8 font-medium leading-relaxed uppercase tracking-wider">
@@ -458,6 +480,17 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
             </div>
           </section>
         )}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white p-4 border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] lg:hidden">
+        <JobActionSection
+          jobId={job.id}
+          jobTitle={job.title}
+          jobType={job.jobType || "unskilled"}
+          isApplied={isApplied}
+          onApplySuccess={() => setIsApplied(true)}
+          isLoading={checkingApplication}
+        />
       </div>
 
       <script

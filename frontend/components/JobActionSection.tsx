@@ -1,27 +1,32 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { ApplicationService } from "@/services/applicationService";
 import Button from "@/components/ui/Button";
 import { CheckCircle, Zap } from "lucide-react";
 import ApplyJobDialog from "./ApplyJobDialog";
 import { useTranslations } from "next-intl";
 
+interface JobActionSectionProps {
+  jobId: string;
+  jobTitle?: string;
+  jobType?: string;
+  isApplied: boolean;
+  onApplySuccess: () => void;
+  isLoading?: boolean;
+}
+
 export default function JobActionSection({
   jobId,
   jobTitle,
   jobType = "unskilled",
-}: {
-  jobId: string;
-  jobTitle?: string;
-  jobType?: string;
-}) {
+  isApplied,
+  onApplySuccess,
+  isLoading = false,
+}: JobActionSectionProps) {
   const t = useTranslations("JobDetail");
   const { user, loading: authLoading } = useAuth();
-  const [isApplied, setIsApplied] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsOpen] = useState(false);
 
   const router = useRouter();
@@ -30,17 +35,7 @@ export default function JobActionSection({
   // Default title fallback if none provided
   const displayTitle = jobTitle || t("position");
 
-  useEffect(() => {
-    if (user) {
-      ApplicationService.getMyApplications().then((apps) => {
-        const applied = apps.some((app) => app.jobId === jobId);
-        setIsApplied(applied);
-        setLoading(false);
-      });
-    }
-  }, [user, jobId]);
-
-  const showLoading = authLoading || (user && loading);
+  const showLoading = authLoading || isLoading;
 
   if (showLoading) {
     return (
@@ -84,7 +79,7 @@ export default function JobActionSection({
         isOpen={isDialogOpen}
         onClose={() => setIsOpen(false)}
         onSuccess={() => {
-          setIsApplied(true);
+          onApplySuccess();
           setIsOpen(false);
         }}
       />
