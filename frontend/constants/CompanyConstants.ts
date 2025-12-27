@@ -38,10 +38,9 @@ export interface CompanyInfo {
 const COMMON_DATA = {
   name: "TTN HR – Tuyển Dụng & Cung Ứng Nhân Lực",
   legalName: "CÔNG TY TNHH TTN HR",
-
   baseUrl: "https://timviec.vieclamhr.com",
   mainDomain: "https://vieclamhr.com",
-  logo: "https://vieclamhr.com/ttn-logo.webp",
+  logo: "https://timviec.vieclamhr.com/logo.webp",
   contact: {
     phone: "+84-844-456-787",
     email: "hrlongtuyendung@gmail.com",
