@@ -31,9 +31,9 @@
     "loadingMore": "Đang tải thêm..."
   },
   "Chatbot": {
-    "title": "RecruitWeb AI",
+    "title": "TTN-Hr AI",
     "status": "ONLINE",
-    "greeting": "Xin chào! Tôi là **RecruitWeb AI**. \n\nTôi có thể giúp bạn tìm việc, phân tích CV hoặc tư vấn mức lương thị trường. Bạn cần hỗ trợ gì?",
+    "greeting": "Xin chào! Tôi là **TTN-Hr AI**. \n\nTôi có thể giúp bạn tìm việc, phân tích CV hoặc tư vấn mức lương thị trường. Bạn cần hỗ trợ gì?",
     "suggestions": {
       "findJob": "Tìm việc Java lương cao",
       "cvTips": "Cách viết CV chuẩn",

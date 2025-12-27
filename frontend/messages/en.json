@@ -31,9 +31,9 @@
     "loadingMore": "Loading more..."
   },
   "Chatbot": {
-    "title": "RecruitWeb AI",
+    "title": "TTN-Hr AI",
     "status": "ONLINE",
-    "greeting": "Hello! I am **RecruitWeb AI**. \n\nI can help you find jobs, analyze CVs, or advise on market salaries. How can I assist you?",
+    "greeting": "Hello! I am **TTN-Hr AI**. \n\nI can help you find jobs, analyze CVs, or advise on market salaries. How can I assist you?",
     "suggestions": {
       "findJob": "Find high-salary Java jobs",
       "cvTips": "How to write a standard CV",

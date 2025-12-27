@@ -358,7 +358,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                 </div>{" "}
                 <p className="text-[10px] text-gray-400 text-center mt-8 font-medium leading-relaxed uppercase tracking-wider">
                   {t("recruitedVia")}{" "}
-                  <span className="text-blue-600 font-black">RecruitWeb</span>
+                  <span className="text-blue-600 font-black">TTN-Hr</span>
                 </p>
               </div>
 
@@ -382,7 +382,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                     </div>
                     <div>
                       <h4 className="font-black text-xl text-gray-900 tracking-tight leading-tight mb-1">
-                        {job.author?.name || "RecruitWeb Partner"}
+                        {job.author?.name || "TTN-Hr Partner"}
                       </h4>
                       <div className="flex items-center gap-2">
                         <Badge
@@ -405,7 +405,7 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                           Email
                         </p>
                         <p className="text-sm font-bold text-gray-700 break-all">
-                          {job.author?.email || "contact@recruitweb.com"}
+                          {job.author?.email || "hrlongtuyendung@gmail.com"}
                         </p>
                       </div>
                     </div>

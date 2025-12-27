@@ -31,9 +31,9 @@
     "loadingMore": "正在加载更多..."
   },
   "Chatbot": {
-    "title": "RecruitWeb AI",
+    "title": "TTN-Hr AI",
     "status": "在线",
-    "greeting": "你好！我是 **RecruitWeb AI**。\n\n我可以帮你找工作，分析简历或提供市场薪资建议。你需要什么帮助？",
+    "greeting": "你好！我是 **TTN-Hr AI**。\n\n我可以帮你找工作，分析简历或提供市场薪资建议。你需要什么帮助？",
     "suggestions": {
       "findJob": "寻找高薪 Java 工作",
       "cvTips": "如何写标准简历",
