@@ -1,6 +1,7 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MinioService } from '../upload/minio.service';
+import { TelegramService } from '../notifications/telegram.service';
 import { AiService } from '../ai/ai.service';
 import { ResumeAnalysisResult } from 'src/ai/dto/resume-analysis.dto';
 import { PDFParse } from 'pdf-parse';
@@ -12,6 +13,7 @@ export class UsersService {
     private minioService: MinioService,
     @Inject(forwardRef(() => AiService))
     private aiService: AiService,
+    private telegramService: TelegramService,
   ) {}
 
   async getProfile(userId: string) {
@@ -229,12 +231,20 @@ export class UsersService {
       throw new Error('Bạn đã có một yêu cầu đang chờ xử lý.');
     }
 
-    return this.prisma.employerRequest.create({
+    const request = await this.prisma.employerRequest.create({
       data: {
         userId,
         status: 'pending',
       },
     });
+
+    this.telegramService
+      .sendEmployerRequestNotification(user)
+      .catch((err) =>
+        console.error('Failed to send employer request notification:', err),
+      );
+
+    return request;
   }
 
   async getEmployerRequestStatus(userId: string) {

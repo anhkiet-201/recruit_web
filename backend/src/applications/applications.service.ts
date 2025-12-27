@@ -1,10 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
+import { TelegramService } from '../notifications/telegram.service';
 
 @Injectable()
 export class ApplicationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private telegramService: TelegramService,
+  ) {}
 
   async submitApplication(
     userId: string,
@@ -22,16 +26,44 @@ export class ApplicationsService {
       throw new BadRequestException('Bạn đã ứng tuyển công việc này rồi.');
     }
 
-    // 2. Create new application
+    // 2. Fetch Job Author to check role
+    const job = await this.prisma.job.findUnique({
+      where: { id: createApplicationDto.jobId },
+      include: { author: { select: { role: true, name: true } } },
+    });
+
+    if (!job) {
+      throw new BadRequestException('Công việc không tồn tại.');
+    }
+
+    // 3. Create new application
     try {
-      return await this.prisma.application.create({
+      const application = await this.prisma.application.create({
         data: {
           jobId: createApplicationDto.jobId,
           userId: userId,
           cvUrl: createApplicationDto.cvUrl,
           status: 'pending',
         },
+        include: {
+          user: { select: { name: true, email: true, phone: true } },
+        },
       });
+
+      // 4. Send Telegram Notification
+      console.log(
+        `[ApplicationsService] Checking for notification. Job Author Role: ${job.author?.role}`,
+      );
+      this.telegramService
+        .sendApplicationNotification(job, application)
+        .catch((err) => {
+          console.error(
+            'Failed to call telegramService.sendApplicationNotification:',
+            err,
+          );
+        });
+
+      return application;
     } catch (error) {
       console.error('Prisma Error:', error);
       throw new BadRequestException(
@@ -86,7 +118,6 @@ export class ApplicationsService {
             phone: true,
             address: true,
             avatarUrl: true,
-            createdAt: true,
           },
         },
       },

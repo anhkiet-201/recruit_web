@@ -4,9 +4,10 @@ import { JobsController } from './jobs.controller';
 import { JobsCleanupService } from './jobs.cleanup.service';
 import { UploadModule } from '../upload/upload.module';
 import { AiModule } from '../ai/ai.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [UploadModule, forwardRef(() => AiModule)],
+  imports: [UploadModule, forwardRef(() => AiModule), NotificationsModule],
   controllers: [JobsController],
   providers: [JobsService, JobsCleanupService],
   exports: [JobsService],
