@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { Link, useRouter, usePathname } from "@/i18n/routing";
 import { useAuth } from "./AuthProvider";
-import { useRouter, usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { LogOut, ShieldCheck, User as UserIcon, Menu, X } from "lucide-react";
 import Image from "next/image";
@@ -25,7 +24,7 @@ export default function Navbar() {
   useEffect(() => {
     // This effect handles closing the menu when navigating
     const handleRouteChange = () => {
-       setIsMenuOpen(false);
+      setIsMenuOpen(false);
     };
     handleRouteChange();
   }, [pathname]);
