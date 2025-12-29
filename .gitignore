@@ -50,3 +50,5 @@ tools/
 gen-lang-client-0527244450-9920e4bcae01.json
 
 docker-compose.prod.yaml
+
+admin_app/

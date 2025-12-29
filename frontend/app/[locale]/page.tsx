@@ -14,18 +14,44 @@ import {
 import Link from "next/link";
 import JobSearchBar from "@/components/JobSearchBar";
 import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
+import { getCompanyInfo } from "@/constants/CompanyConstants";
+import { SeoHelper } from "@/utils/SeoHelper";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage({
-  searchParams,
-}: {
+type Props = {
   searchParams: Promise<{
     title?: string;
     location?: string;
     jobType?: string;
   }>;
-}) {
+  params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "HomePage" });
+  const companyInfo = getCompanyInfo(locale);
+
+  return SeoHelper.generateSeoMetadata(
+    {
+      title: t("metaTitle") || t("title"), // Use metaTitle if avail, else fallback
+      description: t("metaDescription") || t("heroSubtitle"),
+      canonicalUrl: companyInfo.baseUrl,
+      openGraph: {
+        title: t("metaTitle") || t("title"),
+        description: t("metaDescription") || t("heroSubtitle"),
+        type: "website",
+      },
+    },
+    locale
+  );
+}
+
+export default async function HomePage({
+  searchParams,
+}: Props) {
   const params = await searchParams;
   const currentJobType = params.jobType || "all";
   const t = await getTranslations("HomePage");

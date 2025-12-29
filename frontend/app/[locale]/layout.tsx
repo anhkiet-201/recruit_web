@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "../globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -22,6 +23,8 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const headerList = await headers();
+  const currentPath = headerList.get("x-current-path") || "";
   const companyInfo = getCompanyInfo(locale);
   const seoData = getSeoConstants(locale);
   const ogLocale =
@@ -63,7 +66,9 @@ export async function generateMetadata({
       icon: "/favicon.ico",
     },
     alternates: {
-      canonical: `${companyInfo.baseUrl}${locale === "vi" ? "" : `/${locale}`}`,
+      canonical: `${companyInfo.baseUrl}${
+        currentPath === "/" ? "" : currentPath
+      }`,
       languages: {
         "vi-VN": `${companyInfo.baseUrl}`,
         "en-US": `${companyInfo.baseUrl}/en`,

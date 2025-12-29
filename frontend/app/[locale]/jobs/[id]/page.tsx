@@ -10,8 +10,11 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+import { getCompanyInfo } from "@/constants/CompanyConstants";
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params;
+  const companyInfo = getCompanyInfo(locale);
   // IncrementView: false because crawlers/metadata generation shouldn't count as a view
   const job = await JobService.getJobById(id, { incrementView: false });
 
@@ -21,13 +24,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  // Generate keywords from job details
+  const keywords = [
+    ...(job.tags || []),
+    ...(job.jobTags?.map((t) => t.tag.name) || []),
+    job.location,
+    job.jobType,
+    job.title,
+    "Việc làm",
+    "Tuyển dụng",
+  ].filter(Boolean) as string[];
+
+  // Clean description
+  const cleanContent =
+    job.content?.replace(/<[^>]*>?/gm, "").substring(0, 160) || "";
+  const description = `${job.title} tại ${job.location}. ${cleanContent}...`;
+
   return SeoHelper.generateSeoMetadata(
     {
       title: job.title,
-      description: job.content
-        ? job.content.substring(0, 160) + "..."
-        : undefined,
+      description: description,
       ogImage: job.imageUrl,
+      canonicalUrl: `${companyInfo.baseUrl}/jobs/${id}`,
+      keywords: Array.from(new Set(keywords)), // Remove duplicates
+      openGraph: {
+        title: job.title,
+        description: description,
+        type: "article",
+        images: job.imageUrl ? [{ url: job.imageUrl }] : undefined,
+      },
     },
     locale
   );

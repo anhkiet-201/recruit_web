@@ -4,27 +4,57 @@ import FilterSidebar from "@/components/FilterSidebar";
 import JobSearchBar from "@/components/JobSearchBar";
 import { Sparkles, Wand2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
+import { getCompanyInfo } from "@/constants/CompanyConstants";
+import { SeoHelper } from "@/utils/SeoHelper";
 
 export const dynamic = "force-dynamic";
 
-export default async function JobsPage({
-  searchParams,
-}: {
+type Props = {
   searchParams: Promise<{
     title?: string;
     location?: string;
     jobType?: string;
     ai_q?: string;
   }>;
-}) {
-  const params = await searchParams;
-  const isAiSearch = !!params.ai_q;
+  params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "JobsPage" });
+  const companyInfo = getCompanyInfo(locale);
+
+  return SeoHelper.generateSeoMetadata(
+    {
+      title: t("metaTitle") || "Tuyển dụng việc làm HOT - TTN HR",
+      description:
+        t("metaDescription") ||
+        "Tìm việc làm nhanh chóng, uy tín tại Bình Dương, TP.HCM. Hàng ngàn đầu việc hấp dẫn từ các nhà tuyển dụng hàng đầu.",
+      canonicalUrl: `${companyInfo.baseUrl}/jobs`,
+      keywords: [
+        "Tuyển dụng",
+        "Việc làm",
+        "Tìm việc làm",
+        "Việc làm Bình Dương",
+        "Việc làm TP.HCM",
+        "Tuyển dụng nhân sự",
+        "TTN HR",
+      ],
+    },
+    locale
+  );
+}
+
+export default async function JobsPage({ searchParams }: Props) {
+  const resolvedParams = await searchParams;
+  const isAiSearch = !!resolvedParams.ai_q;
   const t = await getTranslations("JobsPage");
 
   let jobsData;
   if (isAiSearch) {
     // AI Search returns a flat array of jobs based on similarity
-    const items = await JobService.aiSearch(params.ai_q!);
+    const items = await JobService.aiSearch(resolvedParams.ai_q!);
     jobsData = {
       items,
       total: items.length,
@@ -32,7 +62,7 @@ export default async function JobsPage({
     };
   } else {
     jobsData = await JobService.searchJobs({
-      ...params,
+      ...resolvedParams,
       page: 1,
       limit: 9,
     });
@@ -54,7 +84,7 @@ export default async function JobsPage({
                 <>
                   {t("suggestedResultsFor")}{" "}
                   <span className="text-blue-600">
-                    &quot;{params.ai_q}&quot;
+                    &quot;{resolvedParams.ai_q}&quot;
                   </span>
                 </>
               ) : (
@@ -71,9 +101,9 @@ export default async function JobsPage({
           </div>
 
           <JobSearchBar
-            defaultTitle={params.ai_q || params.title}
-            defaultValue={params.location}
-            currentJobType={params.jobType || "all"}
+            defaultTitle={resolvedParams.ai_q || resolvedParams.title}
+            defaultValue={resolvedParams.location}
+            currentJobType={resolvedParams.jobType || "all"}
             action="/jobs"
             initialAiMode={isAiSearch}
           />
@@ -87,7 +117,7 @@ export default async function JobsPage({
             <FilterSidebar />
           </aside>
           <main className="lg:col-span-3">
-            <JobFeed initialData={jobsData} filters={params} />
+            <JobFeed initialData={jobsData} filters={resolvedParams} />
           </main>
         </div>
       </div>
