@@ -19,19 +19,15 @@ echo "-> Sử dụng lệnh: $COMPOSE_CMD"
 
 echo "--- BẮT ĐẦU TRIỂN KHAI TRÊN VPS ---"
 
-# 0. Kiểm tra và tạo cấu hình Nginx (nếu thiếu)
-echo "0. Checking Nginx configuration..."
-# Nếu Docker lỡ tạo nhầm thành thư mục, xóa đi
+# 0. Nginx Configuration
+echo "0. Updating Nginx configuration..."
+mkdir -p nginx
+# Remove if it's a directory (often caused by Docker volume mounting)
 if [ -d "nginx/default.conf" ]; then
-    echo "   -> Phát hiện 'nginx/default.conf' là thư mục (lỗi do Docker tạo). Đang xóa..."
     rm -rf nginx/default.conf
 fi
 
-# Tạo file nếu chưa có
-if [ ! -f "nginx/default.conf" ]; then
-    echo "   -> Chưa có file cấu hình Nginx. Đang tạo mới..."
-    mkdir -p nginx
-    cat > nginx/default.conf <<EOF
+cat > nginx/default.conf <<EOF
 server {
     listen 80;
     server_name timviec.vieclamhr.com;
@@ -77,9 +73,21 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
     }
+
+    location /ttn-bucket/ {
+        proxy_pass http://minio:9000;
+        proxy_set_header Host \$http_host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        
+        # MinIO recommendations
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        chunked_transfer_encoding off;
+    }
 }
 EOF
-fi
 
 # 1. Pull images mới nhất
 echo "1. Pulling Docker images..."

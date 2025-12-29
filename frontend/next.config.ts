@@ -18,13 +18,19 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "localhost",
         port: "9000",
-        pathname: '/ttn-bucket/**',
+        pathname: "/ttn-bucket/**",
       },
       {
         protocol: "http",
         hostname: "127.0.0.1",
         port: "9000",
-        pathname: '/ttn-bucket/**',
+        pathname: "/ttn-bucket/**",
+      },
+      {
+        protocol: "http",
+        hostname: "minio",
+        port: "9000",
+        pathname: "/ttn-bucket/**",
       },
       {
         protocol: "https",
@@ -33,6 +39,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "*.vieclamhr.com",
+      },
+      {
+        protocol: "https",
+        hostname: "timviec.vieclamhr.com",
       },
     ],
   },

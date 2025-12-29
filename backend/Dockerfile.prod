@@ -26,6 +26,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/gen-lang-client-*.json ./
 
 EXPOSE 4000
 

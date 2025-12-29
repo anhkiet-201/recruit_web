@@ -1,23 +1,31 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
 
 @Injectable()
 export class MinioService implements OnModuleInit {
+  private readonly logger = new Logger(MinioService.name);
   private minioClient: Minio.Client;
   private bucketName: string;
 
-  constructor() {
-    this.bucketName = process.env.MINIO_BUCKET || 'ttn-bucket';
+  constructor(private configService: ConfigService) {
+    this.bucketName = this.configService.get<string>('MINIO_BUCKET')!;
   }
 
   async onModuleInit() {
+    const useSSL = this.configService.get<string | boolean>('MINIO_USE_SSL');
+    const isUseSSL = useSSL === true || useSSL === 'true';
+
     this.minioClient = new Minio.Client({
-      endPoint: process.env.MINIO_ENDPOINT || 'localhost',
-      port: parseInt(process.env.MINIO_PORT || '9000'),
-      useSSL: process.env.MINIO_USE_SSL === 'true',
-      accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-      secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
-      region: process.env.MINIO_REGION,
+      endPoint: this.configService.get<string>('MINIO_ENDPOINT')!,
+      port: parseInt(
+        this.configService.get<string>('MINIO_PORT') || '9000',
+        10,
+      ),
+      useSSL: isUseSSL,
+      accessKey: this.configService.get<string>('MINIO_ACCESS_KEY')!,
+      secretKey: this.configService.get<string>('MINIO_SECRET_KEY')!,
+      region: this.configService.get<string>('MINIO_REGION')!,
     });
 
     try {
@@ -25,11 +33,11 @@ export class MinioService implements OnModuleInit {
       if (!exists) {
         await this.minioClient.makeBucket(
           this.bucketName,
-          process.env.MINIO_REGION || 'us-east-1',
+          this.configService.get<string>('MINIO_REGION') || 'us-east-1',
         );
-        console.log(`Bucket ${this.bucketName} created successfully.`);
+        this.logger.log(`Bucket ${this.bucketName} created successfully.`);
       } else {
-        console.log(`Bucket ${this.bucketName} already exists.`);
+        this.logger.log(`Bucket ${this.bucketName} already exists.`);
       }
 
       // Always ensure policy is public readonly on startup
@@ -48,9 +56,9 @@ export class MinioService implements OnModuleInit {
         this.bucketName,
         JSON.stringify(policy),
       );
-      console.log(`Bucket policy enforced to public.`);
+      this.logger.log(`Bucket policy enforced to public.`);
     } catch (err) {
-      console.error('Error initializing MinIO:', err);
+      this.logger.error('Error initializing MinIO:', err);
     }
   }
 
@@ -68,8 +76,11 @@ export class MinioService implements OnModuleInit {
       },
     );
 
+    const fileUrl = this.getFileUrl(filename);
+    this.logger.log(`File uploaded: ${filename}, URL: ${fileUrl}`);
+
     return {
-      url: this.getFileUrl(filename),
+      url: fileUrl,
       filename: filename,
     };
   }
@@ -79,25 +90,27 @@ export class MinioService implements OnModuleInit {
   }
 
   private getFileUrl(filename: string): string {
-    const publicUrl = process.env.MINIO_PUBLIC_URL;
+    const publicUrl = this.configService.get<string>('MINIO_PUBLIC_URL');
 
     // Priority 1: Use Custom Public URL (Production/CDN)
-    // Example: https://cdn.mysite.com/ttn-bucket
     if (publicUrl) {
-      // Remove trailing slash if exists
       const cleanUrl = publicUrl.replace(/\/$/, '');
       return `${cleanUrl}/${filename}`;
     }
 
-    // Priority 2: Fallback to constructing URL manually (Localhost / Direct IP)
-    const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
-    const host = process.env.MINIO_ENDPOINT || 'localhost';
-    const port = process.env.MINIO_PORT || '9000';
+    // Priority 2: Fallback to constructing URL manually
+    const useSSL = this.configService.get<string | boolean>('MINIO_USE_SSL');
+    const isUseSSL = useSSL === true || useSSL === 'true';
+    const protocol = isUseSSL ? 'https' : 'http';
 
-    // Check if port is standard (80/443) to hide it in URL
+    const host = this.configService.get<string>('MINIO_ENDPOINT')!;
+    const portValue = this.configService.get<string | number>('MINIO_PORT')!;
+    const port =
+      typeof portValue === 'number' ? portValue : parseInt(portValue, 10);
+
     const isStandardPort =
-      (protocol === 'http' && port == '80') ||
-      (protocol === 'https' && port == '443');
+      (protocol === 'http' && port === 80) ||
+      (protocol === 'https' && port === 443);
     const portString = isStandardPort ? '' : `:${port}`;
 
     return `${protocol}://${host}${portString}/${this.bucketName}/${filename}`;
