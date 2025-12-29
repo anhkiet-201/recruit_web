@@ -8,9 +8,6 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: ttn_db
-    # Production: Consider removing ports if external access is not needed
-    # ports:
-    #   - "5432:5432"
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     networks:
@@ -70,11 +67,6 @@ services:
     container_name: ttn-web-prod
     restart: always
     # Using root config file
-    environment:
-      NODE_ENV: production
-      # Nginx will handle routing, so API URL is relative or through Nginx port
-      NEXT_PUBLIC_API_ENDPOINT: http://backend:4000
-      NEXT_PUBLIC_APP_URL: https://timviec.vieclamhr.com
     depends_on:
       - backend
     # NO PORTS EXPOSED (Internal only)

@@ -1,9 +1,13 @@
-const isServer = typeof window === "undefined";
-const API_URL =
-  (isServer ? process.env.INTERNAL_API_URL : null) ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://127.0.0.1:4000/api";
+// const isServer = typeof window === "undefined";
 
+// Internal URL for Server-Side Rendering (SSR) in Docker network
+// const INTERNAL_API_URL = process.env.INTERNAL_API_URL;
+// // Public URL for Client-Side (Browser)
+// const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_ENDPOINT;
+
+// const API_URL = isServer ? INTERNAL_API_URL : PUBLIC_API_URL;
+
+const API_URL = process.env.NEXT_PUBLIC_API_ENDPOINT;
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
 }
@@ -24,7 +28,6 @@ async function fetchClient<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
-  console.log("url", url);
   const headers: Record<string, string> = {
     ...options.headers,
   };
@@ -47,12 +50,13 @@ async function fetchClient<T>(
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-
   const response = await fetch(url, {
     ...options,
     headers,
+  }).catch((error) => {
+    console.error("Fetch error:", error);
+    throw error;
   });
-  console.log("response", response);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "API request failed");
