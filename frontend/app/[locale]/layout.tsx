@@ -110,7 +110,7 @@ export default async function RootLayout({
             <AuthProvider>
               <ConfirmDialogProvider>
                 <div className="flex flex-col min-h-screen">
-                  <header className="sticky top-0 z-50">
+                  <header className="sticky top-0 z-1000">
                     <Navbar />
                   </header>
                   <main className="grow bg-gray-50/50">{children}</main>

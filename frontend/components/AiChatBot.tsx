@@ -348,7 +348,7 @@ export default function AiChatBot() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            className="fixed bottom-6 right-6 z-999"
+            className="fixed bottom-6 right-6 z-900"
           >
             <div className="absolute inset-0 bg-blue-500/50 rounded-full blur-xl animate-pulse -z-10"></div>
             <button
@@ -375,7 +375,7 @@ export default function AiChatBot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed z-9999 flex flex-col overflow-hidden shadow-2xl bg-white/10 backdrop-blur-3xl border border-white/20
+            className="fixed z-9998 flex flex-col overflow-hidden shadow-2xl bg-white/10 backdrop-blur-3xl border border-white/20
                             /* Mobile: Full Screen */
                             inset-0 w-full h-full rounded-none
                             /* Desktop: Fixed Widget */
