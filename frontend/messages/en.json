@@ -1,6 +1,8 @@
 {
   "HomePage": {
     "title": "Top Recruitment",
+    "metaTitle": "TTN HR - Top Recruitment Platform",
+    "metaDescription": "Discover thousands of exciting job opportunities at TTN HR. Connecting talent with leading reputable employers.",
     "searchPlaceholder": "Job title, position, skills...",
     "locationPlaceholder": "City, location...",
     "searchButton": "Search Jobs",

@@ -1,6 +1,8 @@
 {
   "HomePage": {
     "title": "Tuyển dụng hàng đầu",
+    "metaTitle": "TTN HR - Nền tảng tuyển dụng hàng đầu",
+    "metaDescription": "Khám phá hàng ngàn cơ hội việc làm hấp dẫn tại TTN HR. Kết nối nhân tài với các nhà tuyển dụng uy tín hàng đầu.",
     "searchPlaceholder": "Tên công việc, vị trí, kỹ năng...",
     "locationPlaceholder": "Thành phố, địa điểm...",
     "searchButton": "Tìm Việc Ngay",

@@ -1,6 +1,8 @@
 {
   "HomePage": {
     "title": "顶尖招聘",
+    "metaTitle": "TTN HR - 顶级招聘平台",
+    "metaDescription": "在 TTN HR 发现数以千计的令人兴奋的工作机会。将人才与领先的知名雇主联系起来。",
     "searchPlaceholder": "职位名称，职位，技能...",
     "locationPlaceholder": "城市，地点...",
     "searchButton": "搜寻工作",
