@@ -1,48 +1,68 @@
-import { MetadataRoute } from 'next';
-import { JobService } from '@/services/jobService';
-import { getCompanyInfo } from '@/constants/CompanyConstants';
+import { MetadataRoute } from "next";
+import { JobService } from "@/services/jobService";
+import { getCompanyInfo } from "@/constants/CompanyConstants";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+const LOCALES = ["vi", "en", "zh"] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const companyInfo = getCompanyInfo('vi');
+  const companyInfo = getCompanyInfo("vi");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || companyInfo.baseUrl;
 
-  // Static routes
-  const routes: MetadataRoute.Sitemap = [
-    {
-      url: `${baseUrl}`,
+  const routes: MetadataRoute.Sitemap = [];
+
+  // Helper function to generate alternates
+  const getAlternates = (path: string) => ({
+    languages: {
+      vi: `${baseUrl}/vi${path}`,
+      en: `${baseUrl}/en${path}`,
+      zh: `${baseUrl}/zh${path}`,
+      "x-default": `${baseUrl}/vi${path}`,
+    },
+  });
+
+  // Static routes for each locale
+  LOCALES.forEach((locale) => {
+    // Homepage
+    routes.push({
+      url: `${baseUrl}/${locale}`,
       lastModified: new Date(),
-      changeFrequency: 'daily',
+      changeFrequency: "daily",
       priority: 1,
-    },
-    {
-      url: `${baseUrl}/jobs`,
+      alternates: getAlternates(""),
+    });
+
+    // Jobs listing page
+    routes.push({
+      url: `${baseUrl}/${locale}/jobs`,
       lastModified: new Date(),
-      changeFrequency: 'daily',
+      changeFrequency: "daily",
       priority: 0.8,
-    },
-  ];
+      alternates: getAlternates("/jobs"),
+    });
+  });
 
   try {
-    // Fetch recent jobs for sitemap
-    // Assuming JobService.getAllJobs returns paginated result, we might need a way to fetch all or a large number.
-    // For now, let's fetch the first 1000 items or similar if API supports it.
-    // If not, we take what we can get.
-    // NOTE: JobService.getAllJobs signature: (query?: { page?: number; limit?: number; ... })
+    // Fetch jobs for dynamic routes (increased limit to 500)
+    const { items: jobs } = await JobService.getAllJobs({ limit: 500 });
 
-    const { items: jobs } = await JobService.getAllJobs({ limit: 100 });
+    // Generate job detail routes for each locale
+    LOCALES.forEach((locale) => {
+      const jobRoutes: MetadataRoute.Sitemap = jobs.map((job) => ({
+        url: `${baseUrl}/${locale}/jobs/${job.id}`,
+        lastModified: new Date(job.updatedAt || job.createdAt),
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+        alternates: getAlternates(`/jobs/${job.id}`),
+      }));
 
-    const jobRoutes: MetadataRoute.Sitemap = jobs.map((job) => ({
-      url: `${baseUrl}/jobs/${job.id}`,
-      lastModified: new Date(job.updatedAt || job.createdAt),
-      changeFrequency: 'weekly',
-      priority: 0.6,
-    }));
+      routes.push(...jobRoutes);
+    });
 
-    return [...routes, ...jobRoutes];
+    return routes;
   } catch (error) {
-    console.error('Sitemap generation error:', error);
+    console.error("Sitemap generation error:", error);
     return routes;
   }
 }

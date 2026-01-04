@@ -81,20 +81,8 @@ export const getHomeBreadcrumbSchema = (locale: string) => {
       {
         "@type": "ListItem",
         position: 1,
-        name: locale === "vi" ? "Trang chủ" : "Home",
+        name: locale === "vi" ? "Trang chủ" : locale === "zh" ? "主页" : "Home",
         item: `https://timviec.vieclamhr.com/${locale}`,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: locale === "vi" ? "Đăng nhập" : "Login",
-        item: `https://timviec.vieclamhr.com/${locale}/auth/login`,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: locale === "vi" ? "Đăng ký" : "Register",
-        item: `https://timviec.vieclamhr.com/${locale}/auth/register`,
       },
     ],
   };

@@ -15,6 +15,11 @@ export interface CompanyInfo {
   baseUrl: string;
   mainDomain: string;
   logo: string;
+  foundingDate?: string;
+  numberOfEmployees?: {
+    minValue: number;
+    maxValue: number;
+  };
   contact: {
     phone: string;
     email: string;
@@ -41,28 +46,33 @@ const COMMON_DATA = {
   baseUrl: "https://timviec.vieclamhr.com",
   mainDomain: "https://vieclamhr.com",
   logo: "https://timviec.vieclamhr.com/logo.webp",
+  foundingDate: "2020-01-01",
+  numberOfEmployees: {
+    minValue: 10,
+    maxValue: 50,
+  },
   contact: {
     phone: "+84-844-456-787",
     email: "hrlongtuyendung@gmail.com",
-    availableLanguage: ["Vietnamese", "Chinese", "English"]
+    availableLanguage: ["Vietnamese", "Chinese", "English"],
   },
   geo: {
     latitude: 11.1444095,
-    longitude: 106.7019746
+    longitude: 106.7019746,
   },
   hasMap: "https://maps.app.goo.gl/RWd4A1JszUubM6ddA",
   openingHours: {
     days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     opens: "08:00",
-    closes: "17:00"
+    closes: "17:00",
   },
   socialLinks: [
     "https://www.facebook.com/vieclamhrttn",
     "https://www.tiktok.com/@vieclam.ttn.hr",
     "https://zalo.me/0844456787",
     "https://www.google.com/maps?cid=8824493389288761795",
-    "https://x.com/vieclamhr_ttn"
-  ]
+    "https://x.com/vieclamhr_ttn",
+  ],
 } as const;
 
 export const COMPANY_DATA: Record<string, CompanyInfo> = {
@@ -75,18 +85,19 @@ export const COMPANY_DATA: Record<string, CompanyInfo> = {
       "Tuyển dụng TTN",
       "CÔNG TY TNHH TTN HR",
       "TTN HR",
-      "HR TTN"
+      "HR TTN",
     ],
-    description: "TTN HR - Đối tác tin cậy về cung ứng lao động phổ thông và tuyển dụng tại Bình Dương, Hồ Chí Minh...",
+    description:
+      "TTN HR - Đối tác tin cậy về cung ứng lao động phổ thông và tuyển dụng tại Bình Dương, Hồ Chí Minh...",
     slogan: "Đối tác nhân sự tin cậy - Giải pháp toàn diện",
     address: {
       street: "Đường DB4, Vĩnh Tân",
       locality: "Tân Uyên",
       region: "Bình Dương",
       postalCode: "82000",
-      country: "VN"
+      country: "VN",
     },
-    areaServed: ["Bình Dương", "Thành phố Hồ Chí Minh", "Tân Uyên"]
+    areaServed: ["Bình Dương", "Thành phố Hồ Chí Minh", "Tân Uyên"],
   },
   zh: {
     ...COMMON_DATA,
@@ -97,7 +108,7 @@ export const COMPANY_DATA: Record<string, CompanyInfo> = {
       "TTN 招聘",
       "TTN HR 有限公司",
       "TTN HR",
-      "HR TTN"
+      "HR TTN",
     ],
     description: "TTN HR - 平阳、胡志明市值得信赖的普工供应和招聘合作伙伴...",
     slogan: "值得信赖的人力资源合作伙伴 - 全面解决方案",
@@ -106,9 +117,9 @@ export const COMPANY_DATA: Record<string, CompanyInfo> = {
       locality: "新渊市",
       region: "平阳省",
       postalCode: "82000",
-      country: "VN"
+      country: "VN",
     },
-    areaServed: ["平阳省", "胡志明市", "新渊市"]
+    areaServed: ["平阳省", "胡志明市", "新渊市"],
   },
   en: {
     ...COMMON_DATA,
@@ -119,21 +130,22 @@ export const COMPANY_DATA: Record<string, CompanyInfo> = {
       "TTN Recruitment",
       "TTN HR COMPANY LIMITED",
       "TTN HR",
-      "HR TTN"
+      "HR TTN",
     ],
-    description: "TTN HR - Trusted partner for general labor supply and recruitment in Binh Duong, Ho Chi Minh City...",
+    description:
+      "TTN HR - Trusted partner for general labor supply and recruitment in Binh Duong, Ho Chi Minh City...",
     slogan: "Trusted HR Partner - Comprehensive Solutions",
     address: {
       street: "DB4 Street, Vinh Tan",
       locality: "Tan Uyen",
       region: "Binh Duong",
       postalCode: "82000",
-      country: "VN"
+      country: "VN",
     },
-    areaServed: ["Binh Duong", "Ho Chi Minh City", "Tan Uyen"]
-  }
+    areaServed: ["Binh Duong", "Ho Chi Minh City", "Tan Uyen"],
+  },
 };
 
 export function getCompanyInfo(locale: string): CompanyInfo {
-  return COMPANY_DATA[locale] || COMPANY_DATA['vi'];
+  return COMPANY_DATA[locale] || COMPANY_DATA["vi"];
 }

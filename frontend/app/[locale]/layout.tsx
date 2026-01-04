@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import { ConfirmDialogProvider } from "@/contexts/ConfirmDialogContext";
 import AiChatBot from "@/components/AiChatBot";
 import JsonLdScript from "@/components/seo/JsonLdScript";
+import OrganizationSchema from "@/components/seo/OrganizationSchema";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -15,7 +16,12 @@ import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 import { getCompanyInfo } from "@/constants/CompanyConstants";
 import { getSeoConstants } from "@/constants/SeoConstants";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "600", "700", "900"],
+  display: "swap",
+  preload: true,
+});
 
 export async function generateMetadata({
   params,
@@ -103,6 +109,7 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className={inter.className}>
         <JsonLdScript locale={locale} />
+        <OrganizationSchema locale={locale} />
         <NextIntlClientProvider messages={messages}>
           <GoogleAuthProvider
             clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}

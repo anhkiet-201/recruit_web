@@ -4,6 +4,7 @@ import JobDetailClient from "./JobDetailClient";
 import { SeoHelper } from "@/utils/SeoHelper";
 import { getJobBreadcrumbSchema } from "@/constants/SeoConstants";
 import { Metadata } from "next";
+import JobPostingSchema from "@/components/seo/JobPostingSchema";
 
 type Props = {
   params: Promise<{ id: string; locale: string }>;
@@ -81,6 +82,7 @@ export default async function JobDetailPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <JobPostingSchema job={job} locale={locale} />
       <JobDetailClient initialJob={job} />
     </>
   );
