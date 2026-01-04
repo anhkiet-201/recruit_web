@@ -10,7 +10,13 @@
   },
   "dependencies": {
     "@react-oauth/google": "^0.11.1",
+    "@tiptap/extension-character-count": "^3.14.0",
+    "@tiptap/extension-placeholder": "^3.14.0",
+    "@tiptap/react": "^3.14.0",
+    "@tiptap/starter-kit": "^3.14.0",
+    "dompurify": "^3.3.1",
     "framer-motion": "^12.23.26",
+    "html-to-text": "^9.0.5",
     "lucide-react": "^0.556.0",
     "next": "16.0.7",
     "next-intl": "^4.6.1",
@@ -21,6 +27,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/dompurify": "^3.0.5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

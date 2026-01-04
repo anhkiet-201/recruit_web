@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { JobService } from "@/services/jobService";
+import { isHtmlContent, convertPlainTextToHtml } from "@/utils/contentHelper";
+import { sanitizeHtml } from "@/utils/htmlSanitizer";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import JobActionSection from "@/components/JobActionSection";
@@ -283,8 +285,18 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                         : t("translateTo")}
                     </Button>
                   </div>
-                  <div className="whitespace-pre-wrap text-gray-600 text-lg leading-relaxed font-medium">
-                    {showTranslated ? translatedContent : job.content}
+                  <div className="prose prose-blue max-w-none prose-headings:font-bold prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg prose-h5:text-base prose-ul:list-disc prose-ol:list-decimal prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800">
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeHtml(
+                          showTranslated
+                            ? translatedContent || ""
+                            : isHtmlContent(job.content || "")
+                            ? job.content || ""
+                            : convertPlainTextToHtml(job.content || "")
+                        ),
+                      }}
+                    />
                   </div>
                 </div>
               </div>

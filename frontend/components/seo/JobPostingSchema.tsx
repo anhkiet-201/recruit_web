@@ -1,5 +1,6 @@
 import { Job } from "@/models/Job";
 import { getCompanyInfo } from "@/constants/CompanyConstants";
+import { isHtmlContent, htmlToPlainText } from "@/utils/contentHelper";
 
 interface Props {
   job: Job;
@@ -25,6 +26,23 @@ function mapJobTypeToSchemaFormat(jobType: string): string {
 }
 
 /**
+ * Get description for schema - converts HTML to plain text if needed
+ * Truncates to 5000 chars (Google limit)
+ */
+function getDescriptionForSchema(job: Job): string {
+  const content = job.content || job.description || "";
+
+  // If HTML, convert to plain text
+  if (isHtmlContent(content)) {
+    const plainText = htmlToPlainText(content);
+    return plainText.substring(0, 5000);
+  }
+
+  // Plain text - just truncate
+  return content.substring(0, 5000);
+}
+
+/**
  * Component to render JobPosting structured data
  * Follows Schema.org JobPosting specification
  * @see https://schema.org/JobPosting
@@ -44,7 +62,7 @@ export default function JobPostingSchema({ job, locale }: Props) {
     "@type": "JobPosting",
     "@id": `${companyInfo.baseUrl}/jobs/${job.id}#jobposting`,
     title: job.title,
-    description: job.content || job.description || "",
+    description: getDescriptionForSchema(job),
     datePosted: job.createdAt,
     validThrough: validThrough,
     employmentType: mapJobTypeToSchemaFormat(job.jobType || "full-time"),
