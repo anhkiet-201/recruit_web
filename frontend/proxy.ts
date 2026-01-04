@@ -10,6 +10,10 @@ const handleI18nRouting = createMiddleware({
 
   // Hide the prefix for the default locale
   localePrefix: "as-needed",
+
+  // Disable automatic locale detection from Accept-Language header
+  // Always use Vietnamese as default, users can switch manually
+  localeDetection: false,
 });
 
 export default function middleware(request: NextRequest) {
