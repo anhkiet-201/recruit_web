@@ -350,7 +350,7 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
         "salaryMax": 20000000 (Số nguyên, nếu không có để null),
         "jobType": "skilled" (Chỉ chọn 1 trong 3 giá trị: "unskilled" (Lao động phổ thông), "skilled" (Lao động có tay nghề/bằng cấp), "professional" (Chuyên gia/Quản lý/Cấp cao)),
         "experienceYears": 1 (Số năm kinh nghiệm yêu cầu, số nguyên. Nếu không yêu cầu ghi 0. Nếu yêu cầu > 0 năm thì ghi số năm),
-        "deadline": "2024-12-31T00:00:00.000Z" (ISO Date string. Nếu có hạn nộp thì parse về format này. Nếu không tìm thấy thì cố gắng ước lượng 30 ngày từ hiện tại hoặc để null),
+        "deadline": "2024-12-31T00:00:00.000Z" (ISO Date string. Nếu có hạn nộp thì parse về format này. Nếu không tìm thấy thì để null),
         "skills": ["React", "NodeJS", "Lao động phổ thông", "Điện tử"] (Trích xuất các kỹ năng chuyên môn, công cụ, ngôn ngữ, hoặc chứng chỉ yêu cầu. Tối đa 5-7 tags quan trọng nhất),
       }
 

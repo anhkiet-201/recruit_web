@@ -32,7 +32,6 @@ import { Job } from "@/models/Job";
 import JobCard from "@/components/JobCard";
 import { useTranslations, useLocale } from "next-intl";
 import { formatSalaryRange } from "@/utils/currency";
-import { getJobPostingSchema } from "@/constants/JobPostingConstants";
 
 interface JobDetailClientProps {
   initialJob: Job;
@@ -504,13 +503,6 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
           isLoading={checkingApplication}
         />
       </div>
-
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(getJobPostingSchema(job)),
-        }}
-      />
     </article>
   );
 }
