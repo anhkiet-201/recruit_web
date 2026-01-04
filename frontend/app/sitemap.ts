@@ -12,21 +12,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const routes: MetadataRoute.Sitemap = [];
 
+  // Helper to generate correct URL based on locale prefix strategy (as-needed)
+  // vi: no prefix
+  // en, zh: with prefix
+  const getUrl = (locale: string, path: string) => {
+    if (locale === "vi") {
+      return `${baseUrl}${path}`;
+    }
+    return `${baseUrl}/${locale}${path}`;
+  };
+
   // Helper function to generate alternates
   const getAlternates = (path: string) => ({
     languages: {
-      vi: `${baseUrl}/vi${path}`,
-      en: `${baseUrl}/en${path}`,
-      zh: `${baseUrl}/zh${path}`,
-      "x-default": `${baseUrl}/vi${path}`,
+      vi: getUrl("vi", path),
+      en: getUrl("en", path),
+      zh: getUrl("zh", path),
+      "x-default": getUrl("vi", path), // x-default points to default locale (no prefix)
     },
   });
 
-  // Static routes for each locale
+  // Static routes
   LOCALES.forEach((locale) => {
     // Homepage
     routes.push({
-      url: `${baseUrl}/${locale}`,
+      url: getUrl(locale, ""),
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,
@@ -35,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Jobs listing page
     routes.push({
-      url: `${baseUrl}/${locale}/jobs`,
+      url: getUrl(locale, "/jobs"),
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.8,
@@ -50,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Generate job detail routes for each locale
     LOCALES.forEach((locale) => {
       const jobRoutes: MetadataRoute.Sitemap = jobs.map((job) => ({
-        url: `${baseUrl}/${locale}/jobs/${job.id}`,
+        url: getUrl(locale, `/jobs/${job.id}`),
         lastModified: new Date(job.updatedAt || job.createdAt),
         changeFrequency: "weekly" as const,
         priority: 0.6,

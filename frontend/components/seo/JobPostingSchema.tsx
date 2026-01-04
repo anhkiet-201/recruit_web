@@ -43,7 +43,7 @@ function getDescriptionForSchema(job: Job): string {
 }
 
 /**
- * Parse location string into structured address components
+ * Parse location string into structured address components for Schema.org
  * Examples:
  * - "Hồ Chí Minh" => { addressLocality: "Hồ Chí Minh" }
  * - "Hà Nội, Quận Hoàn Kiếm" => { addressLocality: "Hà Nội", streetAddress: "Quận Hoàn Kiếm" }
