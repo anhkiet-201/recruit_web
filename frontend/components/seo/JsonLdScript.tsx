@@ -1,5 +1,4 @@
 import { getCompanyInfo } from "../../constants/CompanyConstants";
-import { getHomeBreadcrumbSchema } from "../../constants/SeoConstants";
 
 interface Props {
   locale: string;
@@ -78,12 +77,6 @@ export default function JsonLdScript({ locale }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(employmentAgencySchema),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(getHomeBreadcrumbSchema(locale)),
         }}
       />
     </>
