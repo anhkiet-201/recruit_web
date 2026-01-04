@@ -1,0 +1,65 @@
+/**
+ * Vietnam location constants for job posting forms
+ */
+
+export const VIETNAM_CITIES = [
+  "Hà Nội",
+  "Hồ Chí Minh",
+  "Đà Nẵng",
+  "Hải Phòng",
+  "Cần Thơ",
+  "Bình Dương - Thủ Dầu Một",
+  "Đồng Nai - Biên Hòa",
+  "Bà Rịa - Vũng Tàu",
+  "Khánh Hòa - Nha Trang",
+  "Lâm Đồng - Đà Lạt",
+  "Thừa Thiên Huế - Huế",
+  "Kiên Giang - Rạch Giá",
+  "Hải Dương",
+  "Quảng Ninh - Hạ Long",
+  "Long An - Tân An",
+  "Nghệ An - Vinh",
+  "Bắc Ninh",
+  "Thanh Hóa",
+  "Thái Nguyên",
+  "Bình Định - Quy Nhơn",
+  "Vĩnh Phúc - Vĩnh Yên",
+  "Nam Định",
+  "Quảng Nam - Tam Kỳ",
+  "Phú Thọ - Việt Trì",
+];
+
+export const COMMON_DISTRICTS_HCM = [
+  "Quận 1",
+  "Quận 2",
+  "Quận 3",
+  "Quận 4",
+  "Quận 5",
+  "Quận 6",
+  "Quận 7",
+  "Quận 8",
+  "Quận 10",
+  "Quận 11",
+  "Quận 12",
+  "Bình Thạnh",
+  "Tân Bình",
+  "Tân Phú",
+  "Phú Nhuận",
+  "Gò Vấp",
+  "Thủ Đức",
+];
+
+export const COMMON_DISTRICTS_HN = [
+  "Ba Đình",
+  "Hoàn Kiếm",
+  "Hai Bà Trưng",
+  "Đống Đa",
+  "Tây Hồ",
+  "Cầu Giấy",
+  "Thanh Xuân",
+  "Hoàng Mai",
+  "Long Biên",
+  "Nam Từ Liêm",
+  "Bắc Từ Liêm",
+  "Hà Đông",
+];

@@ -10,6 +10,7 @@ import {
 } from "@/services/tagService";
 import { Tag } from "@/models/Tag";
 import { Job } from "@/models/Job";
+import { VIETNAM_CITIES } from "@/constants/LocationConstants";
 import {
   X,
   Save,
@@ -25,7 +26,6 @@ import {
   AlertCircle,
   RefreshCw,
   Type,
-  AlignLeft,
   Award,
   GraduationCap,
   Zap,
@@ -418,15 +418,28 @@ export default function JobForm({
                 </div>
               </div>
 
-              <Input
-                icon={MapPin}
-                label="Địa điểm làm việc"
-                required
-                value={formData.location}
-                onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
-                }
-              />
+              <div className="space-y-2">
+                <Input
+                  icon={MapPin}
+                  label="Địa điểm làm việc"
+                  required
+                  list="vietnam-cities"
+                  placeholder="Ví dụ: Hồ Chí Minh, Quận 1"
+                  value={formData.location}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
+                />
+                <datalist id="vietnam-cities">
+                  {VIETNAM_CITIES.map((city) => (
+                    <option key={city} value={city} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-gray-400 ml-2 font-medium">
+                  💡 Gợi ý: &quot;Hồ Chí Minh&quot; hoặc &quot;Hà Nội, Quận Hoàn
+                  Kiếm&quot;
+                </p>
+              </div>
               <Input
                 icon={Briefcase}
                 label="Kinh nghiệm (Năm)"

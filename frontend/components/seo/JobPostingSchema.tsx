@@ -43,6 +43,25 @@ function getDescriptionForSchema(job: Job): string {
 }
 
 /**
+ * Parse location string into structured address components
+ * Examples:
+ * - "Hồ Chí Minh" => { addressLocality: "Hồ Chí Minh" }
+ * - "Hà Nội, Quận Hoàn Kiếm" => { addressLocality: "Hà Nội", streetAddress: "Quận Hoàn Kiếm" }
+ */
+function parseLocation(location: string) {
+  if (!location) return { addressCountry: "VN" };
+
+  const parts = location.split(",").map((s) => s.trim());
+
+  return {
+    addressLocality: parts[0] || location, // City/Province
+    addressRegion: parts[0] || location, // Same as locality for Vietnam
+    streetAddress: parts.length > 1 ? parts.slice(1).join(", ") : undefined,
+    addressCountry: "VN",
+  };
+}
+
+/**
  * Component to render JobPosting structured data
  * Follows Schema.org JobPosting specification
  * @see https://schema.org/JobPosting
@@ -75,18 +94,12 @@ export default function JobPostingSchema({ job, locale }: Props) {
       logo: job.employer?.logo || companyInfo.logo,
     },
 
-    // Job Location
+    // Job Location - Structured address
     jobLocation: {
       "@type": "Place",
       address: {
         "@type": "PostalAddress",
-        addressLocality: job.location,
-        addressRegion: job.location.includes("Bình Dương")
-          ? "Bình Dương"
-          : job.location.includes("Hồ Chí Minh")
-          ? "Hồ Chí Minh"
-          : undefined,
-        addressCountry: "VN",
+        ...parseLocation(job.location),
       },
     },
 
