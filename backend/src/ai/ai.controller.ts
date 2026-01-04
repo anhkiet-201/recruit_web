@@ -2,8 +2,10 @@ import { Controller, Post, Body, Request } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
 import { ChatRequestDto } from './dto/chat-request.dto';
 import { AiService } from './ai.service';
-import { ApiTags, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
+
+import { OptimizeJobDto } from './dto/optimize-job.dto';
 
 @ApiTags('ai')
 @Controller('ai')
@@ -68,6 +70,21 @@ export class AiController {
       return { response };
     } catch (error) {
       console.error('AI Chat Error:', error);
+      throw error;
+    }
+  }
+  @Post('optimize-job')
+  @ApiBearerAuth()
+  @ApiBody({
+    type: OptimizeJobDto,
+    description: 'Optimize job content',
+  })
+  async optimizeJob(@Body() body: OptimizeJobDto) {
+    try {
+      const result = await this.aiService.optimizeJobContent(body.content);
+      return result;
+    } catch (error) {
+      console.error('AI Job Optimize Error:', error);
       throw error;
     }
   }

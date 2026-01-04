@@ -38,6 +38,7 @@ import Dropdown from "@/components/ui/Dropdown";
 import { Card } from "@/components/ui/Card";
 import Image from "next/image";
 import RichTextEditor from "@/components/admin/RichTextEditor";
+import { AiService } from "@/services/aiService"; // Import AI Service
 
 import { useAuth } from "../AuthProvider";
 
@@ -63,6 +64,9 @@ export default function JobForm({
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false); // Modal State
+  const [aiRawText, setAiRawText] = useState("");
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Job>>({
     title: "",
@@ -177,6 +181,80 @@ export default function JobForm({
     );
   };
 
+  const handleAiOptimize = async () => {
+    if (!aiRawText.trim()) return;
+    setIsOptimizing(true);
+    try {
+      const data = await AiService.optimizeJob(aiRawText);
+
+      setFormData((prev) => ({
+        ...prev,
+        title: data.title,
+        content: data.content,
+        location: data.location,
+        salaryMin: data.salaryMin || 0,
+        salaryMax: data.salaryMax || 0,
+        jobType: data.jobType || "unskilled",
+        experienceYears: data.experienceYears || 0,
+        deadline: data.deadline || "",
+      }));
+
+      if (data.skills && data.skills.length > 0) {
+        const newSelectedTags = new Set(selectedTags);
+        const tagsToCreate: string[] = [];
+
+        data.skills.forEach((skill) => {
+          const normalizedSkill = skill.trim();
+          if (!normalizedSkill) return;
+
+          const existingTag = availableTags.find(
+            (t) => t.name.toLowerCase() === normalizedSkill.toLowerCase()
+          );
+
+          if (existingTag) {
+            newSelectedTags.add(existingTag.id);
+          } else {
+            // Check if we already plan to create this tag (deduplicate)
+            const isAlreadyPlanned = tagsToCreate.some(
+              (t) => t.toLowerCase() === normalizedSkill.toLowerCase()
+            );
+            if (!isAlreadyPlanned) {
+              tagsToCreate.push(normalizedSkill);
+            }
+          }
+        });
+
+        // 2. Create new tags in parallel
+        if (tagsToCreate.length > 0) {
+          try {
+            const createdTags = await Promise.all(
+              tagsToCreate.map((name) => createTag(name))
+            );
+
+            // Update available tags state
+            setAvailableTags((prev) => [...prev, ...createdTags]);
+
+            // Add new tag IDs to selection
+            createdTags.forEach((tag) => newSelectedTags.add(tag.id));
+          } catch (e) {
+            console.error("Failed to auto-create some tags", e);
+            // Non-blocking: continue with what we have
+          }
+        }
+
+        setSelectedTags(Array.from(newSelectedTags));
+      }
+
+      setIsAiModalOpen(false);
+      setAiRawText("");
+    } catch (error) {
+      console.error("Optimize failed", error);
+      alert("Không thể tối ưu hóa nội dung. Vui lòng thử lại.");
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -235,9 +313,19 @@ export default function JobForm({
                 }
               />
               <div className="space-y-2">
-                <label className="block text-xs font-black text-gray-400 uppercase tracking-[0.15em] ml-2">
-                  Mô tả chi tiết *
-                </label>
+                <div className="flex justify-between items-center ml-2">
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-[0.15em]">
+                    Mô tả chi tiết *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsAiModalOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <Zap size={14} className="fill-violet-600" />
+                    AI Optimize
+                  </button>
+                </div>
                 <RichTextEditor
                   value={formData.content || ""}
                   onChange={(html) =>
@@ -531,6 +619,76 @@ export default function JobForm({
           </Card>
         </div>
       </div>
+      {/* AI Optimization Modal */}
+      {isAiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-violet-50 text-violet-600 rounded-lg">
+                  <Zap size={24} className="fill-violet-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    AI Tin Tuyển Dụng
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Dán nội dung thô để AI tự động điền thông tin
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAiModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                disabled={isOptimizing}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto">
+              <textarea
+                className="w-full h-64 p-4 rounded-xl border-2 border-dashed border-gray-200 focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 resize-none transition-all text-sm leading-relaxed"
+                placeholder="Dán nội dung tuyển dụng vào đây...
+Ví dụ: 
+Hà Nội - Tuyển dụng Senior Dev, lương 20-30tr.
+Yêu cầu: 3 năm kinh nghiệm React, biết Tiếng Anh.
+Quyền lợi: Thưởng tháng 13, BHXH full lương..."
+                value={aiRawText}
+                onChange={(e) => setAiRawText(e.target.value)}
+                disabled={isOptimizing}
+              ></textarea>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setIsAiModalOpen(false)}
+                disabled={isOptimizing}
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                onClick={handleAiOptimize}
+                disabled={!aiRawText.trim() || isOptimizing}
+                className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+              >
+                {isOptimizing ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Đang phân tích...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Zap size={18} className="fill-white" />
+                    <span>Tự động điền</span>
+                  </div>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

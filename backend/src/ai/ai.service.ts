@@ -14,6 +14,7 @@ import {
   PerformSearchToolArgs,
   GetJobDetailToolArgs,
 } from './dto/ai-service.dto';
+import { OptimizedJobResponseDto } from './dto/optimize-job.dto';
 
 /**
  * Service quản lý logic trí tuệ nhân tạo (AI) trung tâm.
@@ -334,6 +335,48 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
 
   async generateEmbedding(text: string) {
     return this.aiProvider.generateEmbedding(text);
+  }
+
+  async optimizeJobContent(rawText: string): Promise<OptimizedJobResponseDto> {
+    const prompt = `
+      Bạn là một chuyên gia HR. Nhiệm vụ của bạn là phân tích nội dung tuyển dụng thô dưới đây và trích xuất thông tin thành JSON chuẩn.
+      
+      Yêu cầu đầu ra (JSON Only):
+      {
+        "title": "Tiêu đề công việc ngắn gọn, hấp dẫn (Phải bao gồm tên công ty)",
+        "content": "Nội dung chi tiết phải định dạng HTML (phải sử dụng các thẻ sau: h3, ul, ol, li, p, br, strong, em, s). Chia thành các mục: Mô tả, Yêu cầu, Quyền lợi. KHÔNG dùng thẻ h1, h2.",
+        "location": "Địa điểm làm việc",
+        "salaryMin": 10000000 (Số nguyên, nếu không có để null),
+        "salaryMax": 20000000 (Số nguyên, nếu không có để null),
+        "jobType": "skilled" (Chỉ chọn 1 trong 3 giá trị: "unskilled" (Lao động phổ thông), "skilled" (Lao động có tay nghề/bằng cấp), "professional" (Chuyên gia/Quản lý/Cấp cao)),
+        "experienceYears": 1 (Số năm kinh nghiệm yêu cầu, số nguyên. Nếu không yêu cầu ghi 0. Nếu yêu cầu > 0 năm thì ghi số năm),
+        "deadline": "2024-12-31T00:00:00.000Z" (ISO Date string. Nếu có hạn nộp thì parse về format này. Nếu không tìm thấy thì cố gắng ước lượng 30 ngày từ hiện tại hoặc để null),
+        "skills": ["React", "NodeJS", "Lao động phổ thông", "Điện tử"] (Trích xuất các kỹ năng chuyên môn, công cụ, ngôn ngữ, hoặc chứng chỉ yêu cầu. Tối đa 5-7 tags quan trọng nhất),
+      }
+
+      QUAN TRỌNG: 
+      - Nếu lương là "Thỏa thuận", "Cạnh tranh" -> salaryMin = null, salaryMax = null.
+      - Nếu lương là "Up to 20tr" -> salaryMin = null, salaryMax = 20000000.
+      - Nếu lương là "Từ 10tr" -> salaryMin = 10000000, salaryMax = null.
+      - "content" phải được format HTML đẹp mắt, sạch sẽ.
+      - Về "jobType":
+        + "unskilled": Công nhân, bảo vệ, tạp vụ, phục vụ, giao hàng...
+        + "skilled": Lập trình viên, kế toán, kỹ sư, nhân viên văn phòng, giáo viên... (Có yêu cầu bằng cấp/kỹ năng cụ thể)
+        + "professional": Trưởng phòng, Giám đốc, Quản lý, Senior Expert...
+      
+      Nội dung thô:
+      ${rawText}
+    `;
+
+    try {
+      const res = await this.aiProvider.generateText(prompt);
+      // Clean markdown code blocks if present
+      const cleanJson = res.replace(/```json|```/g, '').trim();
+      return JSON.parse(cleanJson) as OptimizedJobResponseDto;
+    } catch (e) {
+      console.error('Error optimizing job content:', e);
+      throw new Error('Failed to analyze job content.');
+    }
   }
 
   async findSimilarJobs(
