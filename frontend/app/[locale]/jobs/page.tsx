@@ -20,10 +20,37 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
   const { locale } = await params;
+  const resolvedParams = await searchParams;
   const t = await getTranslations({ locale, namespace: "JobsPage" });
   const companyInfo = getCompanyInfo(locale);
+
+  // Xác định canonical URL
+  let canonicalUrl = `${companyInfo.baseUrl}/jobs`;
+
+  // Nếu có bất kỳ filter nào → self-referencing canonical
+  const hasFilters = !!(
+    resolvedParams.title ||
+    resolvedParams.location ||
+    resolvedParams.jobType ||
+    resolvedParams.ai_q
+  );
+
+  if (hasFilters) {
+    const query = new URLSearchParams();
+    // Thêm params theo thứ tự alphabet để chuẩn hóa
+    if (resolvedParams.ai_q) query.append("ai_q", resolvedParams.ai_q);
+    if (resolvedParams.jobType) query.append("jobType", resolvedParams.jobType);
+    if (resolvedParams.location)
+      query.append("location", resolvedParams.location);
+    if (resolvedParams.title) query.append("title", resolvedParams.title);
+
+    canonicalUrl = `${companyInfo.baseUrl}/jobs?${query.toString()}`;
+  }
 
   return SeoHelper.generateSeoMetadata(
     {
@@ -31,7 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description:
         t("metaDescription") ||
         "Tìm việc làm nhanh chóng, uy tín tại Bình Dương, TP.HCM. Hàng ngàn đầu việc hấp dẫn từ các nhà tuyển dụng hàng đầu.",
-      canonicalUrl: `${companyInfo.baseUrl}/jobs`,
+      canonicalUrl,
       keywords: [
         "Tuyển dụng",
         "Việc làm",

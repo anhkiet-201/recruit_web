@@ -29,16 +29,31 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
   const { locale } = await params;
+  const resolvedParams = await searchParams;
   const t = await getTranslations({ locale, namespace: "HomePage" });
   const companyInfo = getCompanyInfo(locale);
+
+  // Xác định canonical URL
+  let canonicalUrl = companyInfo.baseUrl;
+
+  // Nếu có jobType filter → self-referencing với query
+  if (resolvedParams.jobType) {
+    const query = new URLSearchParams({ jobType: resolvedParams.jobType });
+    canonicalUrl = `${companyInfo.baseUrl}?${query.toString()}`;
+  }
+  // Nếu chỉ có title/location → không set canonical ở đây vì sẽ redirect sang /jobs
+  // (giữ nguyên canonicalUrl = companyInfo.baseUrl)
 
   return SeoHelper.generateSeoMetadata(
     {
       title: t("metaTitle") || t("title"), // Use metaTitle if avail, else fallback
       description: t("metaDescription") || t("heroSubtitle"),
-      canonicalUrl: companyInfo.baseUrl,
+      canonicalUrl,
       openGraph: {
         title: t("metaTitle") || t("title"),
         description: t("metaDescription") || t("heroSubtitle"),
@@ -49,9 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   );
 }
 
-export default async function HomePage({
-  searchParams,
-}: Props) {
+export default async function HomePage({ searchParams }: Props) {
   const params = await searchParams;
   const currentJobType = params.jobType || "all";
   const t = await getTranslations("HomePage");

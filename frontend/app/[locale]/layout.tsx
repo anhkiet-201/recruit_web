@@ -72,14 +72,11 @@ export async function generateMetadata({
       icon: "/favicon.ico",
     },
     alternates: {
-      canonical: `${companyInfo.baseUrl}${
-        currentPath === "/" ? "" : currentPath
-      }`,
       languages: {
-        "vi-VN": `${companyInfo.baseUrl}`,
-        "en-US": `${companyInfo.baseUrl}/en`,
-        "zh-CN": `${companyInfo.baseUrl}/zh`,
-        "x-default": `${companyInfo.baseUrl}`,
+        "vi-VN": `${companyInfo.baseUrl}${currentPath}`,
+        "en-US": `${companyInfo.baseUrl}/en${currentPath}`,
+        "zh-CN": `${companyInfo.baseUrl}/zh${currentPath}`,
+        "x-default": `${companyInfo.baseUrl}${currentPath}`,
       },
     },
   };

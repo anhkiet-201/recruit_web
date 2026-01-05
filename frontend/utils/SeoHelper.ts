@@ -9,10 +9,15 @@ export interface SeoDto {
   keywords?: string[];
   noIndex?: boolean;
   openGraph?: Metadata["openGraph"];
+  includeQueryParams?: boolean; // Flag để bao gồm query string trong canonical
 }
 
 export class SeoHelper {
-  static generateSeoMetadata(dto: SeoDto, locale: string = "vi"): Metadata {
+  static generateSeoMetadata(
+    dto: SeoDto,
+    locale: string = "vi",
+    fullUrl?: string // URL đầy đủ từ request (bao gồm query)
+  ): Metadata {
     const constants = getSeoConstants(locale);
 
     const title = dto.title
@@ -45,9 +50,24 @@ export class SeoHelper {
       },
     };
 
-    if (dto.canonicalUrl) {
+    // Xử lý canonical URL với query params nếu cần
+    let canonicalUrl = dto.canonicalUrl;
+
+    if (dto.includeQueryParams && fullUrl) {
+      try {
+        const url = new URL(fullUrl);
+        if (url.search) {
+          // Có query params → self-referencing canonical
+          canonicalUrl = fullUrl;
+        }
+      } catch {
+        // Nếu fullUrl không hợp lệ, giữ nguyên canonicalUrl
+      }
+    }
+
+    if (canonicalUrl) {
       metadata.alternates = {
-        canonical: dto.canonicalUrl,
+        canonical: canonicalUrl,
       };
     }
 
