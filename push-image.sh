@@ -28,7 +28,10 @@ fi
 # 3. Build & Push Backend
 # Load .env variables
 if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+  # Use set -a to export variables from .env automatically
+  set -a
+  source .env
+  set +a
 fi
 
 # Copy .env to backend for build (so prisma generate can read it "in code")

@@ -119,3 +119,23 @@ model JobTag {
 
   @@id([jobId, tagId])
 }
+
+model IndexingQueue {
+  id     Int    @id @default(autoincrement())
+  url    String @db.VarChar(500)
+  type   String @db.VarChar(20) // 'URL_UPDATED' | 'URL_DELETED'
+  status String @default("pending") @db.VarChar(20) // 'pending' | 'processing' | 'success' | 'failed'
+
+  retryCount Int @default(0)
+  maxRetries Int @default(3)
+
+  lastError String? @db.Text
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  processedAt DateTime?
+
+  // Indexes for performance
+  @@index([status, createdAt])
+  @@index([url])
+}

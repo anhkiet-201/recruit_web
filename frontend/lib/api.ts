@@ -1,15 +1,17 @@
-// const isServer = typeof window === "undefined";
+const isServer = typeof window === "undefined";
 
 // Internal URL for Server-Side Rendering (SSR) in Docker network
-// const INTERNAL_API_URL = process.env.INTERNAL_API_URL;
-// // Public URL for Client-Side (Browser)
-// const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_ENDPOINT;
+const INTERNAL_API_URL = process.env.INTERNAL_API_URL || "http://backend:4000";
+// Public URL for Client-Side (Browser)
+const PUBLIC_API_URL =
+  process.env.NEXT_PUBLIC_API_ENDPOINT || "https://vieclamhr.com/api";
 
-// const API_URL = isServer ? INTERNAL_API_URL : PUBLIC_API_URL;
+// ✅ Use internal URL for SSR, public URL for client
+const API_URL = isServer ? INTERNAL_API_URL : PUBLIC_API_URL;
 
-const API_URL = process.env.NEXT_PUBLIC_API_ENDPOINT;
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
+  timeout?: number; // ✅ Add timeout option
 }
 
 // Helper to get or create a persistent guestId
@@ -28,8 +30,10 @@ async function fetchClient<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
+  const { timeout = 10000, ...fetchOptions } = options; // ✅ Default 10s timeout
+
   const headers: Record<string, string> = {
-    ...options.headers,
+    ...fetchOptions.headers,
   };
 
   // Add Guest ID to every request
@@ -39,7 +43,7 @@ async function fetchClient<T>(
   }
 
   const isFormData =
-    typeof FormData !== "undefined" && options.body instanceof FormData;
+    typeof FormData !== "undefined" && fetchOptions.body instanceof FormData;
 
   if (!headers["Content-Type"] && !isFormData) {
     headers["Content-Type"] = "application/json";
@@ -50,23 +54,38 @@ async function fetchClient<T>(
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  }).catch((error) => {
+
+  // ✅ Add timeout wrapper
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "API request failed");
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+      return response.json();
+    } else {
+      return response.text() as T;
+    }
+  } catch (error: unknown) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Request timeout after ${timeout}ms`);
+    }
     console.error("Fetch error:", error);
     throw error;
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "API request failed");
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.indexOf("application/json") !== -1) {
-    return response.json();
-  } else {
-    return response.text() as T;
   }
 }
 

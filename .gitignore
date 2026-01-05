@@ -46,8 +46,11 @@ certbot/conf
 # Tools
 tools/
 
-# Google Indexing
-gen-lang-client-0527244450-9920e4bcae01.json
+# Google Service Account Keys - Block ALL credential files
+*.json
+*-key.json
+gen-lang-client-*.json
+service-account-*.json
 
 docker-compose.prod.yaml
 

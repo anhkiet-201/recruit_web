@@ -1,10 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
 import { AuthClient, GoogleAuth } from 'google-auth-library';
 import { google, indexing_v3 } from 'googleapis';
-import * as path from 'path';
-import * as fs from 'fs';
 
 export type IndexingType = 'URL_UPDATED' | 'URL_DELETED';
 export type Indexing = {
@@ -15,43 +12,93 @@ export type Indexing = {
 @Injectable()
 export class GoogleIndexingService {
   private readonly logger = new Logger(GoogleIndexingService.name);
-  private indexingClient: indexing_v3.Indexing;
-  private auth: GoogleAuth<AuthClient>;
+  private indexingClient: indexing_v3.Indexing | null = null;
+  private auth: GoogleAuth<AuthClient> | null = null;
 
   constructor(private configService: ConfigService) {
     this.initGoogleClient();
   }
 
   private initGoogleClient() {
-    // Check if env var is set (for flexibility), otherwise fallback to the file in root
-    const keyFileName = 'gen-lang-client-0527244450-9920e4bcae01.json';
-    const filePath = path.join(process.cwd(), keyFileName);
+    const email = this.configService.get<string>(
+      'GOOGLE_SERVICE_ACCOUNT_EMAIL',
+    );
+    const privateKey = this.configService.get<string>('GOOGLE_PRIVATE_KEY');
 
-    if (!fs.existsSync(filePath)) {
+    if (!email || !privateKey) {
       this.logger.warn(
-        `Google Service Account file not found at ${filePath}. Google Indexing will be disabled.`,
+        'Google Service Account credentials not found in environment variables. Indexing API disabled.',
       );
       return;
     }
 
-    this.auth = new google.auth.GoogleAuth({
-      keyFile: filePath,
-      scopes: [
-        'www.googleapis.com',
-        'https://www.googleapis.com/auth/indexing',
-      ],
-    });
+    try {
+      this.auth = new google.auth.GoogleAuth({
+        credentials: {
+          client_email: email,
+          private_key: privateKey.replace(/\\n/g, '\n'), // Handle escaped newlines
+        },
+        scopes: ['https://www.googleapis.com/auth/indexing'], // ✅ CORRECT SCOPE
+      });
 
-    this.indexingClient = google.indexing({
-      version: 'v3',
-      auth: this.auth,
-    });
+      this.indexingClient = google.indexing({
+        version: 'v3',
+        auth: this.auth,
+      });
+
+      this.logger.log('Google Indexing API initialized successfully');
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to initialize Google Indexing API',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  /**
+   * Validate that URL belongs to vieclamhr.com domain
+   * Reject localhost, IP addresses, and local development URLs
+   */
+  private validateUrl(url: string): boolean {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+
+      // ❌ Block localhost and loopback addresses
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '::1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('172.16.') ||
+        hostname.endsWith('.local')
+      ) {
+        return false;
+      }
+
+      // ❌ Block IP addresses (only allow domain names)
+      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+        return false;
+      }
+
+      // ✅ Only allow vieclamhr.com production domain
+      return hostname === 'vieclamhr.com' || hostname === 'www.vieclamhr.com';
+    } catch {
+      return false;
+    }
   }
 
   async publishUrl(indexing: Indexing): Promise<void> {
     if (!this.indexingClient) {
-      this.logger.warn(
-        `Skipping Google Indexing for ${indexing.url} (Service not initialized)`,
+      this.logger.warn('Indexing API not initialized. Skipping.');
+      return;
+    }
+
+    // ✅ URL Validation
+    if (!this.validateUrl(indexing.url)) {
+      this.logger.error(
+        `Invalid URL domain: ${indexing.url}. Only vieclamhr.com allowed.`,
       );
       return;
     }
@@ -63,60 +110,46 @@ export class GoogleIndexingService {
           type: indexing.type,
         },
       });
+
       this.logger.log(
-        `Google Indexing API called for ${indexing.url} [${indexing.type}]`,
+        `✅ Indexing API called: ${indexing.url} [${indexing.type}]`,
       );
       this.logger.debug(response.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Failed to call Google Indexing API for ${indexing.url}`,
-        error instanceof Error ? error.message : error,
+        `❌ Indexing API failed for ${indexing.url}: ${errorMessage}`,
       );
     }
   }
 
-  private readonly batchUrl = 'https://indexing.googleapis.com/batch';
-
+  /**
+   * Batch indexing using official googleapis library with rate limiting
+   */
   async sendBatchIndexing(indexings: Indexing[]) {
-    const client = await this.auth.getClient();
-    const tokenResponse = await client.getAccessToken();
-    const accessToken = tokenResponse.token;
-
-    // 2. Xây dựng Multipart/Mixed Body
-    const boundary = `batch_${Date.now()}`;
-    let body = '';
-
-    indexings.forEach((indexing) => {
-      body += `--${boundary}\n`;
-      body += 'Content-Type: application/http\n';
-      body += 'Content-Transfer-Encoding: binary\n\n';
-
-      body += 'POST /v3/urlNotifications:publish\n';
-      body += 'Content-Type: application/json\n\n';
-
-      body +=
-        JSON.stringify({
-          url: indexing.url,
-          type: indexing.type,
-        }) + '\n';
-    });
-    body += `--${boundary}--`;
-
-    // 3. Gửi Request
-    try {
-      const response = await axios.post(this.batchUrl, body, {
-        headers: {
-          'Content-Type': `multipart/mixed; boundary=${boundary}`,
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      console.log(response);
-    } catch (error) {
-      console.error(
-        'Batch Indexing Error:',
-        error instanceof Error ? error.message : error,
-      );
-      throw error;
+    if (!this.indexingClient || !this.auth) {
+      this.logger.warn('Indexing API not initialized. Skipping batch.');
+      return;
     }
+
+    // ✅ Filter only valid URLs
+    const validIndexings = indexings.filter((idx) => this.validateUrl(idx.url));
+
+    if (validIndexings.length === 0) {
+      this.logger.warn('No valid URLs to index');
+      return;
+    }
+
+    // Send individually with delay to avoid rate limits
+    for (const indexing of validIndexings) {
+      await this.publishUrl(indexing);
+      // Add delay between requests (200 requests/day limit)
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
+    }
+
+    this.logger.log(
+      `Batch indexing completed: ${validIndexings.length} URLs processed`,
+    );
   }
 }

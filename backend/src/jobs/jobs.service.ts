@@ -3,7 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MinioService } from '../upload/minio.service';
 import { AiService } from '../ai/ai.service';
 import { TelegramService } from '../notifications/telegram.service';
-import { GoogleIndexingService } from '../google-indexing/google-indexing.service';
+// GoogleIndexingService removed
+import { IndexingQueueService } from '../google-indexing/indexing-queue.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { Prisma, JobStatus } from '@prisma/client';
@@ -21,7 +22,7 @@ export class JobsService {
     @Inject(forwardRef(() => AiService))
     private aiService: AiService,
     private telegramService: TelegramService,
-    private googleIndexingService: GoogleIndexingService,
+    private indexingQueueService: IndexingQueueService,
   ) {}
 
   /**
@@ -142,14 +143,14 @@ export class JobsService {
     }
 
     if (indexingBatch.length > 0) {
-      this.googleIndexingService
-        .sendBatchIndexing(indexingBatch)
-        .catch((err: unknown) =>
-          console.error(
-            'Failed to send batch indexing:',
-            err instanceof Error ? err.message : err,
-          ),
-        );
+      // Use queue service for each item (non-blocking)
+      for (const item of indexingBatch) {
+        this.indexingQueueService
+          .enqueue(item.url, item.type)
+          .catch((err) =>
+            console.error(`Failed to enqueue indexing for ${item.url}:`, err),
+          );
+      }
     }
 
     return {
@@ -245,10 +246,10 @@ export class JobsService {
       process.env.NEXT_PUBLIC_APP_URL || 'https://timviec.vieclamhr.com';
     const jobUrl = `${frontendUrl}/jobs/${job.id}`;
 
-    this.googleIndexingService
-      .publishUrl({ url: jobUrl, type: 'URL_UPDATED' })
+    this.indexingQueueService
+      .enqueue(jobUrl, 'URL_UPDATED')
       .catch((err) =>
-        console.error('Failed to publish URL to Google Indexing:', err),
+        console.error('Failed to enqueue URL to Indexing Queue:', err),
       );
     return job;
   }
@@ -484,13 +485,10 @@ export class JobsService {
       process.env.NEXT_PUBLIC_APP_URL || 'https://timviec.vieclamhr.com';
     const jobUrl = `${frontendUrl}/jobs/${id}`;
 
-    this.googleIndexingService
-      .publishUrl({ url: jobUrl, type: 'URL_DELETED' })
+    this.indexingQueueService
+      .enqueue(jobUrl, 'URL_DELETED')
       .catch((err) =>
-        console.error(
-          'Failed to publish URL deletion to Google Indexing:',
-          err,
-        ),
+        console.error('Failed to enqueue URL deletion to Indexing Queue:', err),
       );
     return this.prisma.job.delete({ where: { id } });
   }

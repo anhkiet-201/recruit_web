@@ -11,6 +11,7 @@ import { ApplicationsModule } from './applications/applications.module';
 import { TagsModule } from './tags/tags.module';
 import { UploadModule } from './upload/upload.module';
 import { AiModule } from './ai/ai.module';
+import { GoogleIndexingModule } from './google-indexing/google-indexing.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AiModule } from './ai/ai.module';
     TagsModule,
     UploadModule,
     AiModule,
+    GoogleIndexingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
