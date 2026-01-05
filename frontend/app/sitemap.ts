@@ -8,7 +8,10 @@ const LOCALES = ["vi", "en", "zh"] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const companyInfo = getCompanyInfo("vi");
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || companyInfo.baseUrl;
+  // Force HTTPS for sitemap URLs to avoid HTTP redirect issues in Google Search Console
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || companyInfo.baseUrl
+  ).replace(/^http:/, "https:");
 
   const routes: MetadataRoute.Sitemap = [];
 

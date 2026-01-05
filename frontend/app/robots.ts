@@ -3,7 +3,10 @@ import { getCompanyInfo } from "../constants/CompanyConstants";
 
 export default function robots(): MetadataRoute.Robots {
   const companyInfo = getCompanyInfo("vi");
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || companyInfo.baseUrl;
+  // Force HTTPS for robots.txt to ensure sitemap URL uses HTTPS
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || companyInfo.baseUrl
+  ).replace(/^http:/, "https:");
 
   return {
     rules: [
