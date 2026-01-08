@@ -109,14 +109,9 @@ server {
 }
 EOF
 
-# 1. Load Environment Variables (for Build Args)
-set -a
-source .env.production
-set +a
-
-# 2. Build images (Local Build)
-echo "1. Building Docker images..."
-$COMPOSE_CMD -f docker-compose.prod.yaml build --no-cache
+# 1. Pull images mới nhất
+echo "1. Pulling Docker images..."
+$COMPOSE_CMD -f docker-compose.prod.yaml pull
 
 # 2. Tạo chứng chỉ SSL giả (Self-signed)
 echo "2. Kiểm tra/Tạo chứng chỉ SSL tạm thời..."

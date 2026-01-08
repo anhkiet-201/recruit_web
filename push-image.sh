@@ -40,7 +40,8 @@ if [ -f .env ]; then
 fi
 
 echo "2. Building & Pushing Backend ($BACKEND_IMAGE)..."
-docker buildx build --platform linux/amd64 -f ./backend/Dockerfile.prod -t $BACKEND_IMAGE ./backend --push
+# Use ROOT context (.) to allow copying prompts
+docker buildx build --platform linux/amd64 -f ./backend/Dockerfile.prod -t $BACKEND_IMAGE . --push
 
 # Cleanup .env in backend
 if [ -f backend/.env ]; then
@@ -49,10 +50,27 @@ fi
 
 # 4. Build & Push Web (Frontend)
 echo "3. Building & Pushing Frontend ($WEB_IMAGE)..."
-# Lưu ý: Frontend cần biến môi trường NEXT_PUBLIC_API_URL khi build
+
+# Ensure we have the latest backend/ prompts copied (if needed by context) - handled by Dockerfile.prod context logic
+
+# Inject variables. PRIORITIZE .env.production if pushing for PROD
+if [ -f .env.production ]; then
+    echo "   -> Loaded .env.production for Frontend Build"
+    set -a
+    source .env.production
+    set +a
+elif [ -f .env ]; then
+    echo "   -> Loaded .env for Frontend Build"
+    set -a
+    source .env
+    set +a
+fi
+
 docker buildx build --platform linux/amd64 \
   -f ./frontend/Dockerfile.prod \
-  --build-arg NEXT_PUBLIC_API_URL=/api \
+  --build-arg NEXT_PUBLIC_API_ENDPOINT=$NEXT_PUBLIC_API_ENDPOINT \
+  --build-arg NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+  --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
   -t $WEB_IMAGE ./frontend --push
 
 echo "--- HOÀN TẤT! ---"
