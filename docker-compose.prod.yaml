@@ -41,8 +41,8 @@ services:
   backend:
     image: aki201/ttn-backend:latest
     build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
+      context: .
+      dockerfile: backend/Dockerfile.prod
     container_name: ttn-backend-prod
     restart: always
     # Inject tất cả env từ .env.production

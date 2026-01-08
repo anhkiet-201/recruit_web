@@ -4,16 +4,17 @@ RUN apk add --no-cache libc6-compat openssl
 
 WORKDIR /app
 
-# Copy package files và prisma schema
-COPY package*.json ./
-COPY prisma ./prisma/
+# Context is now Root (.)
+# Copy package files and prisma schema from backend/ directory
+COPY backend/package*.json ./
+COPY backend/prisma ./prisma/
 
 RUN npm install
 
-# Copy source code (KHÔNG copy .env - sẽ inject runtime)
-COPY . .
+# Copy source code from backend/ directory
+COPY backend/ .
 
-# Generate Prisma Client và build
+# Generate Prisma Client and build
 RUN npx prisma generate
 RUN npm run build
 
@@ -24,18 +25,22 @@ RUN apk add --no-cache libc6-compat openssl
 
 WORKDIR /app
 
-# Copy artifacts từ builder
+# Copy artifacts from builder
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/tsconfig.json ./
-COPY --from=builder /app/src/ai/prompts ./prompts
+
+# Copy prompts from Root Context
+COPY ai_prompts_system.md ./prompts/system.md
+COPY ai_prompts_assistant.md ./prompts/assistant.md
+COPY ai_prompts_user_context.md ./prompts/user_context.md
 
 EXPOSE 4000
 
-# IMPORTANT: Environment variables sẽ được inject bởi Docker Compose
-# Không hardcode .env vào image để đảm bảo security và flexibility
+# IMPORTANT: Environment variables will be injected by Docker Compose
+# Do not hardcode .env into key image to ensure security and flexibility
 
 CMD [ "/bin/sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm run start:prod" ]

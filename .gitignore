@@ -53,6 +53,5 @@ tools/
 gen-lang-client-*.json
 service-account-*.json
 
-docker-compose.prod.yaml
 
 admin_app/
