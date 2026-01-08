@@ -45,11 +45,16 @@ services:
       dockerfile: Dockerfile.prod
     container_name: ttn-backend-prod
     restart: always
-    # Using root config file
+    # Inject tất cả env từ .env.production
     env_file:
-      - ./.env # Global env if needed
+      - .env.production
     environment:
       NODE_ENV: production
+      # CRITICAL: Backend phải listen port 4000
+      PORT: "4000"
+      # Override nếu cần (ưu tiên environment > env_file)
+      DATABASE_URL: postgresql://user:password@postgres:5432/ttn_db
+      MINIO_ENDPOINT: minio
     depends_on:
       - postgres
       - minio
@@ -62,11 +67,21 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      # CRITICAL: Truyền NEXT_PUBLIC_* vào build time
       args:
-        NEXT_PUBLIC_API_URL: /api
+        NEXT_PUBLIC_API_ENDPOINT: /api
+        NEXT_PUBLIC_APP_URL: https://timviec.vieclamhr.com
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
     container_name: ttn-web-prod
     restart: always
-    # Using root config file
+    # Inject runtime env (INTERNAL_API_URL, etc.)
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      # CRITICAL: Frontend phải listen port 3000
+      PORT: "3000"
+      INTERNAL_API_URL: http://backend:4000
     depends_on:
       - backend
     # NO PORTS EXPOSED (Internal only)

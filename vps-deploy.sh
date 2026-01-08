@@ -17,6 +17,19 @@ else
 fi
 echo "-> Sử dụng lệnh: $COMPOSE_CMD"
 
+# --- Kiểm tra .env.production tồn tại ---
+if [ ! -f .env.production ]; then
+    echo "❌ LỖI: File .env.production không tồn tại!"
+    echo ""
+    echo "Bạn cần tạo file .env.production trước khi deploy:"
+    echo "  1. cp .env.example .env.production"
+    echo "  2. nano .env.production  # Điền tất cả credentials thật"
+    echo ""
+    echo "Xem hướng dẫn chi tiết tại DEPLOYMENT.md"
+    exit 1
+fi
+echo "✅ File .env.production đã tồn tại"
+
 echo "--- BẮT ĐẦU TRIỂN KHAI TRÊN VPS ---"
 
 # 0. Nginx Configuration
@@ -54,6 +67,10 @@ server {
     # Recommended SSL settings
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Size limits
+    client_max_body_size 20M;
 
     location / {
         proxy_pass http://web:3000;
@@ -72,6 +89,9 @@ server {
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
     location /ttn-bucket/ {
@@ -134,11 +154,13 @@ if [[ "$RUN_CERTBOT" == "y" || "$RUN_CERTBOT" == "Y" ]]; then
         --no-eff-email \
         --force-renewal
 
-    echo "5. Reloading Nginx..."
-    $COMPOSE_CMD -f docker-compose.prod.yaml exec nginx nginx -s reload
+    echo "5. Restarting Nginx..."
+    $COMPOSE_CMD -f docker-compose.prod.yaml restart nginx
     
     echo "--- HOÀN TẤT SSL THẬT! ---"
 else
+    echo "5. Restarting Nginx to sync configurations..."
+    $COMPOSE_CMD -f docker-compose.prod.yaml restart nginx
     echo "Đã bỏ qua bước lấy SSL thật. Web đang chạy với chứng chỉ hiện tại."
 fi
 

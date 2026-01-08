@@ -18,6 +18,7 @@ build/
 *.env.local
 *.env
 .env.development
+.env.production
 backend/*.env
 frontend/*.env
 
