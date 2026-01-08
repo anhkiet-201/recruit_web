@@ -5,7 +5,10 @@ import * as path from 'path';
 @Injectable()
 export class PromptService {
   private readonly logger = new Logger(PromptService.name);
-  private readonly promptDir = path.join(process.cwd(), 'src/ai/prompts');
+  private readonly promptDir =
+    process.env.NODE_ENV === 'production'
+      ? '/app/prompts'
+      : path.join(process.cwd(), 'src/ai/prompts');
 
   constructor() {
     this.ensurePromptDir();
