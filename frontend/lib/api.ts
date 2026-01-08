@@ -2,9 +2,8 @@ const isServer = typeof window === "undefined";
 
 // Internal URL for Server-Side Rendering (SSR) in Docker network
 const INTERNAL_API_URL = process.env.INTERNAL_API_URL || "http://backend:4000";
-// Public URL for Client-Side (Browser)
-const PUBLIC_API_URL =
-  process.env.NEXT_PUBLIC_API_ENDPOINT || "https://vieclamhr.com/api";
+// Public URL for Client-Side (Browser). Default to relative /api for production proxy.
+const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_ENDPOINT || "/api";
 
 // ✅ Use internal URL for SSR, public URL for client
 const API_URL = isServer ? INTERNAL_API_URL : PUBLIC_API_URL;
