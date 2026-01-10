@@ -111,8 +111,14 @@ export class JobsController {
 
   @Get('ai-search')
   @ApiQuery({ name: 'q', required: true })
-  aiSearch(@Query('q') query: string) {
-    return this.aiService.findSimilarJobs(query);
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 10 })
+  aiSearch(
+    @Query('q') query: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.aiService.findSimilarJobs(query, Number(page), Number(limit));
   }
 
   @Get('locations')

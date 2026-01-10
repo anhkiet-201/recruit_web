@@ -80,13 +80,8 @@ export default async function JobsPage({ searchParams }: Props) {
 
   let jobsData;
   if (isAiSearch) {
-    // AI Search returns a flat array of jobs based on similarity
-    const items = await JobService.aiSearch(resolvedParams.ai_q!);
-    jobsData = {
-      items,
-      total: items.length,
-      lastPage: 1,
-    };
+    // AI Search returns a paginated response
+    jobsData = await JobService.aiSearch(resolvedParams.ai_q!, 1, 9);
   } else {
     jobsData = await JobService.searchJobs({
       ...resolvedParams,

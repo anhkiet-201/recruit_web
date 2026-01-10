@@ -55,8 +55,16 @@ export const JobService = {
     return api.get(url);
   },
 
-  aiSearch: async (query: string): Promise<Job[]> => {
-    return api.get<Job[]>(`/jobs/ai-search?q=${encodeURIComponent(query)}`);
+  aiSearch: async (
+    query: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ items: Job[]; total: number; lastPage: number }> => {
+    return api.get(
+      `/jobs/ai-search?q=${encodeURIComponent(
+        query
+      )}&page=${page}&limit=${limit}`
+    );
   },
 
   getLocations: async (): Promise<string[]> => {

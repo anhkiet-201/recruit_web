@@ -11,7 +11,7 @@ import { useTranslations } from "next-intl";
 
 interface JobFeedProps {
   initialData: { items: Job[]; total: number; lastPage: number };
-  filters: { title?: string; location?: string };
+  filters: { title?: string; location?: string; ai_q?: string };
 }
 
 export default function JobFeed({ initialData, filters }: JobFeedProps) {
@@ -46,11 +46,16 @@ export default function JobFeed({ initialData, filters }: JobFeedProps) {
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
-      const result = await JobService.searchJobs({
-        ...filters,
-        page: nextPage,
-        limit: 6,
-      });
+      let result: { items: Job[]; total: number; lastPage: number };
+      if (filters.ai_q) {
+        result = await JobService.aiSearch(filters.ai_q, nextPage, 6);
+      } else {
+        result = await JobService.searchJobs({
+          ...filters,
+          page: nextPage,
+          limit: 6,
+        });
+      }
 
       setJobs((prev) => [...prev, ...result.items]);
       setPage(nextPage);

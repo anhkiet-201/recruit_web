@@ -53,7 +53,7 @@ export class AiService {
     if (searchEventMatch) {
       const query = searchEventMatch[1];
       try {
-        const jobs = await this.findSimilarJobs(query, 5);
+        const { items: jobs } = await this.findSimilarJobs(query, 1, 5);
 
         if (jobs.length > 0) {
           const jobData = jobs
@@ -227,7 +227,11 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
         let lastSearchContext = '';
         if (user.searchHistories.length > 0) {
           const lastQuery = user.searchHistories[0].query;
-          const lastJobs = await this.findSimilarJobs(lastQuery, 3);
+          const { items: lastJobs } = await this.findSimilarJobs(
+            lastQuery,
+            1,
+            3,
+          );
           if (lastJobs.length > 0) {
             lastSearchContext =
               `\n=== KẾT QUẢ TÌM KIẾM GẦN NHẤT CỦA USER ("${lastQuery}") ===\n` +
@@ -381,10 +385,22 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
 
   async findSimilarJobs(
     query: string,
+    page: number = 1,
     limit: number = 10,
-  ): Promise<JobSearchResultDto[]> {
+  ): Promise<{
+    items: JobSearchResultDto[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }> {
     const vector = await this.aiProvider.generateEmbedding(query);
     const vectorStr = `[${vector.join(',')}]`;
+    const offset = (page - 1) * limit;
+
+    // Use a soft limit for total to avoid scanning the whole table for vector search
+    // or use a separate count query if needed. Here we assume a fixed max relevance window.
+    const MAX_RELEVANT_ITEMS = 100;
+
     const results = await this.prisma.$queryRawUnsafe<JobSearchResultDto[]>(`
       SELECT id, title, content, location, "imageUrl", "jobType", "salaryMin", "salaryMax", 
              (1 - ("embedding" <=> '${vectorStr}'::vector)) as similarity
@@ -392,9 +408,15 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
       ORDER BY (
         (1 - ("embedding" <=> '${vectorStr}'::vector)) + 
         (CASE WHEN title ILIKE '%${query}%' THEN 0.8 ELSE 0 END)
-      ) DESC LIMIT 20
+      ) DESC
+      LIMIT ${limit} OFFSET ${offset}
     `);
-    if (!results.length) return [];
+
+    // Mock total for vector search since exact count of "relevant" items is vague
+    const total =
+      results.length < limit ? offset + results.length : MAX_RELEVANT_ITEMS;
+
+    if (!results.length) return { items: [], total: 0, page, lastPage: 0 };
 
     const jobList = results.map((c) => `ID:${c.id}|${c.title}`).join('\n');
     const rerankPrompt = `Lọc Job phù hợp với "${query}". Trả về JSON array ID. Danh sách:\n${jobList}`;
@@ -403,9 +425,24 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
       const res = await this.aiProvider.generateText(rerankPrompt);
       const cleanJson = res.replace(/```json|```/g, '').trim();
       const validIds = JSON.parse(cleanJson) as string[];
-      return results.filter((c) => validIds.includes(c.id)).slice(0, limit);
+      // Filter but keep original order
+      const filtered = results.filter((c) => validIds.includes(c.id));
+
+      // If LLM filters too aggressively, fallback to original top N
+      const items = filtered.length > 0 ? filtered : results;
+      return {
+        items,
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+      };
     } catch {
-      return results.slice(0, limit);
+      return {
+        items: results,
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+      };
     }
   }
 }
