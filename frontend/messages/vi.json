@@ -100,7 +100,9 @@
     "aiAnalysis": "AI Semantic Analysis",
     "searchResults": "Kết quả tìm kiếm",
     "suggestedResultsFor": "Kết quả gợi ý cho",
-    "foundJobsMatching": "Tìm thấy {count} công việc phù hợp"
+    "foundJobsMatching": "Tìm thấy {count} công việc phù hợp",
+    "metaTitle": "Tuyển dụng việc làm",
+    "metaDescription": "Tìm việc làm nhanh chóng, uy tín tại Bình Dương, TP.HCM."
   },
   "JobCard": {
     "applied": "Đ.Ứng tuyển",

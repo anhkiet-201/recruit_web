@@ -100,7 +100,9 @@
     "aiAnalysis": "AI Semantic Analysis",
     "searchResults": "Search Results",
     "suggestedResultsFor": "Suggested results for",
-    "foundJobsMatching": "Found {count} suitable jobs"
+    "foundJobsMatching": "Found {count} suitable jobs",
+    "metaTitle": "Job Recruitment",
+    "metaDescription": "Find jobs quickly and reliably in Binh Duong, HCMC."
   },
   "JobCard": {
     "applied": "Applied",

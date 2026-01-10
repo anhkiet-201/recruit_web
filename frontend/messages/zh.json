@@ -100,7 +100,9 @@
     "aiAnalysis": "AI 语义分析",
     "searchResults": "搜索结果",
     "suggestedResultsFor": "建议结果",
-    "foundJobsMatching": "找到 {count} 个合适的工作"
+    "foundJobsMatching": "找到 {count} 个合适的工作",
+    "metaTitle": "招聘求职",
+    "metaDescription": "在平阳、胡志明市快速可靠地寻找工作。"
   },
   "JobCard": {
     "applied": "已申请",
