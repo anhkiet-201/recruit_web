@@ -1,4 +1,5 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AI_PROVIDER_TOKEN,
@@ -21,6 +22,7 @@ import { OptimizedJobResponseDto } from './dto/optimize-job.dto';
  */
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
   constructor(
     private prisma: PrismaService,
     private promptService: PromptService,
@@ -383,6 +385,90 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     }
   }
 
+  async translateJob(
+    job: { id: string; title: string; content: string; location: string },
+    targetLocale: string,
+  ): Promise<{ title: string; content: string; location: string }> {
+    if (targetLocale === 'vi')
+      return {
+        title: job.title,
+        content: job.content,
+        location: job.location,
+      };
+
+    const languageMap: Record<string, string> = {
+      en: 'English',
+      zh: 'Chinese (Simplified)',
+    };
+
+    const targetLang = languageMap[targetLocale] || 'English';
+
+    // 1. Check Cache
+    const cached = await this.prisma.jobTranslation.findUnique({
+      where: {
+        jobId_locale: {
+          jobId: job.id,
+          locale: targetLocale,
+        },
+      },
+    });
+
+    if (cached) {
+      return {
+        title: cached.title,
+        content: cached.content,
+        location: cached.location,
+      };
+    }
+
+    // 2. Generate Translation
+    const prompt = `
+      Translate the following Job Posting to ${targetLang}.
+      Return the result as a JSON object with keys: "title", "content", "location".
+      
+      Input:
+      Title: ${job.title}
+      Location: ${job.location}
+      Content: ${job.content}
+
+      Requirements:
+      1. Translate explicitly but professional.
+      2. Keep HTML tags in "content" intact.
+      3. For "location", translate the city/country names if applicable.
+      4. JSON format ONLY.
+    `;
+
+    try {
+      const res = await this.aiProvider.generateText(prompt);
+      const cleanJson = res.replace(/```json|```/g, '').trim();
+      const translation = JSON.parse(cleanJson) as {
+        title: string;
+        content: string;
+        location: string;
+      };
+
+      // 3. Save to Cache
+      await this.prisma.jobTranslation.create({
+        data: {
+          jobId: job.id,
+          locale: targetLocale,
+          title: translation.title,
+          content: translation.content,
+          location: translation.location,
+        },
+      });
+
+      return translation;
+    } catch (e) {
+      console.error('Error translating job:', e);
+      return {
+        title: job.title,
+        content: job.content,
+        location: job.location,
+      };
+    }
+  }
+
   async findSimilarJobs(
     query: string,
     page: number = 1,
@@ -443,6 +529,71 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
         page,
         lastPage: Math.ceil(total / limit),
       };
+    }
+  }
+
+  @Cron(CronExpression.EVERY_30_MINUTES)
+  async handleCron() {
+    this.logger.debug('Running background translation task...');
+
+    // Find recent jobs that are missing translations (EN or ZH)
+    // We limit to 5 per run to avoid rate limits
+    const jobsToTranslate = await this.prisma.job.findMany({
+      where: {
+        AND: [
+          { status: 'ACTIVE' }, // Only translate active jobs
+          {
+            OR: [
+              { jobTranslations: { none: { locale: 'en' } } },
+              { jobTranslations: { none: { locale: 'zh' } } },
+            ],
+          },
+        ],
+      },
+      take: 2, // Process small batches
+      orderBy: { createdAt: 'desc' },
+      include: {
+        jobTranslations: true,
+      },
+    });
+
+    if (jobsToTranslate.length === 0) {
+      return;
+    }
+
+    this.logger.log(
+      `Found ${jobsToTranslate.length} jobs needing translation.`,
+    );
+
+    for (const job of jobsToTranslate) {
+      const hasEn = job.jobTranslations.some((t) => t.locale === 'en');
+      const hasZh = job.jobTranslations.some((t) => t.locale === 'zh');
+
+      if (!hasEn) {
+        this.logger.log(`Translating Job ID ${job.id} to English...`);
+        await this.translateJob(
+          {
+            id: job.id,
+            title: job.title,
+            content: job.content,
+            location: job.location,
+          },
+          'en',
+        );
+      }
+
+      if (!hasZh) {
+        this.logger.log(`Translating Job ID ${job.id} to Chinese...`);
+        await this.translateJob(
+          {
+            id: job.id,
+            title: job.title,
+            content: job.content,
+            location: job.location,
+          },
+          'zh',
+        );
+      }
     }
   }
 }

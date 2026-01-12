@@ -17,7 +17,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params;
   const companyInfo = getCompanyInfo(locale);
   // IncrementView: false because crawlers/metadata generation shouldn't count as a view
-  const job = await JobService.getJobById(id, { incrementView: false });
+  // Pass locale to get translated content for SEO tags (title, description)
+  const job = await JobService.getJobById(id, {
+    incrementView: false,
+    locale,
+  });
 
   if (!job) {
     return {
@@ -41,12 +45,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     job.content?.replace(/<[^>]*>?/gm, "").substring(0, 160) || "";
   const description = `${job.title} tại ${job.location}. ${cleanContent}...`;
 
+  // Fix Canonical: Self-referencing based on locale
+  let canonicalPath = `/jobs/${id}`;
+  if (locale !== "vi") {
+    canonicalPath = `/${locale}/jobs/${id}`;
+  }
+  const canonicalUrl = `${companyInfo.baseUrl}${canonicalPath}`;
+
   return SeoHelper.generateSeoMetadata(
     {
       title: job.title,
       description: description,
       ogImage: job.imageUrl,
-      canonicalUrl: `${companyInfo.baseUrl}/jobs/${id}`,
+      canonicalUrl: canonicalUrl,
       keywords: Array.from(new Set(keywords)), // Remove duplicates
       openGraph: {
         title: job.title,
@@ -64,7 +75,10 @@ export default async function JobDetailPage({ params }: Props) {
   let job;
 
   try {
-    job = await JobService.getJobById(id, { incrementView: false });
+    job = await JobService.getJobById(id, {
+      incrementView: false,
+      locale,
+    });
 
     if (!job) {
       notFound();

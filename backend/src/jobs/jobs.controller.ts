@@ -142,12 +142,28 @@ export class JobsController {
   }
 
   @Get(':id')
-  findOne(
+  async findOne(
     @Param('id') id: string,
     @Query('incrementView') incrementView?: string,
+    @Query('locale') locale?: string,
   ) {
     const shouldIncrement = incrementView !== 'false';
-    return this.jobsService.findOne(id, shouldIncrement);
+    const job = await this.jobsService.findOne(id, shouldIncrement);
+
+    if (job && locale && locale !== 'vi') {
+      const translated = await this.aiService.translateJob(
+        {
+          id: job.id,
+          title: job.title,
+          content: job.content,
+          location: job.location,
+        },
+        locale,
+      );
+      return { ...job, ...translated };
+    }
+
+    return job;
   }
 
   @UseGuards(AuthGuard('jwt'))

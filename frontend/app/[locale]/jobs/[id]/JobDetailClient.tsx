@@ -20,11 +20,9 @@ import {
   Users,
   Clock,
   Share2,
-  RefreshCw,
   Languages,
   Phone,
 } from "lucide-react";
-import { api } from "@/lib/api";
 import ImageComponent from "@/components/ui/ImageComponent";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -48,11 +46,6 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
   // For now, let's trust initialJob is good.
   const [job] = useState<Job>(initialJob);
   const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
-  const [translatedContent, setTranslatedContent] = useState<string | null>(
-    null
-  );
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [showTranslated, setShowTranslated] = useState(false);
   const [isApplied, setIsApplied] = useState(false);
   const [checkingApplication, setCheckingApplication] = useState(true);
 
@@ -112,42 +105,6 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
     )
       .toString()
       .padStart(2, "0")}/${date.getFullYear()}`;
-  };
-
-  const handleTranslate = async () => {
-    if (showTranslated) {
-      setShowTranslated(false);
-      return;
-    }
-
-    if (translatedContent) {
-      setShowTranslated(true);
-      return;
-    }
-
-    if (!job?.content) return;
-
-    setIsTranslating(true);
-    try {
-      const prompt = `Translate the following job description to ${
-        locale === "vi" ? "Vietnamese" : locale === "zh" ? "Chinese" : "English"
-      }. Keep the formatting (markdown/HTML) if possible. Do not add any conversational text, just the translation.\n\n${
-        job.content
-      }`;
-
-      const res = await api.post<{ response: string }>("/ai/chat", {
-        message: prompt,
-        history: [],
-      });
-
-      setTranslatedContent(res.response);
-      setShowTranslated(true);
-    } catch (error) {
-      console.error("Translation failed:", error);
-      alert("Translation failed. Please try again.");
-    } finally {
-      setIsTranslating(false);
-    }
   };
 
   return (
@@ -269,28 +226,12 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
                         {t("jobDetails")}
                       </h3>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleTranslate}
-                      disabled={isTranslating}
-                      className="text-blue-600 hover:bg-blue-50"
-                      icon={isTranslating ? RefreshCw : Languages}
-                    >
-                      {isTranslating
-                        ? t("translating")
-                        : showTranslated
-                        ? t("originalContent")
-                        : t("translateTo")}
-                    </Button>
                   </div>
                   <div className="prose prose-blue max-w-none prose-headings:font-bold prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg prose-h5:text-base prose-ul:list-disc prose-ol:list-decimal prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800">
                     <div
                       dangerouslySetInnerHTML={{
                         __html: sanitizeHtml(
-                          showTranslated
-                            ? translatedContent || ""
-                            : isHtmlContent(job.content || "")
+                          isHtmlContent(job.content || "")
                             ? job.content || ""
                             : convertPlainTextToHtml(job.content || "")
                         ),

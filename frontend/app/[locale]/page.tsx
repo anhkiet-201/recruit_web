@@ -39,12 +39,16 @@ export async function generateMetadata({
   const companyInfo = getCompanyInfo(locale);
 
   // Xác định canonical URL
-  let canonicalUrl = companyInfo.baseUrl;
+  let canonicalPath = "";
+  if (locale !== "vi") {
+    canonicalPath = `/${locale}`;
+  }
+  let canonicalUrl = `${companyInfo.baseUrl}${canonicalPath}`;
 
   // Nếu có jobType filter → self-referencing với query
   if (resolvedParams.jobType) {
     const query = new URLSearchParams({ jobType: resolvedParams.jobType });
-    canonicalUrl = `${companyInfo.baseUrl}?${query.toString()}`;
+    canonicalUrl = `${companyInfo.baseUrl}${canonicalPath}?${query.toString()}`;
   }
   // Nếu chỉ có title/location → không set canonical ở đây vì sẽ redirect sang /jobs
   // (giữ nguyên canonicalUrl = companyInfo.baseUrl)

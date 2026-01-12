@@ -30,7 +30,11 @@ export async function generateMetadata({
   const companyInfo = getCompanyInfo(locale);
 
   // Xác định canonical URL
-  let canonicalUrl = `${companyInfo.baseUrl}/jobs`;
+  let canonicalPath = "/jobs";
+  if (locale !== "vi") {
+    canonicalPath = `/${locale}/jobs`;
+  }
+  let canonicalUrl = `${companyInfo.baseUrl}${canonicalPath}`;
 
   // Nếu có bất kỳ filter nào → self-referencing canonical
   const hasFilters = !!(
@@ -49,7 +53,7 @@ export async function generateMetadata({
       query.append("location", resolvedParams.location);
     if (resolvedParams.title) query.append("title", resolvedParams.title);
 
-    canonicalUrl = `${companyInfo.baseUrl}/jobs?${query.toString()}`;
+    canonicalUrl = `${companyInfo.baseUrl}${canonicalPath}?${query.toString()}`;
   }
 
   return SeoHelper.generateSeoMetadata(

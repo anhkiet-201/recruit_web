@@ -86,9 +86,10 @@ model Job {
   embedding       Unsupported("vector(768)")?
   authorId        String?
 
-  applications Application[]
-  jobTags      JobTag[]
-  author       User?         @relation("JobAuthor", fields: [authorId], references: [id])
+  applications    Application[]
+  jobTags         JobTag[]
+  author          User?            @relation("JobAuthor", fields: [authorId], references: [id])
+  jobTranslations JobTranslation[]
 }
 
 model Application {
@@ -138,4 +139,20 @@ model IndexingQueue {
   // Indexes for performance
   @@index([status, createdAt])
   @@index([url])
+}
+
+model JobTranslation {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobId     String
+  locale    String   @db.VarChar(10) // 'en', 'zh'
+  title     String
+  content   String   @db.Text
+  location  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, locale])
+  @@index([jobId, locale])
 }

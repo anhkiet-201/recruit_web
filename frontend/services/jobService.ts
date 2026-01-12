@@ -21,13 +21,16 @@ export const JobService = {
 
   getJobById: async (
     id: string,
-    options?: { incrementView?: boolean }
+    options?: { incrementView?: boolean; locale?: string }
   ): Promise<Job | null> => {
     try {
-      const url =
-        options?.incrementView === false
-          ? `/jobs/${id}?incrementView=false`
-          : `/jobs/${id}`;
+      const params = new URLSearchParams();
+      if (options?.incrementView === false)
+        params.append("incrementView", "false");
+      if (options?.locale) params.append("locale", options.locale);
+
+      const queryString = params.toString();
+      const url = `/jobs/${id}${queryString ? `?${queryString}` : ""}`;
       return await api.get<Job>(url);
     } catch {
       return null;
