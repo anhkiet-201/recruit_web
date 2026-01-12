@@ -1,29 +1,21 @@
-import { getCompanyInfo } from "../../constants/CompanyConstants";
+import {
+  generateWebSiteSchema,
+  generateOrganizationSchema,
+} from "@/utils/schemaGenerator";
+import { getCompanyInfo } from "@/constants/CompanyConstants";
 
 interface Props {
   locale: string;
 }
 
 export default function JsonLdScript({ locale }: Props) {
+  const websiteSchema = generateWebSiteSchema(locale);
+  // We can use Organization schema as base for EmploymentAgency or keep it separate.
+  // For now let's keep EmploymentAgency here but cleaner, or duplicate Organization logic?
+  // Actually the EmploymentAgency schema in original file had more specific fields like openingHours.
+  // I should add generateEmploymentAgencySchema to generator.
+
   const companyInfo = getCompanyInfo(locale);
-
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "@id": `${companyInfo.baseUrl}/#website`,
-    url: companyInfo.baseUrl,
-    inLanguage: locale,
-    name: companyInfo.name,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${companyInfo.baseUrl}/jobs?title={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
-  };
-
   const employmentAgencySchema = {
     "@context": "https://schema.org",
     "@type": "EmploymentAgency",
