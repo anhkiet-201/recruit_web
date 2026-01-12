@@ -12,13 +12,12 @@ import { TagsModule } from './tags/tags.module';
 import { UploadModule } from './upload/upload.module';
 import { AiModule } from './ai/ai.module';
 import { GoogleIndexingModule } from './google-indexing/google-indexing.module';
-
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`../.env.${process.env.NODE_ENV}`, '../.env'],
+      envFilePath: `../.env${process.env.NODE_ENV === 'development' ? '.development' : ''}`,
     }),
     PrismaModule,
     AuthModule,

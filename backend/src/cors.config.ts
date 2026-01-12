@@ -78,6 +78,7 @@ export const corsOptions: CorsOptions = {
     'X-Requested-With',
     'X-Device-Id', // Custom header cho mobile/desktop tracking
     'X-App-Version', // Custom header cho app version
+    'x-guest-id',
   ],
 
   // Các headers backend có thể expose cho frontend

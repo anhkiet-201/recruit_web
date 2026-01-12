@@ -448,10 +448,22 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
       };
 
       // 3. Save to Cache
-      await this.prisma.jobTranslation.create({
-        data: {
+      await this.prisma.jobTranslation.upsert({
+        where: {
+          jobId_locale: {
+            jobId: job.id,
+            locale: targetLocale,
+          },
+        },
+        create: {
           jobId: job.id,
           locale: targetLocale,
+          title: translation.title,
+          content: translation.content,
+          location: translation.location,
+        },
+        update: {
+          // If already exists, update content might be useful or just do nothing (idempotent)
           title: translation.title,
           content: translation.content,
           location: translation.location,

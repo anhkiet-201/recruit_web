@@ -24,7 +24,6 @@ export class GoogleIndexingService {
       'GOOGLE_SERVICE_ACCOUNT_EMAIL',
     );
     const privateKey = this.configService.get<string>('GOOGLE_PRIVATE_KEY');
-
     if (!email || !privateKey) {
       this.logger.warn(
         'Google Service Account credentials not found in environment variables. Indexing API disabled.',
@@ -83,7 +82,7 @@ export class GoogleIndexingService {
       }
 
       // ✅ Only allow vieclamhr.com production domain
-      return hostname === 'vieclamhr.com' || hostname === 'www.vieclamhr.com';
+      return hostname === 'timviec.vieclamhr.com';
     } catch {
       return false;
     }
@@ -98,7 +97,7 @@ export class GoogleIndexingService {
     // ✅ URL Validation
     if (!this.validateUrl(indexing.url)) {
       this.logger.error(
-        `Invalid URL domain: ${indexing.url}. Only vieclamhr.com allowed.`,
+        `Invalid URL domain: ${indexing.url}. Only timviec.vieclamhr.com allowed.`,
       );
       return;
     }
