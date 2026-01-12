@@ -7,6 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { Metadata } from "next";
 import { getCompanyInfo } from "@/constants/CompanyConstants";
 import { SeoHelper } from "@/utils/SeoHelper";
+import ItemListSchema from "@/components/seo/ItemListSchema";
 
 export const dynamic = "force-dynamic";
 
@@ -77,9 +78,10 @@ export async function generateMetadata({
   );
 }
 
-export default async function JobsPage({ searchParams }: Props) {
+export default async function JobsPage({ searchParams, params }: Props) {
   const resolvedParams = await searchParams;
   const isAiSearch = !!resolvedParams.ai_q;
+  const { locale } = await params;
   const t = await getTranslations("JobsPage");
 
   let jobsData;
@@ -136,6 +138,17 @@ export default async function JobsPage({ searchParams }: Props) {
         </div>
         <div className="absolute top-full left-0 right-0 h-32 bg-linear-to-b from-white to-transparent pointer-events-none"></div>
       </div>
+
+      <ItemListSchema
+        jobs={jobsData.items}
+        locale={locale}
+        title={
+          isAiSearch
+            ? `Suggested for "${resolvedParams.ai_q}"`
+            : "Job Search Results"
+        }
+        url={isAiSearch ? `?ai_q=${resolvedParams.ai_q}` : undefined}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">

@@ -17,6 +17,7 @@ import { getTranslations } from "next-intl/server";
 import { Metadata } from "next";
 import { getCompanyInfo } from "@/constants/CompanyConstants";
 import { SeoHelper } from "@/utils/SeoHelper";
+import ItemListSchema from "@/components/seo/ItemListSchema";
 
 export const dynamic = "force-dynamic";
 
@@ -68,26 +69,28 @@ export async function generateMetadata({
   );
 }
 
-export default async function HomePage({ searchParams }: Props) {
-  const params = await searchParams;
-  const currentJobType = params.jobType || "all";
+export default async function HomePage({ searchParams, params }: Props) {
+  const { locale } = await params;
+  const resolvedParams = await searchParams;
+  const currentJobType = resolvedParams.jobType || "all";
   const t = await getTranslations("HomePage");
 
   const [jobsData, trendingJobs, hotJobs] = await Promise.all([
-    JobService.searchJobs({ ...params, page: 1, limit: 6 }),
+    JobService.searchJobs({ ...resolvedParams, page: 1, limit: 6 }),
     JobService.getTrendingJobs(3),
     JobService.getHotJobs(3),
   ]);
 
   const getFilterUrl = (type: string) => {
     const query = new URLSearchParams();
-    if (params.title) query.append("title", params.title);
-    if (params.location) query.append("location", params.location);
+    if (resolvedParams.title) query.append("title", resolvedParams.title);
+    if (resolvedParams.location)
+      query.append("location", resolvedParams.location);
     if (type !== "all") query.append("jobType", type);
     return `/?${query.toString()}`;
   };
 
-  const isSearching = !!(params.title || params.location);
+  const isSearching = !!(resolvedParams.title || resolvedParams.location);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -111,13 +114,19 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
 
           <JobSearchBar
-            defaultTitle={params.title}
-            defaultValue={params.location}
+            defaultTitle={resolvedParams.title}
+            defaultValue={resolvedParams.location}
             currentJobType={currentJobType}
             action="/jobs"
           />
         </div>
       </header>
+
+      <ItemListSchema
+        jobs={isSearching ? jobsData.items : trendingJobs}
+        locale={locale}
+        title={isSearching ? "Search Results" : "Trending Jobs"}
+      />
 
       {/* 2. MAIN CONTENT SECTION - Unified background */}
       <main className="relative">
@@ -224,7 +233,7 @@ export default async function HomePage({ searchParams }: Props) {
                 </div>
               </div>
 
-              <JobFeed initialData={jobsData} filters={params} />
+              <JobFeed initialData={jobsData} filters={resolvedParams} />
             </section>
           </div>
         </div>
