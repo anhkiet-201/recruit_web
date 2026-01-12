@@ -117,7 +117,7 @@ export default async function RootLayout({
                   <header className="sticky top-0 z-1000">
                     <Navbar />
                   </header>
-                  <main className="grow bg-gray-50/50">{children}</main>
+                  <main className="grow bg-gray-50/90">{children}</main>
                   <Footer />
                   <AiChatBot />
                 </div>
