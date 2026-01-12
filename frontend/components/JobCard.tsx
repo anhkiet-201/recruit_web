@@ -34,13 +34,13 @@ const JobCard = memo(function JobCard({ job, isApplied = false, priority = false
     const isNew = (new Date().getTime() - new Date(job.createdAt).getTime()) < (3 * 24 * 60 * 60 * 1000);
 
     return (
-        <Link href={`/jobs/${job.id}`} className="group block h-full">
+        <Link href={`/${locale}/jobs/${job.id}`} className="group block h-full">
             <div className="h-full bg-white rounded-[2.5rem] p-3.5 shadow-xl shadow-gray-200/40 border border-gray-100/60 hover:shadow-2xl hover:shadow-blue-200/50 hover:-translate-y-2.5 transition-all duration-500 flex flex-col relative overflow-hidden">
                 {/* Background Decoration */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50/50 to-transparent rounded-bl-full -z-0 opacity-50 group-hover:scale-150 transition-transform duration-700"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-blue-50/50 to-transparent rounded-bl-full z-0 opacity-50 group-hover:scale-150 transition-transform duration-700"></div>
 
                 {/* Header Image Section */}
-                <div className="relative aspect-[16/10] w-full rounded-[2.2rem] overflow-hidden shadow-sm bg-gray-50 z-10">
+                <div className="relative aspect-16/10 w-full rounded-[2.2rem] overflow-hidden shadow-sm bg-gray-50 z-10">
                     <SafeImage src={job.imageUrl} fallback={placeholderImage} alt={job.title} priority={priority} />
 
                     <div className="absolute top-4 left-4 flex flex-col gap-2 z-20">
@@ -66,7 +66,7 @@ const JobCard = memo(function JobCard({ job, isApplied = false, priority = false
                     </div>
 
                     {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
                         <span className="text-white text-xs font-bold flex items-center gap-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                             {tDetail('applyNow')} <ArrowRight size={14} />
                         </span>
@@ -75,7 +75,7 @@ const JobCard = memo(function JobCard({ job, isApplied = false, priority = false
 
                 {/* Content Section */}
                 <div className="px-5 pt-7 pb-4 flex flex-col flex-1 z-10">
-                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 mb-5 h-[3.5rem] flex items-start leading-[1.75rem]">
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 mb-5 h-14 flex items-start leading-7">
                         {job.title}
                     </h3>
 
@@ -140,11 +140,11 @@ const JobCard = memo(function JobCard({ job, isApplied = false, priority = false
 
                     {/* Footer */}
                     <div className="mt-auto flex items-center justify-between bg-gray-50/50 rounded-3xl p-2.5 pl-5 border border-gray-100/50 group-hover:bg-blue-50/50 transition-colors duration-500">
-                        <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 group-hover:text-blue-600/70 uppercase tracking-[0.1em] transition-colors">
+                        <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 group-hover:text-blue-600/70 uppercase tracking-widest transition-colors">
                             <Clock size={12} />
                             <span>{job.deadline ? t('deadline', { date: formatDate(job.deadline) }) : t('noDeadline')}</span>
                         </div>
-                        <div className="h-10 w-10 bg-white shadow-md rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 group-hover:rotate-[360deg]">
+                        <div className="h-10 w-10 bg-white shadow-md rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 group-hover:rotate-360">
                             <ChevronRight size={20} />
                         </div>
                     </div>

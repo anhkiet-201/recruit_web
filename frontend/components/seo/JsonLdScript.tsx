@@ -1,6 +1,5 @@
 import {
   generateWebSiteSchema,
-  generateOrganizationSchema,
 } from "@/utils/schemaGenerator";
 import { getCompanyInfo } from "@/constants/CompanyConstants";
 
