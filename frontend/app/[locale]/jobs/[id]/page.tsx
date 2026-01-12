@@ -2,7 +2,6 @@ import { JobService } from "@/services/jobService";
 import { notFound } from "next/navigation";
 import JobDetailClient from "./JobDetailClient";
 import { SeoHelper } from "@/utils/SeoHelper";
-import { getJobBreadcrumbSchema } from "@/constants/SeoConstants";
 import { Metadata } from "next";
 import JobPostingSchema from "@/components/seo/JobPostingSchema";
 
@@ -70,6 +69,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   );
 }
 
+import BreadcrumbSchema from "@/components/seo/BreadcrumbSchema";
+
 export default async function JobDetailPage({ params }: Props) {
   const { id, locale } = await params;
   let job;
@@ -88,14 +89,24 @@ export default async function JobDetailPage({ params }: Props) {
     notFound();
   }
 
-  const jsonLd = getJobBreadcrumbSchema(job, locale);
+  const breadcrumbItems = [
+    {
+      name: locale === "vi" ? "Trang chủ" : "Home",
+      item: `https://timviec.vieclamhr.com/${locale}`,
+    },
+    {
+      name: locale === "vi" ? "Việc làm" : "Jobs",
+      item: `https://timviec.vieclamhr.com/${locale}/jobs`,
+    },
+    {
+      name: job.title,
+      item: `https://timviec.vieclamhr.com/${locale}/jobs/${job.id}`,
+    },
+  ];
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <BreadcrumbSchema items={breadcrumbItems} />
       <JobPostingSchema job={job} locale={locale} />
       <JobDetailClient initialJob={job} />
     </>
