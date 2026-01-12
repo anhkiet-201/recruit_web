@@ -277,11 +277,11 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
 
   private async getJobsMatchingCv(userId: string): Promise<JobCvMatchDto[]> {
     try {
-      const jobs = await this.prisma.$queryRawUnsafe<JobCvMatchDto[]>(`
+      const jobs = await this.prisma.$queryRaw<JobCvMatchDto[]>`
             SELECT j.title FROM "Job" j, "User" u
-            WHERE u.id = '${userId}' AND u.embedding IS NOT NULL AND j.embedding IS NOT NULL AND (j."status" = 'ACTIVE' OR j."status" = 'ACCEPTED')
+            WHERE u.id = ${userId}::uuid AND u.embedding IS NOT NULL AND j.embedding IS NOT NULL AND (j."status" = 'ACTIVE' OR j."status" = 'ACCEPTED')
             ORDER BY j.embedding <=> u.embedding LIMIT 3
-        `);
+        `;
       return jobs;
     } catch (_e) {
       console.error('Error fetching jobs matching CV:', _e);
@@ -326,17 +326,15 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
   async embedJob(jobId: string, text: string) {
     const vector = await this.aiProvider.generateEmbedding(text);
     const vectorStr = `[${vector.join(',')}]`;
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE "Job" SET "embedding" = '${vectorStr}'::vector WHERE "id" = '${jobId}'`,
-    );
+    await this.prisma
+      .$executeRaw`UPDATE "Job" SET "embedding" = ${vectorStr}::vector WHERE "id" = ${jobId}::uuid`;
   }
 
   async embedUser(userId: string, text: string) {
     const vector = await this.aiProvider.generateEmbedding(text);
     const vectorStr = `[${vector.join(',')}]`;
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE "User" SET "embedding" = '${vectorStr}'::vector WHERE "id" = '${userId}'`,
-    );
+    await this.prisma
+      .$executeRaw`UPDATE "User" SET "embedding" = ${vectorStr}::vector WHERE "id" = ${userId}::uuid`;
   }
 
   async generateEmbedding(text: string) {
@@ -487,16 +485,16 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     // or use a separate count query if needed. Here we assume a fixed max relevance window.
     const MAX_RELEVANT_ITEMS = 100;
 
-    const results = await this.prisma.$queryRawUnsafe<JobSearchResultDto[]>(`
+    const results = await this.prisma.$queryRaw<JobSearchResultDto[]>`
       SELECT id, title, content, location, "imageUrl", "jobType", "salaryMin", "salaryMax", 
-             (1 - ("embedding" <=> '${vectorStr}'::vector)) as similarity
+             (1 - ("embedding" <=> ${vectorStr}::vector)) as similarity
       FROM "Job" WHERE ("status" = 'ACTIVE' OR "status" = 'ACCEPTED') AND "embedding" IS NOT NULL
       ORDER BY (
-        (1 - ("embedding" <=> '${vectorStr}'::vector)) + 
-        (CASE WHEN title ILIKE '%${query}%' THEN 0.8 ELSE 0 END)
+        (1 - ("embedding" <=> ${vectorStr}::vector)) + 
+        (CASE WHEN title ILIKE ${`%${query}%`} THEN 0.8 ELSE 0 END)
       ) DESC
       LIMIT ${limit} OFFSET ${offset}
-    `);
+    `;
 
     // Mock total for vector search since exact count of "relevant" items is vague
     const total =
