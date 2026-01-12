@@ -1,6 +1,6 @@
 import { Job } from "@/models/Job";
 import { getCompanyInfo } from "@/constants/CompanyConstants";
-import { isHtmlContent, htmlToPlainText } from "@/utils/contentHelper";
+import { isHtmlContent } from "@/utils/contentHelper";
 
 interface Props {
   job: Job;
@@ -26,16 +26,31 @@ function mapJobTypeToSchemaFormat(jobType: string): string {
 }
 
 /**
- * Get description for schema - converts HTML to plain text if needed
- * Truncates to 5000 chars (Google limit)
+ * Sanitize HTML for Schema.org - Remove script/style but keep formatting tags.
+ */
+function sanitizeForSchema(html: string): string {
+  if (!html) return "";
+  // Remove script and style tags and their content
+  let clean = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+
+  // Remove event handlers (on...)
+  clean = clean.replace(/ on\w+="[^"]*"/gi, "");
+
+  return clean;
+}
+
+/**
+ * Get description for schema - Preserves HTML for Google Jobs
+ * Truncates to 5000 chars
  */
 function getDescriptionForSchema(job: Job): string {
   const content = job.content || job.description || "";
 
-  // If HTML, convert to plain text
+  // If HTML, sanitize but keep tags
   if (isHtmlContent(content)) {
-    const plainText = htmlToPlainText(content);
-    return plainText.substring(0, 5000);
+    return sanitizeForSchema(content).substring(0, 5000);
   }
 
   // Plain text - just truncate
@@ -82,9 +97,10 @@ export default function JobPostingSchema({ job, locale }: Props) {
     "@id": `${companyInfo.baseUrl}/jobs/${job.id}#jobposting`,
     title: job.title,
     description: getDescriptionForSchema(job),
-    datePosted: job.createdAt,
+    datePosted: job.updatedAt || job.createdAt,
     validThrough: validThrough,
     employmentType: mapJobTypeToSchemaFormat(job.jobType || "full-time"),
+    directApply: true,
 
     // Hiring Organization
     hiringOrganization: {

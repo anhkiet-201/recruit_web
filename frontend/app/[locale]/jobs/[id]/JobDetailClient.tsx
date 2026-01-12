@@ -82,7 +82,8 @@ export default function JobDetailClient({ initialJob }: JobDetailClientProps) {
         })
         .catch(() => setCheckingApplication(false));
     } else {
-      setCheckingApplication(false);
+      const timer = setTimeout(() => setCheckingApplication(false), 0);
+      return () => clearTimeout(timer);
     }
   }, [user, job.id]);
 
