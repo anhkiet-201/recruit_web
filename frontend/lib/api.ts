@@ -69,7 +69,10 @@ async function fetchClient<T>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "API request failed");
+      console.error(`[API Error] ${url}:`, response.status, errorData);
+      throw new Error(
+        errorData.message || `API request failed: ${response.status}`
+      );
     }
 
     const contentType = response.headers.get("content-type");

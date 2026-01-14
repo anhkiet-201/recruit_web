@@ -29,10 +29,15 @@ export const JobService = {
         params.append("incrementView", "false");
       if (options?.locale) params.append("locale", options.locale);
 
+      // Encode ID properly for URL (handles special characters)
+      const encodedId = encodeURIComponent(id);
       const queryString = params.toString();
-      const url = `/jobs/${id}${queryString ? `?${queryString}` : ""}`;
+      const url = `/jobs/${encodedId}${queryString ? `?${queryString}` : ""}`;
+
+      console.log(`[JobService] Fetching job: ${id} (encoded: ${encodedId})`);
       return await api.get<Job>(url);
-    } catch {
+    } catch (error) {
+      console.error(`[JobService] Failed to fetch job ${id}:`, error);
       return null;
     }
   },

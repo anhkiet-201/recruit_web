@@ -147,8 +147,18 @@ export class JobsController {
     @Query('incrementView') incrementView?: string,
     @Query('locale') locale?: string,
   ) {
+    // Decode URL parameter (NestJS should auto-decode, but explicit is safer)
+    const decodedId = decodeURIComponent(id);
+
+    console.log(`[JobsController] Fetching job with ID: ${decodedId}`);
+
     const shouldIncrement = incrementView !== 'false';
-    const job = await this.jobsService.findOne(id, shouldIncrement);
+    const job = await this.jobsService.findOne(decodedId, shouldIncrement);
+
+    if (!job) {
+      console.error(`[JobsController] Job not found: ${decodedId}`);
+      throw new Error(`Job with ID "${decodedId}" not found`);
+    }
 
     if (job && locale && locale !== 'vi') {
       const translated = await this.aiService.translateJob(

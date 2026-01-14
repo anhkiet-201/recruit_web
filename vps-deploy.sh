@@ -133,6 +133,15 @@ fi
 echo "3. Khởi động Containers..."
 $COMPOSE_CMD -f docker-compose.prod.yaml up -d
 
+# 3.1. Chạy Database Migration
+echo "3.1. Running database migrations..."
+$COMPOSE_CMD -f docker-compose.prod.yaml exec -T backend npx prisma migrate deploy
+if [ $? -eq 0 ]; then
+    echo "   -> Migration thành công!"
+else
+    echo "   -> ⚠️  Migration gặp lỗi. Kiểm tra logs: docker logs ttn-backend-prod"
+fi
+
 # 4. Hỏi người dùng có muốn lấy chứng chỉ thật ngay không
 echo ""
 echo "----------------------------------------------------"
