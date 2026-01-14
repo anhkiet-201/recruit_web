@@ -47,7 +47,7 @@ services:
     restart: always
     # Inject tất cả env từ .env.production
     env_file:
-      - .env.production
+      - .env
     environment:
       NODE_ENV: production
       # CRITICAL: Backend phải listen port 4000
