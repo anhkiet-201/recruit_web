@@ -32,16 +32,16 @@ model User {
 }
 
 model Guest {
-  id              String          @id @default(uuid()) @db.Uuid
+  id              String          @id @default(uuid())
   lastActive      DateTime        @default(now())
   createdAt       DateTime        @default(now())
   searchHistories SearchHistory[]
 }
 
 model SearchHistory {
-  id        String                      @id @default(uuid()) @db.Uuid
+  id        String                      @id @default(uuid())
   userId    String?
-  guestId   String?                     @db.Uuid
+  guestId   String?
   query     String
   createdAt DateTime                    @default(now())
   embedding Unsupported("vector(768)")?
@@ -51,7 +51,7 @@ model SearchHistory {
 }
 
 model EmployerRequest {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   status    String   @default("pending") // pending, approved, rejected
@@ -93,7 +93,7 @@ model Job {
 }
 
 model Application {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid())
   jobId     String // Removed @db.Uuid to match Job.id
   userId    String
   cvUrl     String
@@ -105,7 +105,7 @@ model Application {
 }
 
 model Tag {
-  id   String @id @default(uuid()) @db.Uuid
+  id   String @id @default(uuid())
   name String @unique
 
   jobTags JobTag[]
@@ -113,7 +113,7 @@ model Tag {
 
 model JobTag {
   jobId String // Removed @db.Uuid to match Job.id
-  tagId String @db.Uuid
+  tagId String
 
   job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
   tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
@@ -123,14 +123,14 @@ model JobTag {
 
 model IndexingQueue {
   id     Int    @id @default(autoincrement())
-  url    String @db.VarChar(500)
-  type   String @db.VarChar(20) // 'URL_UPDATED' | 'URL_DELETED'
-  status String @default("pending") @db.VarChar(20) // 'pending' | 'processing' | 'success' | 'failed'
+  url    String
+  type   String // 'URL_UPDATED' | 'URL_DELETED'
+  status String @default("pending") // 'pending' | 'processing' | 'success' | 'failed'
 
   retryCount Int @default(0)
   maxRetries Int @default(3)
 
-  lastError String? @db.Text
+  lastError String?
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -142,11 +142,11 @@ model IndexingQueue {
 }
 
 model JobTranslation {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid())
   jobId     String
-  locale    String   @db.VarChar(10) // 'en', 'zh'
+  locale    String // 'en', 'zh'
   title     String
-  content   String   @db.Text
+  content   String
   location  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

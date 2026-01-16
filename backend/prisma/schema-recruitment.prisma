@@ -1,0 +1,51 @@
+generator recruitmentClient {
+    provider        = "prisma-client-js"
+    output          = "../node_modules/@prisma/client-recruitment"
+    previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource recruitmentDb {
+    provider   = "postgresql"
+    extensions = [vector]
+}
+
+model RecruitmentPost {
+    id          String   @id @default(uuid())
+    companyName String   @map("company_name")
+    address     String
+    createdAt   DateTime @default(now()) @map("created_at")
+    updatedAt   DateTime @updatedAt @map("updated_at")
+
+    positions JobPosition[]
+
+    @@map("recruitment_posts")
+}
+
+model JobPosition {
+    id     String @id @default(uuid())
+    postId String @map("post_id")
+    title  String
+
+    status          String // "RECRUITING" | "STOPPED"
+    employmentType  String @map("employment_type") // "FULL_TIME" | "TEMPORARY" | "SEASONAL"
+    descriptionText String @map("description_text")
+
+    // Vector embedding for semantic search (768 dimensions for Gemini)
+    embedding Unsupported("vector(768)")?
+
+    // JSONB columns for strict mapping to TypeScript interfaces
+    salaryPackages    Json @map("salary_packages") // SalaryConfig[]
+    managers          Json // ManagerContact[]
+    shifts            Json // WorkShift[]
+    requirements      Json // string[]
+    benefits          Json // string[]
+    otherRequirements Json @map("other_requirements") // string[]
+    environment       Json // string[]
+    notes             Json // string[]
+    shiftSelections   Json @map("shift_selections") // ShiftSelection[]
+
+    post RecruitmentPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+    @@index([embedding])
+    @@map("job_positions")
+}

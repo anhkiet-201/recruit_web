@@ -142,6 +142,15 @@ else
     echo "   -> ⚠️  Migration gặp lỗi. Kiểm tra logs: docker logs ttn-backend-prod"
 fi
 
+# 3.2. Chạy Recruitment Database Migration
+echo "3.2. Running recruitment database migrations..."
+$COMPOSE_CMD -f docker-compose.prod.yaml exec -T backend npx prisma migrate deploy --config prisma.config.recruitment.ts
+if [ $? -eq 0 ]; then
+    echo "   -> Recruitment Migration thành công!"
+else
+    echo "   -> ⚠️  Recruitment Migration gặp lỗi. Kiểm tra logs: docker logs ttn-backend-prod"
+fi
+
 # 4. Hỏi người dùng có muốn lấy chứng chỉ thật ngay không
 echo ""
 echo "----------------------------------------------------"

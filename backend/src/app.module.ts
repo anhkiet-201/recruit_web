@@ -12,12 +12,13 @@ import { TagsModule } from './tags/tags.module';
 import { UploadModule } from './upload/upload.module';
 import { AiModule } from './ai/ai.module';
 import { GoogleIndexingModule } from './google-indexing/google-indexing.module';
+import { RecruitmentModule } from './recruitment/recruitment.module';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `../.env${process.env.NODE_ENV === 'development' ? '.development' : ''}`,
+      envFilePath: `../.env${process.env.NODE_ENV ?? ''}`,
     }),
     PrismaModule,
     AuthModule,
@@ -28,6 +29,7 @@ import { GoogleIndexingModule } from './google-indexing/google-indexing.module';
     UploadModule,
     AiModule,
     GoogleIndexingModule,
+    RecruitmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
