@@ -84,8 +84,8 @@ export type SalaryConfig = MonthlySalary | ShiftSalary | OvertimeSalary;
 // ==========================================
 
 export interface ManagerContact {
-  readonly name: string;
-  readonly phoneNumber: string;
+  readonly name?: string;
+  readonly phoneNumber?: string;
 }
 
 export interface WorkShift {
@@ -104,7 +104,7 @@ export interface JobPosition {
   readonly requirements: string[];
   readonly otherRequirements: string[];
   readonly status: RecruitmentStatus;
-  readonly employmentType: EmploymentType;
+  readonly employmentTypes: EmploymentType[];
 
   readonly managers: ManagerContact[];
   readonly shifts: WorkShift[];

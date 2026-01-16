@@ -27,7 +27,7 @@ model JobPosition {
     title  String
 
     status          String // "RECRUITING" | "STOPPED"
-    employmentType  String @map("employment_type") // "FULL_TIME" | "TEMPORARY" | "SEASONAL"
+    employmentTypes Json   @map("employment_types") // EmploymentType[]
     descriptionText String @map("description_text")
 
     // Vector embedding for semantic search (768 dimensions for Gemini)

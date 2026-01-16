@@ -58,10 +58,12 @@ export class OvertimeSalaryDto {
 
 export class ManagerContactDto {
   @IsString()
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @IsString()
-  phoneNumber: string;
+  @IsOptional()
+  phoneNumber?: string;
 }
 
 export class WorkShiftDto {
@@ -82,8 +84,9 @@ export class CreatePositionDto {
   @IsEnum(RecruitmentStatus)
   status: RecruitmentStatus;
 
-  @IsEnum(EmploymentType)
-  employmentType: EmploymentType;
+  @IsArray()
+  @IsEnum(EmploymentType, { each: true })
+  employmentTypes: EmploymentType[];
 
   @IsArray()
   @ValidateNested({ each: true })

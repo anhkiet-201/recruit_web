@@ -196,8 +196,10 @@ export class RecruitmentService {
     lines.push(`ĐỊA CHỈ: ${post.address}`);
     lines.push(
       `LOẠI HÌNH: ${
-        pos.employmentType
-          ? this.getEmploymentTypeLabel(pos.employmentType)
+        pos.employmentTypes && pos.employmentTypes.length > 0
+          ? pos.employmentTypes
+              .map((t) => this.getEmploymentTypeLabel(t))
+              .join(', ')
           : 'Toàn thời gian'
       }`,
     );
@@ -294,7 +296,11 @@ export class RecruitmentService {
     // Managers / Contacts - Added for exhaustive coverage
     if (pos.managers && pos.managers.length > 0) {
       lines.push('THÔNG TIN LIÊN HỆ & QUẢN LÝ:');
-      pos.managers.forEach((m) => lines.push(`- ${m.name} (${m.phoneNumber})`));
+      pos.managers.forEach((m) => {
+        const name = m.name || 'Người quản lý';
+        const phone = m.phoneNumber || '';
+        lines.push(`- ${name}${phone ? ` (${phone})` : ''}`);
+      });
       lines.push('');
     }
 

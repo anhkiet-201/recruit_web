@@ -105,7 +105,7 @@ export function RecruitmentDetail({
     const newPosition: JobPosition = {
       title: "Vị trí mới",
       status: RecruitmentStatus.Recruiting,
-      employmentType: EmploymentType.FullTime,
+      employmentTypes: [EmploymentType.FullTime],
       benefits: [],
       requirements: [],
       otherRequirements: [],
@@ -212,9 +212,14 @@ export function RecruitmentDetail({
                     >
                       {pos.status}
                     </span>
-                    <span className="inline-block px-2 py-0.5 text-[10px] uppercase tracking-wide rounded-md font-bold bg-blue-100 text-blue-700 ml-2">
-                      {getEmploymentTypeLabel(pos.employmentType)}
-                    </span>
+                    {pos.employmentTypes?.map((type, tIdx) => (
+                      <span
+                        key={tIdx}
+                        className="inline-block px-2 py-0.5 text-[10px] uppercase tracking-wide rounded-md font-bold bg-blue-100 text-blue-700 ml-2"
+                      >
+                        {getEmploymentTypeLabel(type)}
+                      </span>
+                    ))}
                   </div>
 
                   <div className="flex items-center gap-1">

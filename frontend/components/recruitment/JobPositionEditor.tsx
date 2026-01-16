@@ -63,24 +63,35 @@ export function JobPositionEditor({
               <span className="text-sm font-medium text-gray-500">
                 Hình thức:
               </span>
-              <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+              <div className="bg-gray-100 p-1 rounded-lg inline-flex flex-wrap gap-1">
                 {[
                   { value: EmploymentType.FullTime, label: "Toàn thời gian" },
                   { value: EmploymentType.Temporary, label: "Thời vụ" },
                   { value: EmploymentType.Seasonal, label: "Mùa vụ" },
-                ].map((type) => (
-                  <button
-                    key={type.value}
-                    onClick={() => handleChange({ employmentType: type.value })}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition ${
-                      editedPos.employmentType === type.value
-                        ? "bg-white text-blue-700 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
-                  >
-                    {type.label}
-                  </button>
-                ))}
+                ].map((type) => {
+                  const isSelected = editedPos.employmentTypes?.includes(
+                    type.value
+                  );
+                  return (
+                    <button
+                      key={type.value}
+                      onClick={() => {
+                        const current = editedPos.employmentTypes || [];
+                        const next = isSelected
+                          ? current.filter((t) => t !== type.value)
+                          : [...current, type.value];
+                        handleChange({ employmentTypes: next });
+                      }}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                        isSelected
+                          ? "bg-white text-blue-700 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

@@ -15,7 +15,7 @@ export function ManagerEditor({ managers, onChange }: ManagerEditorProps) {
   const [isAdding, setIsAdding] = useState(false);
 
   const handleAdd = () => {
-    if (!newManager.name || !newManager.phoneNumber) return;
+    if (!newManager.name && !newManager.phoneNumber) return;
     onChange([...managers, newManager]);
     setNewManager({ name: "", phoneNumber: "" });
     setIsAdding(false);
@@ -49,11 +49,13 @@ export function ManagerEditor({ managers, onChange }: ManagerEditorProps) {
           >
             <div>
               <div className="font-bold text-gray-800 text-sm">
-                {manager.name}
+                {manager.name || "Chưa có tên"}
               </div>
-              <div className="text-xs text-gray-500 flex items-center gap-1">
-                <Phone size={10} /> {manager.phoneNumber}
-              </div>
+              {manager.phoneNumber && (
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <Phone size={10} /> {manager.phoneNumber}
+                </div>
+              )}
             </div>
             <button
               onClick={() => handleRemove(idx)}
@@ -92,7 +94,7 @@ export function ManagerEditor({ managers, onChange }: ManagerEditorProps) {
             </button>
             <button
               onClick={handleAdd}
-              disabled={!newManager.name || !newManager.phoneNumber}
+              disabled={!newManager.name && !newManager.phoneNumber}
               className="bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
               Thêm

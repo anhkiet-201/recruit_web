@@ -31,17 +31,17 @@ interface RawSearchResult {
   id: string;
   title: string;
   status: string;
-  employment_type: string;
+  employment_types: EmploymentType[];
   description_text: string;
-  salary_packages: any;
-  managers: any;
-  shifts: any;
-  requirements: any;
-  benefits: any;
-  other_requirements: any;
-  environment: any;
-  notes: any;
-  shift_selections: any;
+  salary_packages: SalaryConfig[];
+  managers: ManagerContact[];
+  shifts: WorkShift[];
+  requirements: string[];
+  benefits: string[];
+  other_requirements: string[];
+  environment: string[];
+  notes: string[];
+  shift_selections: ShiftSelection[];
   distance: number;
 }
 
@@ -60,7 +60,8 @@ export class RecruitmentRepository implements IRecruitmentRepository {
           create: post.positions.map((pos) => ({
             title: pos.title,
             status: pos.status,
-            employmentType: pos.employmentType,
+            employmentTypes: (pos.employmentTypes ||
+              []) as unknown as Prisma.InputJsonValue,
             descriptionText: this.combineDescription(pos),
             salaryPackages:
               pos.salaryPackages as unknown as Prisma.InputJsonValue,
@@ -135,7 +136,8 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         create: post.positions.map((pos) => ({
           title: pos.title,
           status: pos.status,
-          employmentType: pos.employmentType,
+          employmentTypes: (pos.employmentTypes ||
+            []) as unknown as Prisma.InputJsonValue,
           descriptionText: this.combineDescription(pos), // ✅ Always generate rich description
           salaryPackages:
             pos.salaryPackages as unknown as Prisma.InputJsonValue,
@@ -175,7 +177,8 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         postId,
         title: position.title,
         status: position.status,
-        employmentType: position.employmentType,
+        employmentTypes: (position.employmentTypes ||
+          []) as unknown as Prisma.InputJsonValue,
         descriptionText: this.combineDescription(position as JobPosition),
         salaryPackages:
           position.salaryPackages as unknown as Prisma.InputJsonValue,
@@ -255,7 +258,7 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         OR j.shifts::text ILIKE ${queryPattern}
         OR j.notes::text ILIKE ${queryPattern}
         OR j.shift_selections::text ILIKE ${queryPattern}
-        OR j.employment_type ILIKE ${queryPattern}
+        OR j.employment_types::text ILIKE ${queryPattern}
         OR j.status ILIKE ${queryPattern}
       )
     `;
@@ -273,7 +276,7 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         j.id,
         j.title,
         j.status,
-        j.employment_type,
+        j.employment_types,
         j.description_text,
         j.salary_packages,
         j.managers,
@@ -304,7 +307,8 @@ export class RecruitmentRepository implements IRecruitmentRepository {
           (CASE WHEN j.requirements::text ILIKE ${queryPattern} THEN 0.8 ELSE 0 END) +
           (CASE WHEN j.benefits::text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
           (CASE WHEN j.salary_packages::text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
-          (CASE WHEN j.notes::text ILIKE ${queryPattern} THEN 0.3 ELSE 0 END)
+          (CASE WHEN j.notes::text ILIKE ${queryPattern} THEN 0.3 ELSE 0 END) +
+          (CASE WHEN j.employment_types::text ILIKE ${queryPattern} THEN 2.0 ELSE 0 END)
         ) as hybrid_score
       FROM job_positions j
       INNER JOIN recruitment_posts p ON j.post_id = p.id
@@ -329,6 +333,7 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         OR j.managers::text ILIKE ${queryPattern}
         OR j.shifts::text ILIKE ${queryPattern}
         OR j.notes::text ILIKE ${queryPattern}
+        OR j.employment_types::text ILIKE ${queryPattern}
       )
       ORDER BY hybrid_score DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -356,16 +361,16 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         id: row.id,
         title: row.title,
         status: row.status as RecruitmentStatus,
-        employmentType: row.employment_type as EmploymentType,
-        salaryPackages: row.salary_packages as unknown as SalaryConfig[],
-        managers: row.managers as unknown as ManagerContact[],
-        shifts: row.shifts as unknown as WorkShift[],
-        requirements: row.requirements as unknown as string[],
-        benefits: row.benefits as unknown as string[],
-        otherRequirements: row.other_requirements as unknown as string[],
-        environment: row.environment as unknown as string[],
-        notes: row.notes as unknown as string[],
-        shiftSelections: row.shift_selections as unknown as ShiftSelection[],
+        employmentTypes: row.employment_types,
+        salaryPackages: row.salary_packages,
+        managers: row.managers,
+        shifts: row.shifts,
+        requirements: row.requirements,
+        benefits: row.benefits,
+        otherRequirements: row.other_requirements,
+        environment: row.environment,
+        notes: row.notes,
+        shiftSelections: row.shift_selections,
         descriptionText: row.description_text,
       });
     }
@@ -414,7 +419,7 @@ export class RecruitmentRepository implements IRecruitmentRepository {
       // Valid mapping:
       title: dbPos.title,
       status: dbPos.status as RecruitmentStatus,
-      employmentType: dbPos.employmentType as EmploymentType,
+      employmentTypes: dbPos.employmentTypes as unknown as EmploymentType[], // Changed
       salaryPackages: dbPos.salaryPackages as unknown as SalaryConfig[],
       managers: dbPos.managers as unknown as ManagerContact[],
       shifts: dbPos.shifts as unknown as WorkShift[],
@@ -434,7 +439,9 @@ export class RecruitmentRepository implements IRecruitmentRepository {
     // Header
     lines.push(`# VỊ TRÍ: ${pos.title?.toUpperCase() || 'Không rõ'}`);
     lines.push(
-      `LOẠI HÌNH: ${pos.employmentType || 'Toàn thời gian'} | TRẠNG THÁI: ${
+      `LOẠI HÌNH: ${
+        pos.employmentTypes?.join(', ') || 'Toàn thời gian' // Changed
+      } | TRẠNG THÁI: ${
         pos.status === RecruitmentStatus.Recruiting
           ? 'Đang tuyển dụng'
           : 'Đã đóng'
