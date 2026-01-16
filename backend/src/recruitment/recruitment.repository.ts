@@ -327,11 +327,11 @@ export class RecruitmentRepository implements IRecruitmentRepository {
             ELSE 0 
           END) + 
           
-          -- Global Search Boosts
-          (CASE WHEN j.requirements::text ILIKE ${unaccentedPattern} THEN 0.8 ELSE 0 END) +
-          (CASE WHEN j.benefits::text ILIKE ${unaccentedPattern} THEN 0.5 ELSE 0 END) +
-          (CASE WHEN j.salary_packages::text ILIKE ${unaccentedPattern} THEN 0.5 ELSE 0 END) +
-          (CASE WHEN j.employment_types::text ILIKE ${unaccentedPattern} THEN 2.0 ELSE 0 END)
+          -- Global Search Boosts (Reduced weight to avoid noise)
+          (CASE WHEN j.requirements::text ILIKE ${unaccentedPattern} THEN 0.3 ELSE 0 END) +
+          (CASE WHEN j.benefits::text ILIKE ${unaccentedPattern} THEN 0.2 ELSE 0 END) +
+          (CASE WHEN j.salary_packages::text ILIKE ${unaccentedPattern} THEN 0.4 ELSE 0 END) +
+          (CASE WHEN j.employment_types::text ILIKE ${unaccentedPattern} THEN 1.0 ELSE 0 END)
         ) as hybrid_score
       FROM job_positions j
       INNER JOIN recruitment_posts p ON j.post_id = p.id
@@ -347,12 +347,8 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         OR j.title ILIKE ${unaccentedPattern}
         OR p.company_name ILIKE ${queryPattern}
         OR p.company_name ILIKE ${unaccentedPattern}
-        OR p.address ILIKE ${queryPattern}
+        -- Only match address and specific fields for keyword fallback, description is too noisy
         OR p.address ILIKE ${unaccentedPattern}
-        OR j.description_text ILIKE ${unaccentedPattern}
-        OR j.salary_packages::text ILIKE ${unaccentedPattern}
-        OR j.requirements::text ILIKE ${unaccentedPattern}
-        OR j.benefits::text ILIKE ${unaccentedPattern}
         OR j.employment_types::text ILIKE ${unaccentedPattern}
       )
       ORDER BY hybrid_score DESC

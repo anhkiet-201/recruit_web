@@ -117,7 +117,7 @@ export class RecruitmentService {
     query: string,
     page: number = 1,
     limit: number = 10,
-    threshold: number = 0.6,
+    threshold: number = 0.7,
   ): Promise<{
     items: RecruitmentPost[];
     total: number;
@@ -196,7 +196,7 @@ export class RecruitmentService {
     // 3. AI Re-ranking (Only for the first page and if results exist)
     if (result.items.length > 0 && page === 1 && embedding) {
       const topItems = result.items.slice(0, 10);
-      const rerankedIds = await this.aiService.rerankRecruitmentPosts(
+      const rerankedIds: string[] = await this.aiService.rerankRecruitmentPosts(
         query,
         topItems.map((item) => ({
           id: item.id,
@@ -207,18 +207,27 @@ export class RecruitmentService {
 
       if (rerankedIds.length > 0) {
         // Re-sort current items based on AI preference
-        const rerankedItems = rerankedIds
-          .map((id) => result.items.find((item) => item.id === id))
+        const rerankedItems: RecruitmentPost[] = rerankedIds
+          .map((id: string) => result.items.find((item) => item.id === id))
           .filter((item): item is RecruitmentPost => !!item);
 
-        // Add back items that weren't included in reranking or were filtered out by AI but still match
-        const otherItems = result.items.filter(
-          (item) => !rerankedIds.includes(item.id),
-        );
+        // STRICT FILTERING: Discard items from the top 10 that AI did not include
+        // We only keep the reranked items. If AI filtered them out, they are likely noise.
 
-        result.items = [...rerankedItems, ...otherItems];
+        // If we are on page 1, we only want to show high-quality results.
+        // We will DISCARD the items that were in the top 10 but not chosen by AI.
+        const itemsToKeep = result.items.slice(10); // Keep items beyond the top 10 for pagination consistency if needed
+
+        result.items = [...rerankedItems, ...itemsToKeep];
+
+        // Update total to reflect the filtered results
+        const filteredOutFromTop10 = topItems.length - rerankedItems.length;
+        if (filteredOutFromTop10 > 0) {
+          result.total = Math.max(0, result.total - filteredOutFromTop10);
+        }
+
         this.logger.debug(
-          `AI Re-ranked results. Top ID: ${result.items[0]?.id}`,
+          `AI Re-ranked results (Strict). Top ID: ${result.items[0]?.id}, Filtered: ${filteredOutFromTop10}`,
         );
       }
     }

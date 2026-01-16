@@ -378,19 +378,21 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     const postsList = posts
       .map(
         (p) =>
-          `ID: ${p.id} | Tiêu đề: ${p.title} | Mô tả ngắn: ${p.description.substring(0, 200)}...`,
+          `ID: ${p.id} | Tiêu đề: ${p.title} | Nội dung: ${p.description.substring(0, 500)}...`,
       )
       .join('\n');
 
     const prompt = `
       Dựa trên câu truy vấn của người dùng: "${query}"
-      Hãy chọn ra các ID công việc phù hợp nhất từ danh sách bên dưới và xếp hạng chúng theo thứ tự ưu tiên giảm dần.
+      Hãy chọn ra các ID công việc CỰC KỲ PHÙ HỢP và ĐÁP ỨNG TRỰC TIẾP nhu cầu của người dùng.
       
-      Quy tắc:
+      Yêu cầu NGHIÊM NGẶT:
       1. Chỉ trả về một mảng JSON chứa các ID (ví dụ: ["id1", "id2"]).
-      2. Loại bỏ các ID hoàn toàn không liên quan.
-      3. Nếu không có kết quả nào thực sự phù hợp, hãy trả về mảng trống [].
-      4. KHÔNG giải thích gì thêm.
+      2. LOẠI BỎ hoàn toàn các ID không liên quan, hoặc chỉ liên quan hời hợt. 
+      3. Nếu kết quả không chắc chắn (low confidence), hãy LOẠI BỎ.
+      4. Sắp xếp theo độ phù hợp từ cao xuống thấp.
+      5. Nếu không có kết quả nào đạt chất lượng cao, hãy trả về mảng trống [].
+      6. Tuyệt đối KHÔNG giải thích.
 
       Danh sách công việc:
       ${postsList}
