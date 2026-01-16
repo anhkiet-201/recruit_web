@@ -217,12 +217,12 @@ export function RecruitmentDetail({
                     : "Chưa có"}
                 </div>
 
-                {/* Description */}
+                {/* Description
                 {pos.descriptionText && (
                   <div className="mb-4 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap border border-gray-100">
                     {pos.descriptionText}
                   </div>
-                )}
+                )} */}
 
                 {/* Grid for Detailed Lists */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

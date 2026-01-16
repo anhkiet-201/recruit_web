@@ -35,8 +35,8 @@ export default function RecruitmentPage() {
 
   const handleCreatePost = async () => {
     const newPost: Omit<RecruitmentPost, "id"> = {
-      companyName: "New Company",
-      address: "Unknown Address",
+      companyName: "Tên công ty",
+      address: "Địa chỉ",
       positions: [],
     };
     try {

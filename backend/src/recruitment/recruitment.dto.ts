@@ -166,5 +166,5 @@ export class SearchRecruitmentQueryDto {
 
   @IsOptional()
   @IsString()
-  threshold?: string = '0.5'; // Giảm từ 0.6 xuống 0.5 để có nhiều kết quả hơn
+  threshold?: string = '0.6';
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { IRecruitmentRepository } from './recruitment.repository.interface';
 import { RecruitmentPrismaService } from './recruitment-prisma.service';
 import {
@@ -10,6 +10,7 @@ import {
   RecruitmentStatus,
   ShiftSelection,
   EmploymentType,
+  SalaryType,
 } from './model';
 import { CreatePostDto } from './recruitment.dto';
 import { Prisma } from '@prisma/client-recruitment';
@@ -46,6 +47,8 @@ interface RawSearchResult {
 
 @Injectable()
 export class RecruitmentRepository implements IRecruitmentRepository {
+  private readonly logger = new Logger(RecruitmentRepository.name);
+
   constructor(private readonly prisma: RecruitmentPrismaService) {}
 
   async createPost(post: CreatePostDto): Promise<RecruitmentPost> {
@@ -133,7 +136,7 @@ export class RecruitmentRepository implements IRecruitmentRepository {
           title: pos.title,
           status: pos.status,
           employmentType: pos.employmentType,
-          descriptionText: pos.descriptionText || this.combineDescription(pos),
+          descriptionText: this.combineDescription(pos), // ✅ Always generate rich description
           salaryPackages:
             pos.salaryPackages as unknown as Prisma.InputJsonValue,
           managers: pos.managers as unknown as Prisma.InputJsonValue,
@@ -226,11 +229,30 @@ export class RecruitmentRepository implements IRecruitmentRepository {
     const queryPattern = `%${query}%`;
 
     // 1. Lấy total count để tính pagination
+    // Note: Use Prisma.raw() for vector to avoid string escaping
     const countResult = await this.prisma.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(DISTINCT p.id) as count
       FROM job_positions j
       INNER JOIN recruitment_posts p ON j.post_id = p.id
-      WHERE j.embedding <-> ${vectorString}::vector < ${1 - threshold}
+      WHERE (
+        j.embedding <=> ${Prisma.raw(`'${vectorString}'`)}::vector < ${1 - threshold}
+        OR j.title ILIKE ${queryPattern}
+        OR p.company_name ILIKE ${queryPattern}
+        OR p.address ILIKE ${queryPattern}
+        OR j.description_text ILIKE ${queryPattern}
+        -- Universal search across all JSONB fields
+        OR j.salary_packages::text ILIKE ${queryPattern}
+        OR j.requirements::text ILIKE ${queryPattern}
+        OR j.benefits::text ILIKE ${queryPattern}
+        OR j.other_requirements::text ILIKE ${queryPattern}
+        OR j.environment::text ILIKE ${queryPattern}
+        OR j.managers::text ILIKE ${queryPattern}
+        OR j.shifts::text ILIKE ${queryPattern}
+        OR j.notes::text ILIKE ${queryPattern}
+        OR j.shift_selections::text ILIKE ${queryPattern}
+        OR j.employment_type ILIKE ${queryPattern}
+        OR j.status ILIKE ${queryPattern}
+      )
     `;
     const total = Number(countResult[0]?.count || 0);
 
@@ -256,15 +278,43 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         j.environment,
         j.notes,
         j.shift_selections,
-        (1 - (j.embedding <-> ${vectorString}::vector)) as similarity,
         (
-          (1 - (j.embedding <-> ${vectorString}::vector)) +
-          (CASE WHEN j.title ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
-          (CASE WHEN p.company_name ILIKE ${queryPattern} THEN 0.3 ELSE 0 END)
+          (1 - (j.embedding <=> ${Prisma.raw(`'${vectorString}'`)}::vector)) +
+          (CASE WHEN j.title ILIKE ${queryPattern} THEN 2.0 ELSE 0 END) +
+          (CASE WHEN p.company_name ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN p.address ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.description_text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
+          -- Boost for Universal Search matches in JSONB/Text fields
+          (CASE WHEN j.salary_packages::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.requirements::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.benefits::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.other_requirements::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.environment::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.managers::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.shifts::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.notes::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.shift_selections::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.employment_type ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.status ILIKE ${queryPattern} THEN 1.0 ELSE 0 END)
         ) as hybrid_score
       FROM job_positions j
       INNER JOIN recruitment_posts p ON j.post_id = p.id
-      WHERE j.embedding <-> ${vectorString}::vector < ${1 - threshold}
+      WHERE (
+        j.embedding <=> ${Prisma.raw(`'${vectorString}'`)}::vector < ${1 - threshold}
+        OR j.title ILIKE ${queryPattern}
+        OR p.company_name ILIKE ${queryPattern}
+        OR p.address ILIKE ${queryPattern}
+        OR j.description_text ILIKE ${queryPattern}
+        -- Universal search across all JSONB fields
+        OR j.salary_packages::text ILIKE ${queryPattern}
+        OR j.requirements::text ILIKE ${queryPattern}
+        OR j.benefits::text ILIKE ${queryPattern}
+        OR j.other_requirements::text ILIKE ${queryPattern}
+        OR j.environment::text ILIKE ${queryPattern}
+        OR j.managers::text ILIKE ${queryPattern}
+        OR j.shifts::text ILIKE ${queryPattern}
+        OR j.notes::text ILIKE ${queryPattern}
+      )
       ORDER BY hybrid_score DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
@@ -360,11 +410,110 @@ export class RecruitmentRepository implements IRecruitmentRepository {
   }
 
   private combineDescription(pos: Partial<JobPosition>): string {
+    // Generate rich description matching Service layer logic
     return [
-      pos.title,
-      ...(pos.requirements || []),
-      ...(pos.benefits || []),
-      ...(pos.otherRequirements || []),
-    ].join('\n');
+      `Vị trí: ${pos.title || 'Không rõ'}`,
+      `Loại hình: ${pos.employmentType || 'Không rõ'}`,
+      pos.status === RecruitmentStatus.Recruiting
+        ? 'Đang tuyển dụng'
+        : 'Đã đóng',
+      '',
+      // Requirements (most important)
+      ...(pos.requirements && pos.requirements.length > 0
+        ? ['Yêu cầu:', ...pos.requirements.map((r) => `- ${r}`)]
+        : []),
+      '',
+      // Benefits
+      ...(pos.benefits && pos.benefits.length > 0
+        ? ['Phúc lợi:', ...pos.benefits.map((b) => `- ${b}`)]
+        : []),
+      '',
+      // Environment
+      ...(pos.environment && pos.environment.length > 0
+        ? ['Môi trường làm việc:', ...pos.environment.map((e) => `- ${e}`)]
+        : []),
+      '',
+      // Salary info
+      ...(pos.salaryPackages && pos.salaryPackages.length > 0
+        ? [
+            'Lương:',
+            ...pos.salaryPackages
+              .map((sal) => {
+                if (sal.type === SalaryType.Monthly) {
+                  return `- Tháng: ${sal.amount || 'Thỏa thuận'}`;
+                }
+                if (sal.type === SalaryType.Shift) {
+                  return `- Theo ca ${sal.isNightShift ? '(ca đêm)' : ''}`;
+                }
+                if (sal.type === SalaryType.Overtime) {
+                  return `- Có tăng ca`;
+                }
+                return '';
+              })
+              .filter(Boolean),
+          ]
+        : []),
+      '',
+      // Other requirements
+      ...(pos.otherRequirements && pos.otherRequirements.length > 0
+        ? ['Yêu cầu khác:', ...pos.otherRequirements.map((r) => `- ${r}`)]
+        : []),
+      '',
+      // Managers
+      ...(pos.managers && pos.managers.length > 0
+        ? [
+            'Liên hệ quản lý:',
+            ...pos.managers.map(
+              (m) =>
+                `- ${m.name} (${m.phoneNumber}${
+                  // @ts-expect-error email is not in ManagerContact interface but might exist in runtime
+                  m.email ? `, ${m.email}` : ''
+                })`,
+            ),
+          ]
+        : []),
+      '',
+      // Shifts
+      ...(pos.shifts && pos.shifts.length > 0
+        ? [
+            'Ca làm việc:',
+            ...pos.shifts.map(
+              (s) => `- ${s.name}: ${s.startTime} - ${s.endTime}`,
+            ),
+          ]
+        : []),
+      '',
+      // Notes
+      ...(pos.notes && pos.notes.length > 0
+        ? ['Ghi chú:', ...pos.notes.map((n) => `- ${n}`)]
+        : []),
+      '',
+      // Shift Selections
+      ...(pos.shiftSelections && pos.shiftSelections.length > 0
+        ? [
+            'Chế độ ca:',
+            ...pos.shiftSelections.map((s) => {
+              switch (s) {
+                case ShiftSelection.Flexible:
+                  return '- Linh hoạt (Được chọn ca)';
+                case ShiftSelection.DayShiftOnly:
+                  return '- Chỉ ca ngày';
+                case ShiftSelection.NightShiftOnly:
+                  return '- Chỉ ca đêm';
+                case ShiftSelection.OfficeHoursOvertime:
+                  return '- Hành chính có tăng ca';
+                case ShiftSelection.ArrangedByHR:
+                  return '- Nhân sự sắp xếp';
+                case ShiftSelection.RotatingShift:
+                  return '- Xoay ca';
+                default:
+                  return `- ${s as string}`;
+              }
+            }),
+          ]
+        : []),
+    ]
+      .filter((line) => line !== undefined && line !== null)
+      .join('\n');
   }
 }

@@ -117,10 +117,10 @@ export function JobPositionEditor({
             </div>
           </div>
 
-          <hr className="border-gray-100" />
+          {/* <hr className="border-gray-100" /> */}
 
           {/* 2. Description */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <label className="text-sm font-bold text-gray-400 uppercase tracking-wider block">
               Mô tả chi tiết
             </label>
@@ -132,7 +132,7 @@ export function JobPositionEditor({
                 handleChange({ descriptionText: e.target.value })
               }
             />
-          </div>
+          </div> */}
 
           <hr className="border-gray-100" />
 
