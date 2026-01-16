@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { RecruitmentService } from "@/services/recruitmentService";
-import { RecruitmentPost, JobPosition } from "@/models/Recruitment";
+import { RecruitmentPost } from "@/models/Recruitment";
 import { RecruitmentSidebar } from "@/components/recruitment/RecruitmentSidebar";
 import { RecruitmentDetail } from "@/components/recruitment/RecruitmentDetail";
 import { ArrowLeft } from "lucide-react";
@@ -12,7 +12,13 @@ export default function RecruitmentPage() {
   const [selectedPost, setSelectedPost] = useState<RecruitmentPost | null>(
     null
   );
-  const [aiSearchResults, setAiSearchResults] = useState<JobPosition[]>([]);
+  const [aiSearchResults, setAiSearchResults] = useState<RecruitmentPost[]>([]);
+  const [searchMetadata, setSearchMetadata] = useState<{
+    total: number;
+    page: number;
+    lastPage: number;
+  } | null>(null);
+  const [currentSearchQuery, setCurrentSearchQuery] = useState<string>("");
 
   // Initial Fetch
   useEffect(() => {
@@ -79,12 +85,20 @@ export default function RecruitmentPage() {
     }
   };
 
-  const handleAiSearch = async (query: string) => {
+  const handleAiSearch = async (query: string, page: number = 1) => {
     try {
-      const results = await RecruitmentService.searchSemantic(query);
-      setAiSearchResults(results);
+      const response = await RecruitmentService.searchSemantic(query, page, 10);
+      setAiSearchResults(response.items);
+      setSearchMetadata({
+        total: response.total,
+        page: response.page,
+        lastPage: response.lastPage,
+      });
+      setCurrentSearchQuery(query);
     } catch (error) {
       console.error("AI Search failed:", error);
+      setAiSearchResults([]);
+      setSearchMetadata(null);
     }
   };
 
@@ -102,7 +116,12 @@ export default function RecruitmentPage() {
           onCreatePost={handleCreatePost}
           onAiSearch={handleAiSearch}
           aiSearchResults={aiSearchResults}
-          onClearAiResults={() => setAiSearchResults([])}
+          searchMetadata={searchMetadata}
+          onClearAiResults={() => {
+            setAiSearchResults([]);
+            setSearchMetadata(null);
+            setCurrentSearchQuery("");
+          }}
         />
       </div>
 

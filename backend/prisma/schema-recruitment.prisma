@@ -46,6 +46,11 @@ model JobPosition {
 
     post RecruitmentPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-    @@index([embedding])
+    // Note: Embedding index KHÔNG dùng @@index vì btree limit 2704 bytes
+    // Vector 768 dims = 3088 bytes, vượt quá limit
+    // Index được tạo bằng raw SQL migration:
+    // CREATE INDEX job_positions_embedding_idx ON job_positions 
+    // USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
     @@map("job_positions")
 }

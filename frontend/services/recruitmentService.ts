@@ -1,5 +1,12 @@
 import { api } from "@/lib/api";
-import { RecruitmentPost, JobPosition } from "@/models/Recruitment";
+import { RecruitmentPost } from "@/models/Recruitment";
+
+export interface SearchRecruitmentResponse {
+  items: RecruitmentPost[];
+  total: number;
+  page: number;
+  lastPage: number;
+}
 
 export const RecruitmentService = {
   getAllPosts: async (
@@ -32,9 +39,16 @@ export const RecruitmentService = {
     return api.delete(`/recruitment/${id}`);
   },
 
-  searchSemantic: async (query: string): Promise<JobPosition[]> => {
-    return api.get<JobPosition[]>(
-      `/recruitment/search?q=${encodeURIComponent(query)}`
+  searchSemantic: async (
+    query: string,
+    page: number = 1,
+    limit: number = 10,
+    threshold: number = 0.5
+  ): Promise<SearchRecruitmentResponse> => {
+    return api.get<SearchRecruitmentResponse>(
+      `/recruitment/search?query=${encodeURIComponent(
+        query
+      )}&page=${page}&limit=${limit}&threshold=${threshold}`
     );
   },
 };

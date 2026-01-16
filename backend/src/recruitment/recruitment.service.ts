@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { RecruitmentRepository } from './recruitment.repository';
-import { RecruitmentPost, JobPosition } from './model';
+import { RecruitmentPost, SalaryType, RecruitmentStatus } from './model';
 import { CreatePostDto } from './recruitment.dto';
 import { AiService } from '../ai/ai.service'; // Assuming we can use AiService for embedding
 
@@ -15,29 +15,62 @@ export class RecruitmentService {
     // Create the post without embeddings first
     const newPost = await this.repository.createPost(post);
 
-    // Now update embeddings for each position
+    // Now update embeddings for each position với description đã tối ưu
     for (const pos of newPost.positions) {
       if (pos.id) {
+        // Tối ưu description: thông tin quan trọng lên đầu, giảm noise
         const description = [
-          `Company: ${newPost.companyName}`,
-          `Address: ${newPost.address}`,
-          `Title: ${pos.title}`,
-          `Status: ${pos.status}`,
-          `Requirements: ${(pos.requirements || []).join(', ')}`,
-          `Benefits: ${(pos.benefits || []).join(', ')}`,
-          `Other Requirements: ${(pos.otherRequirements || []).join(', ')}`,
-          `Environment: ${(pos.environment || []).join(', ')}`,
-          `Notes: ${(pos.notes || []).join(', ')}`,
-          `Shifts: ${(pos.shifts || [])
-            .map((s) => `${s.name} (${s.startTime}-${s.endTime})`)
-            .join(', ')}`,
-          `Managers: ${(pos.managers || [])
-            .map((m) => `${m.name} (${m.phoneNumber})`)
-            .join(', ')}`,
-          `Salary: ${(pos.salaryPackages || [])
-            .map((s) => JSON.stringify(s))
-            .join('; ')}`,
-        ].join('\n');
+          `Vị trí: ${pos.title}`,
+          `Công ty: ${newPost.companyName}`,
+          `Địa chỉ: ${newPost.address}`,
+          `Loại hình: ${pos.employmentType}`,
+          pos.status === RecruitmentStatus.Recruiting
+            ? 'Đang tuyển dụng'
+            : 'Đã đóng',
+          '',
+          // Requirements (quan trọng nhất)
+          ...(pos.requirements && pos.requirements.length > 0
+            ? ['Yêu cầu:', ...pos.requirements.map((r) => `- ${r}`)]
+            : []),
+          '',
+          // Benefits
+          ...(pos.benefits && pos.benefits.length > 0
+            ? ['Phúc lợi:', ...pos.benefits.map((b) => `- ${b}`)]
+            : []),
+          '',
+          // Environment
+          ...(pos.environment && pos.environment.length > 0
+            ? ['Môi trường làm việc:', ...pos.environment.map((e) => `- ${e}`)]
+            : []),
+          '',
+          // Salary info (simplified, không include chi tiết phone number)
+          ...(pos.salaryPackages && pos.salaryPackages.length > 0
+            ? [
+                'Lương:',
+                ...pos.salaryPackages
+                  .map((sal) => {
+                    if (sal.type === SalaryType.Monthly) {
+                      return `- Tháng: ${sal.amount || 'Thỏa thuận'}`;
+                    }
+                    if (sal.type === SalaryType.Shift) {
+                      return `- Theo ca ${sal.isNightShift ? '(ca đêm)' : ''}`;
+                    }
+                    if (sal.type === SalaryType.Overtime) {
+                      return `- Có tăng ca`;
+                    }
+                    return '';
+                  })
+                  .filter(Boolean),
+              ]
+            : []),
+          '',
+          // Other requirements
+          ...(pos.otherRequirements && pos.otherRequirements.length > 0
+            ? ['Yêu cầu khác:', ...pos.otherRequirements.map((r) => `- ${r}`)]
+            : []),
+        ]
+          .filter((line) => line !== undefined && line !== null)
+          .join('\n');
 
         const embedding = await this.aiService.generateEmbedding(description);
         await this.repository.updateJobPositionEmbedding(pos.id, embedding);
@@ -62,7 +95,77 @@ export class RecruitmentService {
     id: string,
     updateData: Partial<RecruitmentPost>,
   ): Promise<RecruitmentPost> {
-    return this.repository.updatePost(id, updateData);
+    // Update post data first
+    const updatedPost = await this.repository.updatePost(id, updateData);
+
+    // Re-generate embeddings nếu positions được update
+    if (updateData.positions && updateData.positions.length > 0) {
+      for (const pos of updatedPost.positions) {
+        if (pos.id) {
+          // Tạo description text giống như trong createPost
+          const description = [
+            `Vị trí: ${pos.title}`,
+            `Công ty: ${updatedPost.companyName}`,
+            `Địa chỉ: ${updatedPost.address}`,
+            `Loại hình: ${pos.employmentType}`,
+            pos.status === RecruitmentStatus.Recruiting
+              ? 'Đang tuyển dụng'
+              : 'Đã đóng',
+            '',
+            // Requirements (quan trọng nhất)
+            ...(pos.requirements && pos.requirements.length > 0
+              ? ['Yêu cầu:', ...pos.requirements.map((r) => `- ${r}`)]
+              : []),
+            '',
+            // Benefits
+            ...(pos.benefits && pos.benefits.length > 0
+              ? ['Phúc lợi:', ...pos.benefits.map((b) => `- ${b}`)]
+              : []),
+            '',
+            // Environment
+            ...(pos.environment && pos.environment.length > 0
+              ? [
+                  'Môi trường làm việc:',
+                  ...pos.environment.map((e) => `- ${e}`),
+                ]
+              : []),
+            '',
+            // Salary info
+            ...(pos.salaryPackages && pos.salaryPackages.length > 0
+              ? [
+                  'Lương:',
+                  ...pos.salaryPackages
+                    .map((sal) => {
+                      if (sal.type === SalaryType.Monthly) {
+                        return `- Tháng: ${sal.amount || 'Thỏa thuận'}`;
+                      }
+                      if (sal.type === SalaryType.Shift) {
+                        return `- Theo ca ${sal.isNightShift ? '(ca đêm)' : ''}`;
+                      }
+                      if (sal.type === SalaryType.Overtime) {
+                        return `- Có tăng ca`;
+                      }
+                      return '';
+                    })
+                    .filter(Boolean),
+                ]
+              : []),
+            '',
+            // Other requirements
+            ...(pos.otherRequirements && pos.otherRequirements.length > 0
+              ? ['Yêu cầu khác:', ...pos.otherRequirements.map((r) => `- ${r}`)]
+              : []),
+          ]
+            .filter((line) => line !== undefined && line !== null)
+            .join('\n');
+
+          const embedding = await this.aiService.generateEmbedding(description);
+          await this.repository.updateJobPositionEmbedding(pos.id, embedding);
+        }
+      }
+    }
+
+    return updatedPost;
   }
 
   async remove(id: string): Promise<void> {
@@ -71,13 +174,24 @@ export class RecruitmentService {
 
   async searchSemantic(
     query: string,
+    page: number = 1,
     limit: number = 10,
-  ): Promise<JobPosition[]> {
+    threshold: number = 0.5, // Điều chỉnh từ 0.6 xuống 0.5
+  ): Promise<{
+    items: RecruitmentPost[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }> {
     const embedding = await this.aiService.generateEmbedding(query);
-    // threshold 0.2 (similarity > 0.8? No, cosine distance < 0.2 means similarity > 0.8)
-    // Actually repo uses: WHERE embedding <-> vector < (1 - threshold)
-    // If threshold is SIMILARITY (0 to 1), then distance < 1-threshold.
-    // If user inputs 0.7 similarity, distance < 0.3.
-    return this.repository.findSimilarJobs(embedding, 0.6, limit);
+    const offset = (page - 1) * limit;
+
+    return this.repository.findSimilarJobs(
+      embedding,
+      query,
+      threshold,
+      limit,
+      offset,
+    );
   }
 }

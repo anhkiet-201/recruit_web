@@ -21,19 +21,21 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Recruitment')
-@ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))
 @Controller('recruitment')
 export class RecruitmentController {
   constructor(private readonly recruitmentService: RecruitmentService) {}
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new recruitment post' })
   create(@Body() post: CreatePostDto) {
     return this.recruitmentService.createPost(post);
   }
 
   @Get()
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all recruitment posts' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
@@ -45,19 +47,38 @@ export class RecruitmentController {
   }
 
   @Get('search')
-  @ApiOperation({ summary: 'Semantic search for jobs' })
-  @ApiQuery({ name: 'q', required: true, type: String })
-  search(@Query('q') query: string) {
-    return this.recruitmentService.searchSemantic(query);
+  @ApiOperation({
+    summary: 'Semantic search for jobs with pagination - PUBLIC',
+  })
+  @ApiQuery({ name: 'query', required: true, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'threshold', required: false, type: Number })
+  search(
+    @Query('query') query: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+    @Query('threshold') threshold: string = '0.5',
+  ) {
+    return this.recruitmentService.searchSemantic(
+      query,
+      +page,
+      +limit,
+      +threshold,
+    );
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a recruitment post by ID' })
   findOne(@Param('id') id: string) {
     return this.recruitmentService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a recruitment post' })
   update(
     @Param('id') id: string,
@@ -67,6 +88,8 @@ export class RecruitmentController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a recruitment post' })
   remove(@Param('id') id: string) {
     return this.recruitmentService.remove(id);

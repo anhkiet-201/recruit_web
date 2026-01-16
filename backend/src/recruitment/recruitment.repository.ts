@@ -21,6 +21,29 @@ type DbRecruitmentPost = Prisma.RecruitmentPostGetPayload<{
 
 type DbJobPosition = Prisma.JobPositionGetPayload<object>;
 
+interface RawSearchResult {
+  post_id: string;
+  company_name: string;
+  address: string;
+  created_at: Date;
+  updated_at: Date;
+  id: string;
+  title: string;
+  status: string;
+  employment_type: string;
+  description_text: string;
+  salary_packages: any;
+  managers: any;
+  shifts: any;
+  requirements: any;
+  benefits: any;
+  other_requirements: any;
+  environment: any;
+  notes: any;
+  shift_selections: any;
+  distance: number;
+}
+
 @Injectable()
 export class RecruitmentRepository implements IRecruitmentRepository {
   constructor(private readonly prisma: RecruitmentPrismaService) {}
@@ -86,15 +109,53 @@ export class RecruitmentRepository implements IRecruitmentRepository {
     id: string,
     post: Partial<RecruitmentPost>,
   ): Promise<RecruitmentPost> {
-    // Note: This matches the simple repository pattern. Complex nested updates might need dedicated methods.
+    // Build update data object với proper Prisma type
+    const updateData: Prisma.RecruitmentPostUpdateInput = {};
+
+    if (post.companyName !== undefined) {
+      updateData.companyName = post.companyName;
+    }
+
+    if (post.address !== undefined) {
+      updateData.address = post.address;
+    }
+
+    // Handle positions update if provided
+    if (post.positions !== undefined && post.positions.length > 0) {
+      // Delete existing positions and create new ones
+      // This is simpler than trying to upsert each position individually
+      await this.prisma.jobPosition.deleteMany({
+        where: { postId: id },
+      });
+
+      updateData.positions = {
+        create: post.positions.map((pos) => ({
+          title: pos.title,
+          status: pos.status,
+          employmentType: pos.employmentType,
+          descriptionText: pos.descriptionText || this.combineDescription(pos),
+          salaryPackages:
+            pos.salaryPackages as unknown as Prisma.InputJsonValue,
+          managers: pos.managers as unknown as Prisma.InputJsonValue,
+          shifts: pos.shifts as unknown as Prisma.InputJsonValue,
+          requirements: pos.requirements as unknown as Prisma.InputJsonValue,
+          benefits: pos.benefits as unknown as Prisma.InputJsonValue,
+          otherRequirements:
+            pos.otherRequirements as unknown as Prisma.InputJsonValue,
+          environment: pos.environment as unknown as Prisma.InputJsonValue,
+          notes: pos.notes as unknown as Prisma.InputJsonValue,
+          shiftSelections:
+            pos.shiftSelections as unknown as Prisma.InputJsonValue,
+        })),
+      };
+    }
+
     const updated = await this.prisma.recruitmentPost.update({
       where: { id },
-      data: {
-        companyName: post.companyName,
-        address: post.address,
-      },
+      data: updateData,
       include: { positions: true },
     });
+
     return this.mapToDomain(updated);
   }
 
@@ -141,31 +202,117 @@ export class RecruitmentRepository implements IRecruitmentRepository {
   ): Promise<void> {
     // Prisma Unsupported type requires raw query to update vector
     const vectorString = `[${embedding.join(',')}]`;
+    // Note: Không cần cast ::uuid, Prisma tự động handle UUID parameters
     await this.prisma.$executeRaw`
       UPDATE job_positions 
       SET embedding = ${vectorString}::vector
-      WHERE id = ${positionId}::uuid
+      WHERE id = ${positionId}
     `;
   }
 
   async findSimilarJobs(
     embedding: number[],
+    query: string,
     threshold: number,
     limit: number,
-  ): Promise<JobPosition[]> {
+    offset: number,
+  ): Promise<{
+    items: RecruitmentPost[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }> {
     const vectorString = `[${embedding.join(',')}]`;
+    const queryPattern = `%${query}%`;
+
+    // 1. Lấy total count để tính pagination
+    const countResult = await this.prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(DISTINCT p.id) as count
+      FROM job_positions j
+      INNER JOIN recruitment_posts p ON j.post_id = p.id
+      WHERE j.embedding <-> ${vectorString}::vector < ${1 - threshold}
+    `;
+    const total = Number(countResult[0]?.count || 0);
+
+    // 2. Query chính với hybrid scoring (vector + keyword)
     const result = await this.prisma.$queryRaw`
-      SELECT * 
-      FROM job_positions
-      WHERE embedding <-> ${vectorString}::vector < ${1 - threshold}
-      ORDER BY embedding <-> ${vectorString}::vector ASC
-      LIMIT ${limit}
+      SELECT 
+        p.id as post_id,
+        p.company_name,
+        p.address,
+        p.created_at,
+        p.updated_at,
+        j.id,
+        j.title,
+        j.status,
+        j.employment_type,
+        j.description_text,
+        j.salary_packages,
+        j.managers,
+        j.shifts,
+        j.requirements,
+        j.benefits,
+        j.other_requirements,
+        j.environment,
+        j.notes,
+        j.shift_selections,
+        (1 - (j.embedding <-> ${vectorString}::vector)) as similarity,
+        (
+          (1 - (j.embedding <-> ${vectorString}::vector)) +
+          (CASE WHEN j.title ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
+          (CASE WHEN p.company_name ILIKE ${queryPattern} THEN 0.3 ELSE 0 END)
+        ) as hybrid_score
+      FROM job_positions j
+      INNER JOIN recruitment_posts p ON j.post_id = p.id
+      WHERE j.embedding <-> ${vectorString}::vector < ${1 - threshold}
+      ORDER BY hybrid_score DESC
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    // Result is raw Db objects. Map them.
-    return (result as DbJobPosition[]).map((pos) =>
-      this.mapPositionToDomain(pos),
-    );
+    // 3. Group positions by post_id
+    const postsMap = new Map<string, RecruitmentPost>();
+
+    for (const row of result as RawSearchResult[]) {
+      const postId = row.post_id;
+
+      if (!postsMap.has(postId)) {
+        postsMap.set(postId, {
+          id: postId,
+          companyName: row.company_name,
+          address: row.address,
+          positions: [],
+        });
+      }
+
+      const post = postsMap.get(postId)!;
+      post.positions.push({
+        id: row.id,
+        title: row.title,
+        status: row.status as RecruitmentStatus,
+        employmentType: row.employment_type as EmploymentType,
+        salaryPackages: row.salary_packages as unknown as SalaryConfig[],
+        managers: row.managers as unknown as ManagerContact[],
+        shifts: row.shifts as unknown as WorkShift[],
+        requirements: row.requirements as unknown as string[],
+        benefits: row.benefits as unknown as string[],
+        otherRequirements: row.other_requirements as unknown as string[],
+        environment: row.environment as unknown as string[],
+        notes: row.notes as unknown as string[],
+        shiftSelections: row.shift_selections as unknown as ShiftSelection[],
+        descriptionText: row.description_text,
+      });
+    }
+
+    const items = Array.from(postsMap.values());
+    const page = Math.floor(offset / limit) + 1;
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      items,
+      total,
+      page,
+      lastPage,
+    };
   }
 
   private mapToDomain(dbPost: DbRecruitmentPost): RecruitmentPost {

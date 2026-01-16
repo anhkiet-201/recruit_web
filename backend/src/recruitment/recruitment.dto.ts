@@ -150,3 +150,21 @@ export class CreatePostDto {
   @Type(() => CreatePositionDto)
   positions: CreatePositionDto[];
 }
+
+// Search DTOs
+export class SearchRecruitmentQueryDto {
+  @IsString()
+  query: string;
+
+  @IsOptional()
+  @IsString()
+  page?: string = '1';
+
+  @IsOptional()
+  @IsString()
+  limit?: string = '10';
+
+  @IsOptional()
+  @IsString()
+  threshold?: string = '0.5'; // Giảm từ 0.6 xuống 0.5 để có nhiều kết quả hơn
+}

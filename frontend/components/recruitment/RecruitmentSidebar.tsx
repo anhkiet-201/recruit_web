@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RecruitmentPost, JobPosition } from "@/models/Recruitment";
+import { RecruitmentPost } from "@/models/Recruitment";
 import { Plus, Search } from "lucide-react";
 
 interface RecruitmentSidebarProps {
@@ -9,8 +9,13 @@ interface RecruitmentSidebarProps {
   selectedPostId: string | undefined;
   onSelectPost: (post: RecruitmentPost) => void;
   onCreatePost: () => void;
-  onAiSearch: (query: string) => Promise<void>;
-  aiSearchResults: JobPosition[];
+  onAiSearch: (query: string, page?: number) => Promise<void>;
+  aiSearchResults: RecruitmentPost[];
+  searchMetadata: {
+    total: number;
+    page: number;
+    lastPage: number;
+  } | null;
   onClearAiResults: () => void;
 }
 
@@ -21,6 +26,7 @@ export function RecruitmentSidebar({
   onCreatePost,
   onAiSearch,
   aiSearchResults,
+  searchMetadata,
   onClearAiResults,
 }: RecruitmentSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,29 +76,70 @@ export function RecruitmentSidebar({
 
       <div className="flex-1 overflow-y-auto">
         {aiSearchResults.length > 0 ? (
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-xs font-bold text-blue-600 uppercase">
-                Kết quả AI
-              </h3>
-              <button
-                onClick={onClearAiResults}
-                className="text-xs text-gray-400 hover:text-gray-600"
-              >
-                Xóa
-              </button>
-            </div>
-            {aiSearchResults.map((pos, idx) => (
-              <div
-                key={idx}
-                className="p-3 mb-2 bg-blue-50 border border-blue-100 rounded-lg cursor-pointer hover:bg-blue-100"
-              >
-                <h4 className="font-bold text-gray-800 text-sm">{pos.title}</h4>
-                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                  {pos.descriptionText || "Không có mô tả"}
-                </p>
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-xs font-bold text-blue-600 uppercase">
+                  Kết quả AI ({searchMetadata?.total || 0})
+                </h3>
+                <button
+                  onClick={onClearAiResults}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  Xóa
+                </button>
               </div>
-            ))}
+              <div className="space-y-2">
+                {aiSearchResults.map((post) => (
+                  <div
+                    key={post.id}
+                    onClick={() => onSelectPost(post)}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedPostId === post.id
+                        ? "bg-blue-50 border-blue-200"
+                        : "bg-white border-gray-200 hover:bg-blue-50/50"
+                    }`}
+                  >
+                    <h4 className="font-bold text-gray-800 text-sm">
+                      {post.companyName}
+                    </h4>
+                    <p className="text-xs text-gray-500 mt-1 truncate">
+                      {post.address}
+                    </p>
+                    <div className="flex gap-2 mt-2">
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[10px] rounded-full font-medium">
+                        {post.positions.length} vị trí
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {searchMetadata && searchMetadata.lastPage > 1 && (
+              <div className="flex justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50">
+                <button
+                  disabled={searchMetadata.page === 1}
+                  onClick={() =>
+                    onAiSearch(searchQuery, searchMetadata.page - 1)
+                  }
+                  className="px-3 py-1 text-sm text-blue-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded hover:bg-blue-50 transition"
+                >
+                  ← Trước
+                </button>
+                <span className="text-xs text-gray-600 font-medium">
+                  Trang {searchMetadata.page} / {searchMetadata.lastPage}
+                </span>
+                <button
+                  disabled={searchMetadata.page === searchMetadata.lastPage}
+                  onClick={() =>
+                    onAiSearch(searchQuery, searchMetadata.page + 1)
+                  }
+                  className="px-3 py-1 text-sm text-blue-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded hover:bg-blue-50 transition"
+                >
+                  Sau →
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">

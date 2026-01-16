@@ -22,7 +22,14 @@ export interface IRecruitmentRepository {
   ): Promise<void>;
   findSimilarJobs(
     embedding: number[],
+    query: string,
     threshold: number,
     limit: number,
-  ): Promise<JobPosition[]>;
+    offset: number,
+  ): Promise<{
+    items: RecruitmentPost[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }>;
 }
