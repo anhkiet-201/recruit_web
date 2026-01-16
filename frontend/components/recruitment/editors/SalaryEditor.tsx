@@ -78,11 +78,28 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
       return `Lương tháng: ${sal.amount}`;
     }
     if (sal.type === SalaryType.Shift) {
-      return `Ca ${sal.isNightShift ? "Đêm" : "Ngày"}: ${sal.standardRate}`;
+      const parts = [
+        `Ca ${sal.isNightShift ? "Đêm" : "Ngày"}: ${sal.standardRate}`,
+      ];
+      if (sal.sundayRate) parts.push(`CN: ${sal.sundayRate}`);
+      if (sal.holidayRate) parts.push(`Lễ: ${sal.holidayRate}`);
+      return parts.join(" - ");
     }
-    return `Tăng ca: Ngày ${sal.dayShiftOvertime?.standardRate || ""} - Đêm ${
-      sal.nightShiftOvertime?.standardRate || ""
-    }`;
+
+    // Overtime
+    const dayParts = [`Ngày: ${sal.dayShiftOvertime?.standardRate || "?"}`];
+    if (sal.dayShiftOvertime?.sundayRate)
+      dayParts.push(`CN: ${sal.dayShiftOvertime.sundayRate}`);
+    if (sal.dayShiftOvertime?.holidayRate)
+      dayParts.push(`Lễ: ${sal.dayShiftOvertime.holidayRate}`);
+
+    const nightParts = [`Đêm: ${sal.nightShiftOvertime?.standardRate || "?"}`];
+    if (sal.nightShiftOvertime?.sundayRate)
+      nightParts.push(`CN: ${sal.nightShiftOvertime.sundayRate}`);
+    if (sal.nightShiftOvertime?.holidayRate)
+      nightParts.push(`Lễ: ${sal.nightShiftOvertime.holidayRate}`);
+
+    return `Tăng ca: ${dayParts.join(", ")} | ${nightParts.join(", ")}`;
   };
 
   return (
@@ -145,12 +162,11 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
           {newSalaryType === SalaryType.Monthly && (
             <div>
               <label className="text-xs font-bold text-gray-500 block mb-1">
-                Số tiền (VND)
+                Số tiền
               </label>
               <input
-                type="number"
                 className="w-full text-sm border-gray-300 rounded-lg p-2"
-                placeholder="VD: 10000000"
+                placeholder="VD: 10tr"
                 onChange={(e) =>
                   setNewSalaryConfig({
                     ...newSalaryConfig,
@@ -221,10 +237,9 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs font-bold text-gray-500 block mb-1">
-                      Cơ bản (VND/h)
+                      Cơ bản
                     </label>
                     <input
-                      type="number"
                       className="w-full text-sm border-gray-300 rounded-lg p-2"
                       onChange={(e) =>
                         setNewSalaryConfig({
@@ -277,7 +292,7 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs font-bold text-gray-500 block mb-1">
-                      Cơ bản (VND/h)
+                      Cơ bản
                     </label>
                     <input
                       className="w-full text-sm border-gray-300 rounded-lg p-2"

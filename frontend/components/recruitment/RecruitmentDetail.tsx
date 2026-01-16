@@ -8,6 +8,7 @@ import {
   EmploymentType,
   SalaryType,
   ShiftSelection,
+  SalaryConfig,
 } from "@/models/Recruitment";
 import { Trash2, Briefcase, DollarSign, FileText, Edit2 } from "lucide-react";
 import { useState } from "react";
@@ -28,6 +29,49 @@ const getShiftSelectionLabel = (selection: ShiftSelection) => {
       return "Xoay ca";
     default:
       return selection;
+  }
+};
+
+const getSalaryLabel = (sal: SalaryConfig) => {
+  if (sal.type === SalaryType.Monthly) {
+    return `${sal.amount}`;
+  }
+  if (sal.type === SalaryType.Shift) {
+    const parts = [
+      `Ca ${sal.isNightShift ? "Đêm" : "Ngày"}: ${sal.standardRate}`,
+    ];
+    if (sal.sundayRate) parts.push(`CN: ${sal.sundayRate}`);
+    if (sal.holidayRate) parts.push(`Lễ: ${sal.holidayRate}`);
+    return parts.join(" - ");
+  }
+  if (sal.type === SalaryType.Overtime) {
+    const dayParts = [`Ngày: ${sal.dayShiftOvertime?.standardRate || "?"}`];
+    if (sal.dayShiftOvertime?.sundayRate)
+      dayParts.push(`CN: ${sal.dayShiftOvertime.sundayRate}`);
+    if (sal.dayShiftOvertime?.holidayRate)
+      dayParts.push(`Lễ: ${sal.dayShiftOvertime.holidayRate}`);
+
+    const nightParts = [`Đêm: ${sal.nightShiftOvertime?.standardRate || "?"}`];
+    if (sal.nightShiftOvertime?.sundayRate)
+      nightParts.push(`CN: ${sal.nightShiftOvertime.sundayRate}`);
+    if (sal.nightShiftOvertime?.holidayRate)
+      nightParts.push(`Lễ: ${sal.nightShiftOvertime.holidayRate}`);
+
+    return `Tăng ca: ${dayParts.join(", ")} | ${nightParts.join(", ")}`;
+  }
+  return "";
+};
+
+const getEmploymentTypeLabel = (type: EmploymentType) => {
+  switch (type) {
+    case EmploymentType.FullTime:
+      return "Toàn thời gian";
+    case EmploymentType.Temporary:
+      return "Thời vụ";
+    case EmploymentType.Seasonal:
+      return "Mùa vụ";
+    default:
+      return type;
   }
 };
 
@@ -168,6 +212,9 @@ export function RecruitmentDetail({
                     >
                       {pos.status}
                     </span>
+                    <span className="inline-block px-2 py-0.5 text-[10px] uppercase tracking-wide rounded-md font-bold bg-blue-100 text-blue-700 ml-2">
+                      {getEmploymentTypeLabel(pos.employmentType)}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-1">
@@ -196,15 +243,7 @@ export function RecruitmentDetail({
                       className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded"
                     >
                       <DollarSign size={12} />
-                      <span>
-                        {sal.type === SalaryType.Monthly
-                          ? `${sal.amount}`
-                          : sal.type === SalaryType.Shift
-                          ? `Ca ${sal.isNightShift ? "Đêm" : "Ngày"}: ${
-                              sal.standardRate
-                            }`
-                          : "Tăng ca"}
-                      </span>
+                      <span>{getSalaryLabel(sal)}</span>
                     </div>
                   ))}
                 </div>
