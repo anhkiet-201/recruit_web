@@ -341,6 +341,30 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     return this.aiProvider.generateEmbedding(text);
   }
 
+  /**
+   * Mở rộng và chuyên nghiệp hóa câu truy vấn tìm kiếm việc làm (Experimental).
+   * Ví dụ: "nv vp" -> "nhân viên văn phòng, hành chính nhân sự"
+   */
+  async rewriteQuery(query: string): Promise<string> {
+    const prompt = `
+      Bạn là một chuyên gia tuyển dụng. Hãy viết lại câu truy vấn tìm kiếm của người dùng bên dưới để tối ưu hóa khả năng tìm kiếm (SEO & Semantic).
+      - Nếu là từ viết tắt, hãy viết đầy đủ (vd: "nv vp" -> "nhân viên văn phòng").
+      - Thêm 1-2 từ đồng nghĩa chuyên môn nếu cần.
+      - Giữ nguyên ý định gốc.
+      - TRẢ VỀ DUY NHẤT CHUỖI CÂU TRUY VẤN MỚI, KHÔNG GIẢI THÍCH.
+
+      Truy vấn: "${query}"
+    `;
+
+    try {
+      const result = await this.aiProvider.generateText(prompt);
+      return result.trim().replace(/^"|"$/g, '');
+    } catch (e) {
+      this.logger.error(`Failed to rewrite query: ${query}`, e);
+      return query;
+    }
+  }
+
   async optimizeJobContent(rawText: string): Promise<OptimizedJobResponseDto> {
     const prompt = `
       Bạn là một chuyên gia HR. Nhiệm vụ của bạn là phân tích nội dung tuyển dụng thô dưới đây và trích xuất thông tin thành JSON chuẩn.

@@ -23,6 +23,7 @@ export interface IRecruitmentRepository {
   findSimilarJobs(
     embedding: number[],
     query: string,
+    unaccentedQuery: string,
     threshold: number,
     limit: number,
     offset: number,

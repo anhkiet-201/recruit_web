@@ -219,6 +219,7 @@ export class RecruitmentRepository implements IRecruitmentRepository {
   async findSimilarJobs(
     embedding: number[],
     query: string,
+    unaccentedQuery: string,
     threshold: number,
     limit: number,
     offset: number,
@@ -231,6 +232,7 @@ export class RecruitmentRepository implements IRecruitmentRepository {
     const hasEmbedding = embedding && embedding.length > 0;
     const vectorString = hasEmbedding ? `[${embedding.join(',')}]` : null;
     const queryPattern = `%${query}%`;
+    const unaccentedPattern = `%${unaccentedQuery}%`;
 
     // 1. Lấy total count để tính pagination
     const countResult = await this.prisma.$queryRaw<{ count: bigint }[]>`
@@ -246,19 +248,33 @@ export class RecruitmentRepository implements IRecruitmentRepository {
             : Prisma.raw('false')
         })
         OR j.title ILIKE ${queryPattern}
+        OR j.title ILIKE ${unaccentedPattern}
         OR p.company_name ILIKE ${queryPattern}
+        OR p.company_name ILIKE ${unaccentedPattern}
         OR p.address ILIKE ${queryPattern}
+        OR p.address ILIKE ${unaccentedPattern}
         OR j.description_text ILIKE ${queryPattern}
+        OR j.description_text ILIKE ${unaccentedPattern}
         OR j.salary_packages::text ILIKE ${queryPattern}
+        OR j.salary_packages::text ILIKE ${unaccentedPattern}
         OR j.requirements::text ILIKE ${queryPattern}
+        OR j.requirements::text ILIKE ${unaccentedPattern}
         OR j.benefits::text ILIKE ${queryPattern}
+        OR j.benefits::text ILIKE ${unaccentedPattern}
         OR j.other_requirements::text ILIKE ${queryPattern}
+        OR j.other_requirements::text ILIKE ${unaccentedPattern}
         OR j.environment::text ILIKE ${queryPattern}
+        OR j.environment::text ILIKE ${unaccentedPattern}
         OR j.managers::text ILIKE ${queryPattern}
+        OR j.managers::text ILIKE ${unaccentedPattern}
         OR j.shifts::text ILIKE ${queryPattern}
+        OR j.shifts::text ILIKE ${unaccentedPattern}
         OR j.notes::text ILIKE ${queryPattern}
+        OR j.notes::text ILIKE ${unaccentedPattern}
         OR j.shift_selections::text ILIKE ${queryPattern}
+        OR j.shift_selections::text ILIKE ${unaccentedPattern}
         OR j.employment_types::text ILIKE ${queryPattern}
+        OR j.employment_types::text ILIKE ${unaccentedPattern}
         OR j.status ILIKE ${queryPattern}
       )
     `;
@@ -297,18 +313,25 @@ export class RecruitmentRepository implements IRecruitmentRepository {
               : Prisma.raw('0')
           } +
           -- Keyword Boosts (Prioritize accuracy)
-          (CASE WHEN j.title ILIKE ${query} THEN 5.0 ELSE 0 END) + -- Exact title match (highest)
-          (CASE WHEN j.title ILIKE ${queryPattern} THEN 3.0 ELSE 0 END) + -- Title partial match
-          (CASE WHEN p.company_name ILIKE ${queryPattern} THEN 2.0 ELSE 0 END) + -- Company name match
-          (CASE WHEN p.address ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) + -- Address match
-          (CASE WHEN j.description_text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) + -- Description match
+          (CASE 
+            WHEN j.title ILIKE ${query} OR j.title ILIKE ${unaccentedQuery} THEN 5.0 
+            WHEN j.title ILIKE ${queryPattern} OR j.title ILIKE ${unaccentedPattern} THEN 3.0 
+            ELSE 0 
+          END) + 
+          (CASE 
+            WHEN p.company_name ILIKE ${queryPattern} OR p.company_name ILIKE ${unaccentedPattern} THEN 2.0 
+            ELSE 0 
+          END) + 
+          (CASE 
+            WHEN p.address ILIKE ${queryPattern} OR p.address ILIKE ${unaccentedPattern} THEN 1.0 
+            ELSE 0 
+          END) + 
           
           -- Global Search Boosts
-          (CASE WHEN j.requirements::text ILIKE ${queryPattern} THEN 0.8 ELSE 0 END) +
-          (CASE WHEN j.benefits::text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
-          (CASE WHEN j.salary_packages::text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
-          (CASE WHEN j.notes::text ILIKE ${queryPattern} THEN 0.3 ELSE 0 END) +
-          (CASE WHEN j.employment_types::text ILIKE ${queryPattern} THEN 2.0 ELSE 0 END)
+          (CASE WHEN j.requirements::text ILIKE ${unaccentedPattern} THEN 0.8 ELSE 0 END) +
+          (CASE WHEN j.benefits::text ILIKE ${unaccentedPattern} THEN 0.5 ELSE 0 END) +
+          (CASE WHEN j.salary_packages::text ILIKE ${unaccentedPattern} THEN 0.5 ELSE 0 END) +
+          (CASE WHEN j.employment_types::text ILIKE ${unaccentedPattern} THEN 2.0 ELSE 0 END)
         ) as hybrid_score
       FROM job_positions j
       INNER JOIN recruitment_posts p ON j.post_id = p.id
@@ -321,19 +344,16 @@ export class RecruitmentRepository implements IRecruitmentRepository {
             : Prisma.raw('false')
         })
         OR j.title ILIKE ${queryPattern}
+        OR j.title ILIKE ${unaccentedPattern}
         OR p.company_name ILIKE ${queryPattern}
+        OR p.company_name ILIKE ${unaccentedPattern}
         OR p.address ILIKE ${queryPattern}
-        OR j.description_text ILIKE ${queryPattern}
-        -- Universal search across all JSONB fields
-        OR j.salary_packages::text ILIKE ${queryPattern}
-        OR j.requirements::text ILIKE ${queryPattern}
-        OR j.benefits::text ILIKE ${queryPattern}
-        OR j.other_requirements::text ILIKE ${queryPattern}
-        OR j.environment::text ILIKE ${queryPattern}
-        OR j.managers::text ILIKE ${queryPattern}
-        OR j.shifts::text ILIKE ${queryPattern}
-        OR j.notes::text ILIKE ${queryPattern}
-        OR j.employment_types::text ILIKE ${queryPattern}
+        OR p.address ILIKE ${unaccentedPattern}
+        OR j.description_text ILIKE ${unaccentedPattern}
+        OR j.salary_packages::text ILIKE ${unaccentedPattern}
+        OR j.requirements::text ILIKE ${unaccentedPattern}
+        OR j.benefits::text ILIKE ${unaccentedPattern}
+        OR j.employment_types::text ILIKE ${unaccentedPattern}
       )
       ORDER BY hybrid_score DESC
       LIMIT ${limit} OFFSET ${offset}
