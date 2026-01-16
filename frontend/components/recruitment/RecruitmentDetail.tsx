@@ -198,10 +198,12 @@ export function RecruitmentDetail({
                       <DollarSign size={12} />
                       <span>
                         {sal.type === SalaryType.Monthly
-                          ? `${sal.amount?.toLocaleString()} VND`
-                          : sal.type === SalaryType.Overtime
-                          ? "Tăng ca"
-                          : sal.type}
+                          ? `${sal.amount}`
+                          : sal.type === SalaryType.Shift
+                          ? `Ca ${sal.isNightShift ? "Đêm" : "Ngày"}: ${
+                              sal.standardRate
+                            }`
+                          : "Tăng ca"}
                       </span>
                     </div>
                   ))}

@@ -42,9 +42,9 @@ export enum SalaryType {
 
 // Interface cơ bản cho lương theo ca (Dùng để tái sử dụng)
 export interface ShiftRate {
-  readonly standardRate: number; // Lương cơ bản (VND/h hoặc VND/ca)
-  readonly sundayRate: number; // Lương chủ nhật
-  readonly holidayRate: number; // Lương ngày lễ
+  readonly standardRate: string; // Lương cơ bản (VND/h hoặc VND/ca)
+  readonly sundayRate: string; // Lương chủ nhật
+  readonly holidayRate: string; // Lương ngày lễ
 }
 
 /**
@@ -52,7 +52,7 @@ export interface ShiftRate {
  */
 export interface MonthlySalary {
   readonly type: SalaryType.Monthly; // Discriminator
-  readonly amount: number; // Tổng lương cứng
+  readonly amount: string; // Tổng lương cứng
 }
 
 /**

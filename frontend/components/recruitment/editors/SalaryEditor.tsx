@@ -9,10 +9,10 @@ interface SalaryEditorProps {
 
 // Interface to handle form state for all salary types
 interface SalaryFormState {
-  amount?: number;
-  standardRate?: number;
-  sundayRate?: number;
-  holidayRate?: number;
+  amount?: string;
+  standardRate?: string;
+  sundayRate?: string;
+  holidayRate?: string;
   isNightShift?: boolean;
   dayShiftOvertime?: ShiftRate;
   nightShiftOvertime?: ShiftRate;
@@ -38,14 +38,14 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
     if (newSalaryType === SalaryType.Monthly) {
       salaryToAdd = {
         type: SalaryType.Monthly,
-        amount: newSalaryConfig.amount || 0,
+        amount: newSalaryConfig.amount || "",
       };
     } else if (newSalaryType === SalaryType.Shift) {
       salaryToAdd = {
         type: SalaryType.Shift,
-        standardRate: newSalaryConfig.standardRate || 0,
-        sundayRate: newSalaryConfig.sundayRate || 0,
-        holidayRate: newSalaryConfig.holidayRate || 0,
+        standardRate: newSalaryConfig.standardRate || "",
+        sundayRate: newSalaryConfig.sundayRate || "",
+        holidayRate: newSalaryConfig.holidayRate || "",
         isNightShift: !!newSalaryConfig.isNightShift,
       };
     } else {
@@ -53,14 +53,14 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
       salaryToAdd = {
         type: SalaryType.Overtime,
         dayShiftOvertime: newSalaryConfig.dayShiftOvertime || {
-          standardRate: 0,
-          sundayRate: 0,
-          holidayRate: 0,
+          standardRate: "",
+          sundayRate: "",
+          holidayRate: "",
         },
         nightShiftOvertime: newSalaryConfig.nightShiftOvertime || {
-          standardRate: 0,
-          sundayRate: 0,
-          holidayRate: 0,
+          standardRate: "",
+          sundayRate: "",
+          holidayRate: "",
         },
       };
     }
@@ -75,14 +75,14 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
 
   const renderDescription = (sal: SalaryConfig) => {
     if (sal.type === SalaryType.Monthly) {
-      return `Lương tháng: ${sal.amount?.toLocaleString()} VND`;
+      return `Lương tháng: ${sal.amount}`;
     }
     if (sal.type === SalaryType.Shift) {
-      return `Ca ${sal.isNightShift ? "Đêm" : "Ngày"}: ${sal.standardRate} /h`;
+      return `Ca ${sal.isNightShift ? "Đêm" : "Ngày"}: ${sal.standardRate}`;
     }
-    return `Tăng ca: Ngày ${sal.dayShiftOvertime?.standardRate || 0}/h - Đêm ${
-      sal.nightShiftOvertime?.standardRate || 0
-    }/h`;
+    return `Tăng ca: Ngày ${sal.dayShiftOvertime?.standardRate || ""} - Đêm ${
+      sal.nightShiftOvertime?.standardRate || ""
+    }`;
   };
 
   return (
@@ -154,7 +154,7 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
                 onChange={(e) =>
                   setNewSalaryConfig({
                     ...newSalaryConfig,
-                    amount: Number(e.target.value),
+                    amount: e.target.value,
                   })
                 }
               />
@@ -166,30 +166,28 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-bold text-gray-500 block mb-1">
-                    Lương cơ bản (VND/h)
+                    Lương cơ bản
                   </label>
                   <input
-                    type="number"
                     className="w-full text-sm border-gray-300 rounded-lg p-2"
                     onChange={(e) =>
                       setNewSalaryConfig({
                         ...newSalaryConfig,
-                        standardRate: Number(e.target.value),
+                        standardRate: e.target.value,
                       })
                     }
                   />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 block mb-1">
-                    Lương Chủ Nhật (VND/h)
+                    Lương Chủ Nhật
                   </label>
                   <input
-                    type="number"
                     className="w-full text-sm border-gray-300 rounded-lg p-2"
                     onChange={(e) =>
                       setNewSalaryConfig({
                         ...newSalaryConfig,
-                        sundayRate: Number(e.target.value),
+                        sundayRate: e.target.value,
                       })
                     }
                   />
@@ -233,12 +231,13 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
                           ...newSalaryConfig,
                           dayShiftOvertime: {
                             ...newSalaryConfig.dayShiftOvertime,
-                            standardRate: Number(e.target.value),
+                            standardRate: e.target.value,
                             sundayRate:
-                              newSalaryConfig.dayShiftOvertime?.sundayRate || 0,
+                              newSalaryConfig.dayShiftOvertime?.sundayRate ||
+                              "",
                             holidayRate:
                               newSalaryConfig.dayShiftOvertime?.holidayRate ||
-                              0,
+                              "",
                           },
                         })
                       }
@@ -246,23 +245,22 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 block mb-1">
-                      Chủ Nhật (VND/h)
+                      Chủ Nhật
                     </label>
                     <input
-                      type="number"
                       className="w-full text-sm border-gray-300 rounded-lg p-2"
                       onChange={(e) =>
                         setNewSalaryConfig({
                           ...newSalaryConfig,
                           dayShiftOvertime: {
                             ...newSalaryConfig.dayShiftOvertime,
-                            sundayRate: Number(e.target.value),
+                            sundayRate: e.target.value,
                             standardRate:
                               newSalaryConfig.dayShiftOvertime?.standardRate ||
-                              0,
+                              "",
                             holidayRate:
                               newSalaryConfig.dayShiftOvertime?.holidayRate ||
-                              0,
+                              "",
                           },
                         })
                       }
@@ -282,20 +280,19 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
                       Cơ bản (VND/h)
                     </label>
                     <input
-                      type="number"
                       className="w-full text-sm border-gray-300 rounded-lg p-2"
                       onChange={(e) =>
                         setNewSalaryConfig({
                           ...newSalaryConfig,
                           nightShiftOvertime: {
                             ...newSalaryConfig.nightShiftOvertime,
-                            standardRate: Number(e.target.value),
+                            standardRate: e.target.value,
                             sundayRate:
                               newSalaryConfig.nightShiftOvertime?.sundayRate ||
-                              0,
+                              "",
                             holidayRate:
                               newSalaryConfig.nightShiftOvertime?.holidayRate ||
-                              0,
+                              "",
                           },
                         })
                       }
@@ -303,23 +300,22 @@ export function SalaryEditor({ salaryPackages, onChange }: SalaryEditorProps) {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 block mb-1">
-                      Chủ Nhật (VND/h)
+                      Chủ Nhật
                     </label>
                     <input
-                      type="number"
                       className="w-full text-sm border-gray-300 rounded-lg p-2"
                       onChange={(e) =>
                         setNewSalaryConfig({
                           ...newSalaryConfig,
                           nightShiftOvertime: {
                             ...newSalaryConfig.nightShiftOvertime,
-                            sundayRate: Number(e.target.value),
+                            sundayRate: e.target.value,
                             standardRate:
                               newSalaryConfig.nightShiftOvertime
-                                ?.standardRate || 0,
+                                ?.standardRate || "",
                             holidayRate:
                               newSalaryConfig.nightShiftOvertime?.holidayRate ||
-                              0,
+                              "",
                           },
                         })
                       }
