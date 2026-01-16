@@ -13,6 +13,7 @@ import { AiService } from '../ai/ai.service'; // Assuming we can use AiService f
 @Injectable()
 export class RecruitmentService {
   private readonly logger = new Logger(RecruitmentService.name);
+  private readonly embeddingCache = new Map<string, number[]>();
 
   constructor(
     private readonly repository: RecruitmentRepository,
@@ -116,29 +117,58 @@ export class RecruitmentService {
     query: string,
     page: number = 1,
     limit: number = 10,
-    threshold: number = 0.6, // Tăng lên 0.6 để lọc kết quả chính xác hơn
+    threshold: number = 0.6,
   ): Promise<{
     items: RecruitmentPost[];
     total: number;
     page: number;
     lastPage: number;
   }> {
+    const normalizedQuery = query.trim().toLowerCase().replace(/\s+/g, ' ');
+
     this.logger.log(
-      `Semantic search: "${query}" (page=${page}, limit=${limit}, threshold=${threshold})`,
+      `Semantic search: "${normalizedQuery}" (original: "${query}", page=${page}, limit=${limit}, threshold=${threshold})`,
     );
 
     const startTime = Date.now();
-    const embedding = await this.aiService.generateEmbedding(query);
-    this.logger.debug(
-      `Generated query embedding in ${Date.now() - startTime}ms`,
-    );
+    let embedding: number[] | undefined;
+
+    // 1. Try to get from cache
+    if (this.embeddingCache.has(normalizedQuery)) {
+      embedding = this.embeddingCache.get(normalizedQuery);
+      this.logger.debug(`Embedding cache hit for: "${normalizedQuery}"`);
+    } else {
+      // 2. Generate new embedding with error handling fallback
+      try {
+        const embedStartTime = Date.now();
+        embedding = await this.aiService.generateEmbedding(normalizedQuery);
+        this.embeddingCache.set(normalizedQuery, embedding);
+        this.logger.debug(
+          `Generated query embedding in ${Date.now() - embedStartTime}ms`,
+        );
+
+        // Limit cache size to prevent memory leaks (simple LRU-ish approach if needed, but for now just clear if too big)
+        if (this.embeddingCache.size > 1000) {
+          const firstKeyResult = this.embeddingCache.keys().next();
+          if (!firstKeyResult.done) {
+            this.embeddingCache.delete(firstKeyResult.value);
+          }
+        }
+      } catch (error) {
+        const err = error as Error;
+        this.logger.error(
+          `Failed to generate embedding for query: "${normalizedQuery}". Falling back to keyword search.`,
+          err.stack,
+        );
+        // embedding stays undefined
+      }
+    }
 
     const offset = (page - 1) * limit;
 
-    // const searchStart = Date.now();
     const result = await this.repository.findSimilarJobs(
-      embedding,
-      query,
+      embedding || [], // Pass empty array if embedding failed
+      normalizedQuery,
       threshold,
       limit,
       offset,
@@ -146,7 +176,9 @@ export class RecruitmentService {
 
     const totalTime = Date.now() - startTime;
     this.logger.log(
-      `Search completed: ${result.items.length} results (total: ${result.total}, page ${result.page}/${result.lastPage}) in ${totalTime}ms`,
+      `Search completed (${embedding ? 'semantic+hybrid' : 'keyword-only'}): ${
+        result.items.length
+      } results (total: ${result.total}) in ${totalTime}ms`,
     );
 
     return result;
@@ -156,97 +188,133 @@ export class RecruitmentService {
     post: { companyName: string; address: string },
     pos: Partial<RecruitmentPost['positions'][0]>,
   ): string {
-    return [
-      `Vị trí: ${pos.title || ''}`,
-      `Công ty: ${post.companyName}`,
-      `Địa chỉ: ${post.address}`,
-      `Loại hình: ${
+    const lines: string[] = [];
+
+    // Header - Core Information
+    lines.push(`# VỊ TRÍ: ${pos.title?.toUpperCase() || ''}`);
+    lines.push(`CÔNG TY: ${post.companyName}`);
+    lines.push(`ĐỊA CHỈ: ${post.address}`);
+    lines.push(
+      `LOẠI HÌNH: ${
         pos.employmentType
           ? this.getEmploymentTypeLabel(pos.employmentType)
-          : ''
+          : 'Toàn thời gian'
       }`,
-      pos.status === RecruitmentStatus.Recruiting
-        ? 'Đang tuyển dụng'
-        : 'Đã đóng',
-      '',
-      // Requirements
-      ...(pos.requirements && pos.requirements.length > 0
-        ? ['Yêu cầu:', ...pos.requirements.map((r) => `- ${r}`)]
-        : []),
-      '',
-      // Benefits
-      ...(pos.benefits && pos.benefits.length > 0
-        ? ['Phúc lợi:', ...pos.benefits.map((b) => `- ${b}`)]
-        : []),
-      '',
-      // Salary
-      ...(pos.salaryPackages && pos.salaryPackages.length > 0
-        ? [
-            'Lương:',
-            ...pos.salaryPackages
-              .map((sal) => {
-                if (sal.type === SalaryType.Monthly) {
-                  return `- Tháng: ${sal.amount || 'Thỏa thuận'}`;
-                }
-                if (sal.type === SalaryType.Shift) {
-                  return `- Theo ca ${sal.isNightShift ? 'đêm' : 'ngày'}: ${
-                    sal.standardRate
-                  }`;
-                }
-                if (sal.type === SalaryType.Overtime) {
-                  return `- Có tăng ca`;
-                }
-                return '';
-              })
-              .filter(Boolean),
-          ]
-        : []),
-      '',
-      // Shifts
-      ...(pos.shifts && pos.shifts.length > 0
-        ? [
-            'Ca làm việc:',
-            ...pos.shifts.map(
-              (s) => `- ${s.name}: ${s.startTime} - ${s.endTime}`,
-            ),
-          ]
-        : []),
-      '',
-      // Shift Selections
-      ...(pos.shiftSelections && pos.shiftSelections.length > 0
-        ? [
-            'Chế độ ca:',
-            ...pos.shiftSelections.map((s) => this.getShiftSelectionLabel(s)),
-          ]
-        : []),
-      '',
-      // Environment
-      ...(pos.environment && pos.environment.length > 0
-        ? ['Môi trường:', ...pos.environment.map((e) => `- ${e}`)]
-        : []),
-      '',
-      // Managers
-      ...(pos.managers && pos.managers.length > 0
-        ? [
-            'Liên hệ:',
-            ...pos.managers.map((m) => `- ${m.name} (${m.phoneNumber})`),
-          ]
-        : []),
-      '',
-      // Notes
-      ...(pos.notes && pos.notes.length > 0
-        ? ['Ghi chú:', ...pos.notes.map((n) => `- ${n}`)]
-        : []),
-      '',
-      // Other requirements
-      ...(pos.otherRequirements && pos.otherRequirements.length > 0
-        ? ['Khác:', ...pos.otherRequirements.map((r) => `- ${r}`)]
-        : []),
-      '',
-      pos.descriptionText || '',
-    ]
-      .filter((line) => line !== undefined && line !== null)
-      .join('\n');
+    );
+    lines.push(
+      `TRẠNG THÁI: ${
+        pos.status === RecruitmentStatus.Recruiting
+          ? 'Đang tuyển dụng'
+          : 'Đã đóng'
+      }`,
+    );
+
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+
+    // Requirements & Other Requirements
+    if (
+      (pos.requirements && pos.requirements.length > 0) ||
+      (pos.otherRequirements && pos.otherRequirements.length > 0)
+    ) {
+      lines.push('YÊU CẦU CÔNG VIỆC:');
+      if (pos.requirements)
+        pos.requirements.forEach((r) => lines.push(`- ${r}`));
+      if (pos.otherRequirements)
+        pos.otherRequirements.forEach((r) => lines.push(`- ${r}`));
+      lines.push('');
+    }
+
+    // Benefits
+    if (pos.benefits && pos.benefits.length > 0) {
+      lines.push('PHÚC LỢI & QUYỀN LỢI:');
+      pos.benefits.forEach((b) => lines.push(`- ${b}`));
+      lines.push('');
+    }
+
+    // Salary info - Highly Detailed for Semantic Search
+    if (pos.salaryPackages && pos.salaryPackages.length > 0) {
+      lines.push('CHẾ ĐỘ LƯƠNG THƯỞNG CHI TIẾT:');
+      pos.salaryPackages.forEach((sal) => {
+        if (sal.type === SalaryType.Monthly) {
+          lines.push(`- Lương tháng: ${sal.amount || 'Thỏa thuận'}`);
+        } else if (sal.type === SalaryType.Shift) {
+          lines.push(
+            `- Lương theo ca ${sal.isNightShift ? 'đêm' : 'ngày'}: ${
+              sal.standardRate || 'Thỏa thuận'
+            }`,
+          );
+          if (sal.sundayRate)
+            lines.push(`  + Lương Chủ Nhật: ${sal.sundayRate}`);
+          if (sal.holidayRate)
+            lines.push(`  + Lương Ngày Lễ: ${sal.holidayRate}`);
+        } else if (sal.type === SalaryType.Overtime) {
+          lines.push(`- Chế độ tăng ca:`);
+          if (sal.dayShiftOvertime) {
+            lines.push(
+              `  + Tăng ca ngày: Cơ bản ${sal.dayShiftOvertime.standardRate}, CN ${sal.dayShiftOvertime.sundayRate}, Lễ ${sal.dayShiftOvertime.holidayRate}`,
+            );
+          }
+          if (sal.nightShiftOvertime) {
+            lines.push(
+              `  + Tăng ca đêm: Cơ bản ${sal.nightShiftOvertime.standardRate}, CN ${sal.nightShiftOvertime.sundayRate}, Lễ ${sal.nightShiftOvertime.holidayRate}`,
+            );
+          }
+        }
+      });
+      lines.push('');
+    }
+
+    // Environment - Added for exhaustive coverage
+    if (pos.environment && pos.environment.length > 0) {
+      lines.push('MÔI TRƯỜNG LÀM VIỆC:');
+      pos.environment.forEach((e) => lines.push(`- ${e}`));
+      lines.push('');
+    }
+
+    // Shifts
+    if (pos.shifts && pos.shifts.length > 0) {
+      lines.push('CA LÀM VIỆC:');
+      pos.shifts.forEach((s) =>
+        lines.push(`- ${s.name}: ${s.startTime} - ${s.endTime}`),
+      );
+      lines.push('');
+    }
+
+    // Shift Selections
+    if (pos.shiftSelections && pos.shiftSelections.length > 0) {
+      const selections = pos.shiftSelections.map((s) =>
+        this.getShiftSelectionLabel(s),
+      );
+      lines.push(`CÁCH THỨC ĐI CA: ${selections.join(', ')}`);
+      lines.push('');
+    }
+
+    // Managers / Contacts - Added for exhaustive coverage
+    if (pos.managers && pos.managers.length > 0) {
+      lines.push('THÔNG TIN LIÊN HỆ & QUẢN LÝ:');
+      pos.managers.forEach((m) => lines.push(`- ${m.name} (${m.phoneNumber})`));
+      lines.push('');
+    }
+
+    // Notes
+    if (pos.notes && pos.notes.length > 0) {
+      lines.push('GHI CHÚ QUAN TRỌNG:');
+      pos.notes.forEach((n) => lines.push(`- ${n}`));
+      lines.push('');
+    }
+
+    // Raw Description text if any
+    if (pos.descriptionText) {
+      lines.push('MÔ TẢ CHI TIẾT BỔ SUNG:');
+      lines.push(pos.descriptionText);
+    }
+
+    return lines
+      .filter((l) => l !== undefined && l !== null)
+      .join('\n')
+      .trim();
   }
 
   private getShiftSelectionLabel(selection: ShiftSelection): string {

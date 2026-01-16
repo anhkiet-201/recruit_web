@@ -225,22 +225,27 @@ export class RecruitmentRepository implements IRecruitmentRepository {
     page: number;
     lastPage: number;
   }> {
-    const vectorString = `[${embedding.join(',')}]`;
+    const hasEmbedding = embedding && embedding.length > 0;
+    const vectorString = hasEmbedding ? `[${embedding.join(',')}]` : null;
     const queryPattern = `%${query}%`;
 
     // 1. Lấy total count để tính pagination
-    // Note: Use Prisma.raw() for vector to avoid string escaping
     const countResult = await this.prisma.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(DISTINCT p.id) as count
       FROM job_positions j
       INNER JOIN recruitment_posts p ON j.post_id = p.id
       WHERE (
-        j.embedding <=> ${Prisma.raw(`'${vectorString}'`)}::vector < ${1 - threshold}
+        (${
+          hasEmbedding
+            ? Prisma.raw(
+                `j.embedding <=> '${vectorString}'::vector < ${1 - threshold}`,
+              )
+            : Prisma.raw('false')
+        })
         OR j.title ILIKE ${queryPattern}
         OR p.company_name ILIKE ${queryPattern}
         OR p.address ILIKE ${queryPattern}
         OR j.description_text ILIKE ${queryPattern}
-        -- Universal search across all JSONB fields
         OR j.salary_packages::text ILIKE ${queryPattern}
         OR j.requirements::text ILIKE ${queryPattern}
         OR j.benefits::text ILIKE ${queryPattern}
@@ -257,6 +262,7 @@ export class RecruitmentRepository implements IRecruitmentRepository {
     const total = Number(countResult[0]?.count || 0);
 
     // 2. Query chính với hybrid scoring (vector + keyword)
+    // Tăng trọng số (boost) cho các trường quan trọng để ưu tiên độ chính xác
     const result = await this.prisma.$queryRaw`
       SELECT 
         p.id as post_id,
@@ -279,28 +285,37 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         j.notes,
         j.shift_selections,
         (
-          (1 - (j.embedding <=> ${Prisma.raw(`'${vectorString}'`)}::vector)) +
-          (CASE WHEN j.title ILIKE ${queryPattern} THEN 2.0 ELSE 0 END) +
-          (CASE WHEN p.company_name ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN p.address ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.description_text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
-          -- Boost for Universal Search matches in JSONB/Text fields
-          (CASE WHEN j.salary_packages::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.requirements::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.benefits::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.other_requirements::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.environment::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.managers::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.shifts::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.notes::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.shift_selections::text ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.employment_type ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) +
-          (CASE WHEN j.status ILIKE ${queryPattern} THEN 1.0 ELSE 0 END)
+          -- Semantic Score (0 to 1) if embedding exists
+          ${
+            hasEmbedding
+              ? Prisma.raw(
+                  `(1 - (j.embedding <=> '${vectorString}'::vector)) * 2.5`,
+                )
+              : Prisma.raw('0')
+          } +
+          -- Keyword Boosts (Prioritize accuracy)
+          (CASE WHEN j.title ILIKE ${query} THEN 5.0 ELSE 0 END) + -- Exact title match (highest)
+          (CASE WHEN j.title ILIKE ${queryPattern} THEN 3.0 ELSE 0 END) + -- Title partial match
+          (CASE WHEN p.company_name ILIKE ${queryPattern} THEN 2.0 ELSE 0 END) + -- Company name match
+          (CASE WHEN p.address ILIKE ${queryPattern} THEN 1.0 ELSE 0 END) + -- Address match
+          (CASE WHEN j.description_text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) + -- Description match
+          
+          -- Global Search Boosts
+          (CASE WHEN j.requirements::text ILIKE ${queryPattern} THEN 0.8 ELSE 0 END) +
+          (CASE WHEN j.benefits::text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
+          (CASE WHEN j.salary_packages::text ILIKE ${queryPattern} THEN 0.5 ELSE 0 END) +
+          (CASE WHEN j.notes::text ILIKE ${queryPattern} THEN 0.3 ELSE 0 END)
         ) as hybrid_score
       FROM job_positions j
       INNER JOIN recruitment_posts p ON j.post_id = p.id
       WHERE (
-        j.embedding <=> ${Prisma.raw(`'${vectorString}'`)}::vector < ${1 - threshold}
+        (${
+          hasEmbedding
+            ? Prisma.raw(
+                `j.embedding <=> '${vectorString}'::vector < ${1 - threshold}`,
+              )
+            : Prisma.raw('false')
+        })
         OR j.title ILIKE ${queryPattern}
         OR p.company_name ILIKE ${queryPattern}
         OR p.address ILIKE ${queryPattern}
@@ -414,110 +429,133 @@ export class RecruitmentRepository implements IRecruitmentRepository {
   }
 
   private combineDescription(pos: Partial<JobPosition>): string {
-    // Generate rich description matching Service layer logic
-    return [
-      `Vị trí: ${pos.title || 'Không rõ'}`,
-      `Loại hình: ${pos.employmentType || 'Không rõ'}`,
-      pos.status === RecruitmentStatus.Recruiting
-        ? 'Đang tuyển dụng'
-        : 'Đã đóng',
-      '',
-      // Requirements (most important)
-      ...(pos.requirements && pos.requirements.length > 0
-        ? ['Yêu cầu:', ...pos.requirements.map((r) => `- ${r}`)]
-        : []),
-      '',
-      // Benefits
-      ...(pos.benefits && pos.benefits.length > 0
-        ? ['Phúc lợi:', ...pos.benefits.map((b) => `- ${b}`)]
-        : []),
-      '',
-      // Environment
-      ...(pos.environment && pos.environment.length > 0
-        ? ['Môi trường làm việc:', ...pos.environment.map((e) => `- ${e}`)]
-        : []),
-      '',
-      // Salary info
-      ...(pos.salaryPackages && pos.salaryPackages.length > 0
-        ? [
-            'Lương:',
-            ...pos.salaryPackages
-              .map((sal) => {
-                if (sal.type === SalaryType.Monthly) {
-                  return `- Tháng: ${sal.amount || 'Thỏa thuận'}`;
-                }
-                if (sal.type === SalaryType.Shift) {
-                  return `- Theo ca ${sal.isNightShift ? '(ca đêm)' : ''}`;
-                }
-                if (sal.type === SalaryType.Overtime) {
-                  return `- Có tăng ca`;
-                }
-                return '';
-              })
-              .filter(Boolean),
-          ]
-        : []),
-      '',
-      // Other requirements
-      ...(pos.otherRequirements && pos.otherRequirements.length > 0
-        ? ['Yêu cầu khác:', ...pos.otherRequirements.map((r) => `- ${r}`)]
-        : []),
-      '',
-      // Managers
-      ...(pos.managers && pos.managers.length > 0
-        ? [
-            'Liên hệ quản lý:',
-            ...pos.managers.map(
-              (m) =>
-                `- ${m.name} (${m.phoneNumber}${
-                  // @ts-expect-error email is not in ManagerContact interface but might exist in runtime
-                  m.email ? `, ${m.email}` : ''
-                })`,
-            ),
-          ]
-        : []),
-      '',
-      // Shifts
-      ...(pos.shifts && pos.shifts.length > 0
-        ? [
-            'Ca làm việc:',
-            ...pos.shifts.map(
-              (s) => `- ${s.name}: ${s.startTime} - ${s.endTime}`,
-            ),
-          ]
-        : []),
-      '',
-      // Notes
-      ...(pos.notes && pos.notes.length > 0
-        ? ['Ghi chú:', ...pos.notes.map((n) => `- ${n}`)]
-        : []),
-      '',
-      // Shift Selections
-      ...(pos.shiftSelections && pos.shiftSelections.length > 0
-        ? [
-            'Chế độ ca:',
-            ...pos.shiftSelections.map((s) => {
-              switch (s) {
-                case ShiftSelection.Flexible:
-                  return '- Linh hoạt (Được chọn ca)';
-                case ShiftSelection.DayShiftOnly:
-                  return '- Chỉ ca ngày';
-                case ShiftSelection.NightShiftOnly:
-                  return '- Chỉ ca đêm';
-                case ShiftSelection.OfficeHoursOvertime:
-                  return '- Hành chính có tăng ca';
-                case ShiftSelection.ArrangedByHR:
-                  return '- Nhân sự sắp xếp';
-                case ShiftSelection.RotatingShift:
-                  return '- Xoay ca';
-                default:
-                  return `- ${s as string}`;
-              }
-            }),
-          ]
-        : []),
-    ]
-      .filter((line) => line !== undefined && line !== null)
-      .join('\n');
+    const lines: string[] = [];
+
+    // Header
+    lines.push(`# VỊ TRÍ: ${pos.title?.toUpperCase() || 'Không rõ'}`);
+    lines.push(
+      `LOẠI HÌNH: ${pos.employmentType || 'Toàn thời gian'} | TRẠNG THÁI: ${
+        pos.status === RecruitmentStatus.Recruiting
+          ? 'Đang tuyển dụng'
+          : 'Đã đóng'
+      }`,
+    );
+
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+
+    // Requirements & Other Requirements
+    if (
+      (pos.requirements && pos.requirements.length > 0) ||
+      (pos.otherRequirements && pos.otherRequirements.length > 0)
+    ) {
+      lines.push('YÊU CẦU CÔNG VIỆC:');
+      if (pos.requirements)
+        pos.requirements.forEach((r) => lines.push(`- ${r}`));
+      if (pos.otherRequirements)
+        pos.otherRequirements.forEach((r) => lines.push(`- ${r}`));
+      lines.push('');
+    }
+
+    // Benefits
+    if (pos.benefits && pos.benefits.length > 0) {
+      lines.push('PHÚC LỢI & QUYỀN LỢI:');
+      pos.benefits.forEach((b) => lines.push(`- ${b}`));
+      lines.push('');
+    }
+
+    // Salary info
+    if (pos.salaryPackages && pos.salaryPackages.length > 0) {
+      lines.push('CHẾ ĐỘ LƯƠNG THƯỞNG:');
+      pos.salaryPackages.forEach((sal) => {
+        if (sal.type === SalaryType.Monthly) {
+          lines.push(`- Lương tháng: ${sal.amount || 'Thỏa thuận'}`);
+        } else if (sal.type === SalaryType.Shift) {
+          lines.push(
+            `- Lương theo ca ${sal.isNightShift ? '(ca đêm)' : '(ca ngày)'}: ${
+              sal.standardRate || 'Thỏa thuận'
+            }`,
+          );
+          if (sal.sundayRate)
+            lines.push(`  + Lương Chủ Nhật: ${sal.sundayRate}`);
+          if (sal.holidayRate)
+            lines.push(`  + Lương Ngày Lễ: ${sal.holidayRate}`);
+        } else if (sal.type === SalaryType.Overtime) {
+          lines.push(`- Chế độ tăng ca:`);
+          if (sal.dayShiftOvertime) {
+            lines.push(
+              `  + Tăng ca ngày: ${sal.dayShiftOvertime.standardRate} (Lễ ${sal.dayShiftOvertime.holidayRate})`,
+            );
+          }
+          if (sal.nightShiftOvertime) {
+            lines.push(
+              `  + Tăng ca đêm: ${sal.nightShiftOvertime.standardRate} (Lễ ${sal.nightShiftOvertime.holidayRate})`,
+            );
+          }
+        }
+      });
+      lines.push('');
+    }
+
+    // Environment
+    if (pos.environment && pos.environment.length > 0) {
+      lines.push('MÔI TRƯỜNG LÀM VIỆC:');
+      pos.environment.forEach((e) => lines.push(`- ${e}`));
+      lines.push('');
+    }
+
+    // Shifts
+    if (pos.shifts && pos.shifts.length > 0) {
+      lines.push('CA LÀM VIỆC:');
+      pos.shifts.forEach((s) =>
+        lines.push(`- ${s.name}: ${s.startTime} - ${s.endTime}`),
+      );
+      lines.push('');
+    }
+
+    // Managers
+    if (pos.managers && pos.managers.length > 0) {
+      lines.push('LIÊN HỆ QUẢN LÝ:');
+      pos.managers.forEach((m) => {
+        // @ts-expect-error email might exist in runtime
+        const emailInfo = m.email ? `, ${m.email}` : '';
+        lines.push(`- ${m.name} (${m.phoneNumber}${emailInfo})`);
+      });
+      lines.push('');
+    }
+
+    // Notes & Shift Selections
+    if (pos.shiftSelections && pos.shiftSelections.length > 0) {
+      const selections = pos.shiftSelections.map((s) => {
+        switch (s) {
+          case ShiftSelection.Flexible:
+            return 'Linh hoạt (Được chọn ca)';
+          case ShiftSelection.DayShiftOnly:
+            return 'Chỉ ca ngày';
+          case ShiftSelection.NightShiftOnly:
+            return 'Chỉ ca đêm';
+          case ShiftSelection.OfficeHoursOvertime:
+            return 'Hành chính có tăng ca';
+          case ShiftSelection.ArrangedByHR:
+            return 'Nhân sự sắp xếp';
+          case ShiftSelection.RotatingShift:
+            return 'Xoay ca';
+          default:
+            return s as string;
+        }
+      });
+      lines.push(`CHẾ ĐỘ CA: ${selections.join(', ')}`);
+    }
+
+    if (pos.notes && pos.notes.length > 0) {
+      lines.push('GHI CHÚ:');
+      pos.notes.forEach((n) => lines.push(`- ${n}`));
+    }
+
+    return lines
+      .filter((l) => l !== undefined && l !== null)
+      .join('\n')
+      .trim();
   }
 }
