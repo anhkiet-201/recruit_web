@@ -133,6 +133,12 @@ fi
 echo "3. Khởi động Containers..."
 $COMPOSE_CMD -f docker-compose.prod.yaml up -d
 
+# 3.0. Cleanup Failed Migrations (if any)
+echo "3.0. Cleaning up failed migrations..."
+$COMPOSE_CMD -f docker-compose.prod.yaml exec -T postgres psql -U user -d ttn_db -c "DELETE FROM _prisma_migrations WHERE finished_at IS NULL OR rolled_back_at IS NOT NULL;" 2>/dev/null || echo "   -> No failed migrations in main DB"
+$COMPOSE_CMD -f docker-compose.prod.yaml exec -T postgres psql -U user -d recruitment_db -c "DELETE FROM _prisma_migrations WHERE finished_at IS NULL OR rolled_back_at IS NOT NULL;" 2>/dev/null || echo "   -> No failed migrations in recruitment DB"
+echo "   -> Cleanup completed"
+
 # 3.1. Chạy Database Migration
 echo "3.1. Running database migrations..."
 $COMPOSE_CMD -f docker-compose.prod.yaml exec -T backend npx prisma migrate deploy

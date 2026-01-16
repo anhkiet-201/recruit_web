@@ -32,8 +32,10 @@ CREATE TABLE "job_positions" (
     CONSTRAINT "job_positions_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE INDEX "job_positions_embedding_idx" ON "job_positions"("embedding");
+-- CreateIndex: ivfflat for vector search (btree won't work for 768-dim vectors)
+CREATE INDEX "job_positions_embedding_idx" ON "job_positions"
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
 
 -- AddForeignKey
 ALTER TABLE "job_positions" ADD CONSTRAINT "job_positions_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "recruitment_posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;

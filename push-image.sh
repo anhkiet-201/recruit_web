@@ -74,7 +74,7 @@ docker buildx build --platform linux/amd64 \
   -t $WEB_IMAGE ./frontend --push
 
 echo "4. Copy files to VPS..."
-scp ./vps-deploy.sh .env docker-compose.prod.yaml root@103.90.225.222:~/
+scp ./vps-deploy.sh .env.production docker-compose.prod.yaml root@103.90.225.222:~/
 
 echo "5. Deploy on VPS..."
 ssh root@103.90.225.222 "./vps-deploy.sh & n"
