@@ -330,6 +330,8 @@ export class RecruitmentRepository implements IRecruitmentRepository {
           id: postId,
           companyName: row.company_name,
           address: row.address,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
           positions: [],
         });
       }
@@ -370,6 +372,8 @@ export class RecruitmentRepository implements IRecruitmentRepository {
       id: dbPost.id,
       companyName: dbPost.companyName,
       address: dbPost.address,
+      createdAt: dbPost.createdAt,
+      updatedAt: dbPost.updatedAt,
       positions: dbPost.positions.map((pos) => this.mapPositionToDomain(pos)),
     };
   }

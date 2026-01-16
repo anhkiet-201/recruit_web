@@ -99,7 +99,7 @@ export interface WorkShift {
 // ==========================================
 
 export interface JobPosition {
-  readonly id?: string;
+  readonly id: string;
   readonly title: string;
   readonly benefits: string[];
   readonly requirements: string[];
@@ -115,7 +115,7 @@ export interface JobPosition {
 
   readonly environment: string[];
   readonly notes: string[];
-  readonly descriptionText?: string;
+  readonly descriptionText: string;
 
   readonly shiftSelections: ShiftSelection[];
 }
@@ -124,5 +124,7 @@ export interface RecruitmentPost {
   readonly id: string;
   readonly companyName: string;
   readonly address: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
   readonly positions: JobPosition[];
 }
