@@ -43,7 +43,7 @@ export const RecruitmentService = {
     query: string,
     page: number = 1,
     limit: number = 10,
-    threshold: number = 0.7
+    threshold: number = 0.5
   ): Promise<SearchRecruitmentResponse> => {
     return api.get<SearchRecruitmentResponse>(
       `/recruitment/search?query=${encodeURIComponent(
