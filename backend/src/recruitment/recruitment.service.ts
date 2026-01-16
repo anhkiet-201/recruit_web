@@ -198,11 +198,7 @@ export class RecruitmentService {
       const topItems = result.items.slice(0, 10);
       const rerankedIds: string[] = await this.aiService.rerankRecruitmentPosts(
         query,
-        topItems.map((item) => ({
-          id: item.id,
-          title: item.positions[0]?.title || 'N/A',
-          description: item.positions[0]?.descriptionText || '',
-        })),
+        topItems.map((item) => item as unknown as Record<string, unknown>),
       );
 
       if (rerankedIds.length > 0) {

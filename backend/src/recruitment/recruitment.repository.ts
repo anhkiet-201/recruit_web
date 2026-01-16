@@ -327,11 +327,13 @@ export class RecruitmentRepository implements IRecruitmentRepository {
             ELSE 0 
           END) + 
           
-          -- Global Search Boosts (Reduced weight to avoid noise)
+          -- Global Search Boosts (Strategic weights for specific intents)
           (CASE WHEN j.requirements::text ILIKE ${unaccentedPattern} THEN 0.3 ELSE 0 END) +
           (CASE WHEN j.benefits::text ILIKE ${unaccentedPattern} THEN 0.2 ELSE 0 END) +
-          (CASE WHEN j.salary_packages::text ILIKE ${unaccentedPattern} THEN 0.4 ELSE 0 END) +
-          (CASE WHEN j.employment_types::text ILIKE ${unaccentedPattern} THEN 1.0 ELSE 0 END)
+          (CASE WHEN j.salary_packages::text ILIKE ${unaccentedPattern} THEN 1.5 ELSE 0 END) + -- Higher boost for salary intent
+          (CASE WHEN j.employment_types::text ILIKE ${unaccentedPattern} THEN 1.0 ELSE 0 END) +
+          (CASE WHEN j.shift_selections::text ILIKE ${unaccentedPattern} THEN 2.0 ELSE 0 END) + -- High boost for "chọn ca"
+          (CASE WHEN j.shifts::text ILIKE ${unaccentedPattern} THEN 1.0 ELSE 0 END) -- Boost for specific shifts
         ) as hybrid_score
       FROM job_positions j
       INNER JOIN recruitment_posts p ON j.post_id = p.id
@@ -347,7 +349,10 @@ export class RecruitmentRepository implements IRecruitmentRepository {
         OR j.title ILIKE ${unaccentedPattern}
         OR p.company_name ILIKE ${queryPattern}
         OR p.company_name ILIKE ${unaccentedPattern}
-        -- Only match address and specific fields for keyword fallback, description is too noisy
+        -- Expanded keywords for high-intent structured fields
+        OR j.salary_packages::text ILIKE ${unaccentedPattern}
+        OR j.shift_selections::text ILIKE ${unaccentedPattern}
+        OR j.shifts::text ILIKE ${unaccentedPattern}
         OR p.address ILIKE ${unaccentedPattern}
         OR j.employment_types::text ILIKE ${unaccentedPattern}
       )

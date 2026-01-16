@@ -371,16 +371,19 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
    */
   async rerankRecruitmentPosts(
     query: string,
-    posts: { id: string; title: string; description: string }[],
+    posts: Record<string, unknown>[],
   ): Promise<string[]> {
     if (posts.length === 0) return [];
 
     const postsList = posts
-      .map(
-        (p) =>
-          `ID: ${p.id} | Tiêu đề: ${p.title} | Nội dung: ${p.description.substring(0, 500)}...`,
-      )
-      .join('\n');
+      .map((p, index) => {
+        // Remove embedding if present to save tokens and avoid confusion
+        const cleanPost = { ...p };
+        delete cleanPost.embedding;
+        const id = (p.id as string) || `unknown-${index}`;
+        return `${index + 1}. ID: ${id}\nData: ${JSON.stringify(cleanPost)}`;
+      })
+      .join('\n\n');
 
     const prompt = `
       Dựa trên câu truy vấn của người dùng: "${query}"
