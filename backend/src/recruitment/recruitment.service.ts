@@ -432,4 +432,21 @@ export class RecruitmentService {
     str = str.trim();
     return str;
   }
+
+  async generateJobPosting(postId: string, positionId: string): Promise<any> {
+    const post = await this.repository.findPostById(postId);
+    if (!post) throw new NotFoundException('Recruitment post not found');
+
+    const position = post.positions.find((p) => p.id === positionId);
+    if (!position) throw new NotFoundException('Job position not found');
+
+    // Prepare data for AI
+    const dataForAi = {
+      companyName: post.companyName,
+      address: post.address,
+      ...position,
+    };
+
+    return this.aiService.generateJobPosting(postId, positionId, dataForAi);
+  }
 }

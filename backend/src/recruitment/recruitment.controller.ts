@@ -94,4 +94,15 @@ export class RecruitmentController {
   remove(@Param('id') id: string) {
     return this.recruitmentService.remove(id);
   }
+
+  @Post(':id/positions/:positionId/generate-posting')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate formatted job posting content using AI' })
+  generatePosting(
+    @Param('id') id: string,
+    @Param('positionId') positionId: string,
+  ) {
+    return this.recruitmentService.generateJobPosting(id, positionId);
+  }
 }

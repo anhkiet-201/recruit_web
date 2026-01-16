@@ -99,6 +99,7 @@ export interface WorkShift {
 // ==========================================
 
 export interface JobPosition {
+  readonly id: string;
   readonly title: string;
   readonly benefits: string[];
   readonly requirements: string[];

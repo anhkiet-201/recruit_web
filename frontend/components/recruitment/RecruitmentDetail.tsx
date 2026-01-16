@@ -10,8 +10,16 @@ import {
   ShiftSelection,
   SalaryConfig,
 } from "@/models/Recruitment";
-import { Trash2, Briefcase, DollarSign, FileText, Edit2 } from "lucide-react";
+import {
+  Trash2,
+  Briefcase,
+  DollarSign,
+  FileText,
+  Edit2,
+  Sparkles,
+} from "lucide-react";
 import { useState } from "react";
+import AiPostModal from "./AiPostModal";
 
 const getShiftSelectionLabel = (selection: ShiftSelection) => {
   switch (selection) {
@@ -91,6 +99,10 @@ export function RecruitmentDetail({
     number | null
   >(null);
 
+  const [aiModalPositionIndex, setAiModalPositionIndex] = useState<
+    number | null
+  >(null);
+
   if (!post) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
@@ -103,6 +115,7 @@ export function RecruitmentDetail({
   const handleAddPosition = () => {
     if (!post) return;
     const newPosition: JobPosition = {
+      id: Math.random().toString(36).substr(2, 9),
       title: "Vị trí mới",
       status: RecruitmentStatus.Recruiting,
       employmentTypes: [EmploymentType.FullTime],
@@ -230,6 +243,16 @@ export function RecruitmentDetail({
                     >
                       <Edit2 size={18} />
                     </button>
+
+                    {/* Thê nút tạo Job posting bằng gemini ở đây. thông tin được lấy từ recruitment */}
+                    <button
+                      onClick={() => setAiModalPositionIndex(idx)}
+                      className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition"
+                      title="AI Generate Post"
+                    >
+                      <Sparkles size={18} className="fill-violet-600" />
+                    </button>
+
                     <button
                       onClick={() => handleDeletePosition(idx)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
@@ -387,6 +410,17 @@ export function RecruitmentDetail({
           )}
         </div>
       </div>
+
+      {/* AI Post Modal */}
+      {aiModalPositionIndex !== null && (
+        <AiPostModal
+          isOpen={aiModalPositionIndex !== null}
+          onClose={() => setAiModalPositionIndex(null)}
+          postId={post.id}
+          positionId={post.positions[aiModalPositionIndex]?.id || ""}
+          positionTitle={post.positions[aiModalPositionIndex]?.title || ""}
+        />
+      )}
     </div>
   );
 }

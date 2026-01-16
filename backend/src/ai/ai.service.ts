@@ -15,7 +15,10 @@ import {
   PerformSearchToolArgs,
   GetJobDetailToolArgs,
 } from './dto/ai-service.dto';
-import { OptimizedJobResponseDto } from './dto/optimize-job.dto';
+import {
+  OptimizedJobResponseDto,
+  AiGeneratedPostResponseDto,
+} from './dto/optimize-job.dto';
 
 /**
  * Service quản lý logic trí tuệ nhân tạo (AI) trung tâm.
@@ -295,9 +298,9 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     const prompt = `Trích xuất thông tin từ CV thành JSON với các trường sau: name (Họ tên), phone (SĐT), address (Địa chỉ), education (Học vấn), skills (Kỹ năng), experience (Kinh nghiệm), summary (Tóm tắt ngắn gọn). CV Content: ${text}`;
     try {
       const res = await this.aiProvider.generateText(prompt);
-      return JSON.parse(
-        res.replace(/```json|```/g, '').trim(),
-      ) as import('./dto/resume-analysis.dto').ResumeAnalysisResult;
+      return this.parseJsonResponse<
+        import('./dto/resume-analysis.dto').ResumeAnalysisResult
+      >(res);
     } catch (_e) {
       console.error('Error analyzing resume:', _e);
       return null;
@@ -406,8 +409,7 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
         `Reranking ${posts.length} recruitment posts for query: "${query}"`,
       );
       const response = await this.aiProvider.generateText(prompt);
-      const cleanJson = response.replace(/```json|```/g, '').trim();
-      const rerankedIds = JSON.parse(cleanJson) as string[];
+      const rerankedIds = this.parseJsonResponse<string[]>(response);
 
       if (Array.isArray(rerankedIds)) {
         return rerankedIds.filter((id) => typeof id === 'string');
@@ -452,9 +454,7 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
 
     try {
       const res = await this.aiProvider.generateText(prompt);
-      // Clean markdown code blocks if present
-      const cleanJson = res.replace(/```json|```/g, '').trim();
-      return JSON.parse(cleanJson) as OptimizedJobResponseDto;
+      return this.parseJsonResponse<OptimizedJobResponseDto>(res);
     } catch (e) {
       console.error('Error optimizing job content:', e);
       throw new Error('Failed to analyze job content.');
@@ -516,12 +516,11 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
 
     try {
       const res = await this.aiProvider.generateText(prompt);
-      const cleanJson = res.replace(/```json|```/g, '').trim();
-      const translation = JSON.parse(cleanJson) as {
+      const translation = this.parseJsonResponse<{
         title: string;
         content: string;
         location: string;
-      };
+      }>(res);
 
       // 3. Save to Cache
       await this.prisma.jobTranslation.upsert({
@@ -597,8 +596,7 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
 
     try {
       const res = await this.aiProvider.generateText(rerankPrompt);
-      const cleanJson = res.replace(/```json|```/g, '').trim();
-      const validIds = JSON.parse(cleanJson) as string[];
+      const validIds = this.parseJsonResponse<string[]>(res);
       // Filter but keep original order
       const filtered = results.filter((c) => validIds.includes(c.id));
 
@@ -682,6 +680,89 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
           'zh',
         );
       }
+    }
+  }
+
+  /**
+   * Tạo bài đăng tuyển dụng định dạng đẹp và trích xuất dữ liệu có cấu trúc từ ghi chú.
+   */
+  async generateJobPosting(
+    postId: string,
+    positionId: string,
+    data: any,
+  ): Promise<AiGeneratedPostResponseDto> {
+    const prompt = `
+      Bạn là một chuyên gia Tuyển dụng cấp cao và Chuyên gia Marketing nội dung.
+      Dựa trên dữ liệu dưới đây, hãy thực hiện 2 nhiệm vụ với yêu cầu CHUYÊN NGHIỆP:
+
+      1. Viết nội dung hiển thị (displayContent): 
+         - Dành cho: Đăng tải lên các nền tảng web tuyển dụng chuyên nghiệp.
+         - Văn phong: Trang trọng, súc tích, chuyên nghiệp.
+         - Định dạng: Sử dụng các thẻ HTML (<h3>, <ul>, <li>, <p>) để trình bày đẹp mắt.
+         - QUAN TRỌNG: TUYỆT ĐỐI KHÔNG sử dụng hashtag (#).
+
+      2. Trích xuất dữ liệu structuredData (Chuẩn SEO):
+         - "title": Tiêu đề chuẩn SEO, bao gồm [Vị trí] + [Tên Công ty] + [Địa điểm].
+         - "content": Nội dung chi tiết định dạng HTML chuẩn SEO.
+           + CHỈ sử dụng các thẻ: <h3>, <h4>, <ul>, <li>, <p>, <br>, <strong>, <em>.
+           + TUYỆT ĐỐI KHÔNG dùng thẻ <h1>, <h2>.
+           + TUYỆT ĐỐI KHÔNG sử dụng hashtag (#).
+           + Đảm bảo đầy đủ các mục: Mô tả công việc, Yêu cầu ứng viên, Quyền lợi, Thời gian & Địa điểm làm việc.
+
+      Yêu cầu đầu ra (JSON Only):
+      {
+        "displayContent": "Nội dung HTML chuyên nghiệp cho web (không hashtag)",
+        "structuredData": {
+          "title": "Tiêu đề chuẩn SEO",
+          "content": "Nội dung HTML bám sát các mục (h3+, ul, li, p...), không hashtag",
+          "location": "Địa chỉ làm việc",
+          "salaryMin": 10000000,
+          "salaryMax": 20000000,
+          "jobType": "skilled",
+          "experienceYears": 1,
+          "deadline": "ISO String",
+          "skills": ["Tag1", "Tag2"]
+        }
+      }
+
+      Dữ liệu tuyển dụng:
+      ${JSON.stringify(data)}
+    `;
+
+    try {
+      const response = await this.aiProvider.generateText(prompt);
+      return this.parseJsonResponse<AiGeneratedPostResponseDto>(response);
+    } catch (e) {
+      this.logger.error(
+        `Failed to generate job posting for Post: ${postId}, Pos: ${positionId}`,
+        e,
+      );
+      throw e;
+    }
+  }
+
+  /**
+   * Trích xuất JSON từ nội dung phản hồi của AI một cách an toàn.
+   */
+  private parseJsonResponse<T>(response: string): T {
+    try {
+      // 1. Clean markdown code blocks if present
+      const clean = response.replace(/```json|```/g, '').trim();
+
+      // 2. Try simple parse first
+      try {
+        return JSON.parse(clean) as T;
+      } catch {
+        // 3. Robust regex extraction if simple parse fails
+        const jsonMatch = clean.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]) as T;
+        }
+        throw new Error('No JSON block found in AI response');
+      }
+    } catch (e) {
+      this.logger.error(`Failed to parse AI JSON response: ${response}`, e);
+      throw e;
     }
   }
 }

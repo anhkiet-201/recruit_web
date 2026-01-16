@@ -36,3 +36,13 @@ export class OptimizedJobResponseDto {
   @ApiProperty({ type: [String], required: false })
   skills?: string[];
 }
+
+export class AiGeneratedPostResponseDto {
+  @ApiProperty({
+    description: 'Nội dung bài đăng định dạng đẹp (với emoji) để hiển thị',
+  })
+  displayContent: string;
+
+  @ApiProperty({ description: 'Dữ liệu có cấu trúc để điền vào form tạo Job' })
+  structuredData: OptimizedJobResponseDto;
+}

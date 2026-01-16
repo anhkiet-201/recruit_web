@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { RecruitmentPost } from "@/models/Recruitment";
+import { OptimizedJobResponse } from "./aiService";
 
 export interface SearchRecruitmentResponse {
   items: RecruitmentPost[];
@@ -49,6 +50,18 @@ export const RecruitmentService = {
       `/recruitment/search?query=${encodeURIComponent(
         query
       )}&page=${page}&limit=${limit}&threshold=${threshold}`
+    );
+  },
+  generatePosting: async (
+    postId: string,
+    positionId: string
+  ): Promise<{
+    displayContent: string;
+    structuredData: OptimizedJobResponse;
+  }> => {
+    return api.post(
+      `/recruitment/${postId}/positions/${positionId}/generate-posting`,
+      {}
     );
   },
 };
