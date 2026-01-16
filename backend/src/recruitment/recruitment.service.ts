@@ -193,6 +193,36 @@ export class RecruitmentService {
       offset,
     );
 
+    // 3. AI Re-ranking (Only for the first page and if results exist)
+    if (result.items.length > 0 && page === 1 && embedding) {
+      const topItems = result.items.slice(0, 10);
+      const rerankedIds = await this.aiService.rerankRecruitmentPosts(
+        query,
+        topItems.map((item) => ({
+          id: item.id,
+          title: item.positions[0]?.title || 'N/A',
+          description: item.positions[0]?.descriptionText || '',
+        })),
+      );
+
+      if (rerankedIds.length > 0) {
+        // Re-sort current items based on AI preference
+        const rerankedItems = rerankedIds
+          .map((id) => result.items.find((item) => item.id === id))
+          .filter((item): item is RecruitmentPost => !!item);
+
+        // Add back items that weren't included in reranking or were filtered out by AI but still match
+        const otherItems = result.items.filter(
+          (item) => !rerankedIds.includes(item.id),
+        );
+
+        result.items = [...rerankedItems, ...otherItems];
+        this.logger.debug(
+          `AI Re-ranked results. Top ID: ${result.items[0]?.id}`,
+        );
+      }
+    }
+
     const totalTime = Date.now() - startTime;
     this.logger.log(
       `Search completed (${embedding ? 'semantic+hybrid' : 'keyword-only'}): ${

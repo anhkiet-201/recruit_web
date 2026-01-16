@@ -365,6 +365,55 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
     }
   }
 
+  /**
+   * Tái xếp hạng các tin tuyển dụng dựa trên độ phù hợp thực tế với yêu cầu của người dùng.
+   * Sử dụng Gemini để phân tích ngữ nghĩa sâu.
+   */
+  async rerankRecruitmentPosts(
+    query: string,
+    posts: { id: string; title: string; description: string }[],
+  ): Promise<string[]> {
+    if (posts.length === 0) return [];
+
+    const postsList = posts
+      .map(
+        (p) =>
+          `ID: ${p.id} | Tiêu đề: ${p.title} | Mô tả ngắn: ${p.description.substring(0, 200)}...`,
+      )
+      .join('\n');
+
+    const prompt = `
+      Dựa trên câu truy vấn của người dùng: "${query}"
+      Hãy chọn ra các ID công việc phù hợp nhất từ danh sách bên dưới và xếp hạng chúng theo thứ tự ưu tiên giảm dần.
+      
+      Quy tắc:
+      1. Chỉ trả về một mảng JSON chứa các ID (ví dụ: ["id1", "id2"]).
+      2. Loại bỏ các ID hoàn toàn không liên quan.
+      3. Nếu không có kết quả nào thực sự phù hợp, hãy trả về mảng trống [].
+      4. KHÔNG giải thích gì thêm.
+
+      Danh sách công việc:
+      ${postsList}
+    `;
+
+    try {
+      this.logger.debug(
+        `Reranking ${posts.length} recruitment posts for query: "${query}"`,
+      );
+      const response = await this.aiProvider.generateText(prompt);
+      const cleanJson = response.replace(/```json|```/g, '').trim();
+      const rerankedIds = JSON.parse(cleanJson) as string[];
+
+      if (Array.isArray(rerankedIds)) {
+        return rerankedIds.filter((id) => typeof id === 'string');
+      }
+      return [];
+    } catch (e) {
+      this.logger.error('Failed to rerank recruitment posts', e);
+      return []; // Fallback to original order if AI fails
+    }
+  }
+
   async optimizeJobContent(rawText: string): Promise<OptimizedJobResponseDto> {
     const prompt = `
       Bạn là một chuyên gia HR. Nhiệm vụ của bạn là phân tích nội dung tuyển dụng thô dưới đây và trích xuất thông tin thành JSON chuẩn.
