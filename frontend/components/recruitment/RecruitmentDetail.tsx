@@ -111,6 +111,10 @@ export function RecruitmentDetail({
     number | null
   >(null);
 
+  const [deletingPositionIndex, setDeletingPositionIndex] = useState<
+    number | null
+  >(null);
+
   if (!post) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
@@ -143,10 +147,17 @@ export function RecruitmentDetail({
     setEditingPositionIndex(newPositions.length - 1);
   };
 
-  const handleDeletePosition = (index: number) => {
-    if (!post) return;
-    const updatedPositions = post.positions.filter((_, i) => i !== index);
+  const confirmDelete = (index: number) => {
+    setDeletingPositionIndex(index);
+  };
+
+  const performDelete = () => {
+    if (!post || deletingPositionIndex === null) return;
+    const updatedPositions = post.positions.filter(
+      (_, i) => i !== deletingPositionIndex,
+    );
     onUpdate(post.id, { positions: updatedPositions });
+    setDeletingPositionIndex(null);
   };
 
   const handleSavePosition = (updatedPosition: JobPosition) => {
@@ -266,7 +277,6 @@ export function RecruitmentDetail({
                       <Edit2 size={18} />
                     </button>
 
-                    {/* Thê nút tạo Job posting bằng gemini ở đây. thông tin được lấy từ recruitment */}
                     <button
                       onClick={() => setAiModalPositionIndex(idx)}
                       className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition"
@@ -275,7 +285,6 @@ export function RecruitmentDetail({
                       <Sparkles size={18} className="fill-violet-600" />
                     </button>
 
-                    {/* Thêm nút Clone ở đây */}
                     <button
                       onClick={() => handleClonePosition(idx)}
                       className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition"
@@ -285,7 +294,7 @@ export function RecruitmentDetail({
                     </button>
 
                     <button
-                      onClick={() => handleDeletePosition(idx)}
+                      onClick={() => confirmDelete(idx)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
                       title="Xóa vị trí"
                     >
@@ -451,6 +460,38 @@ export function RecruitmentDetail({
           positionId={post.positions[aiModalPositionIndex]?.id || ""}
           positionTitle={post.positions[aiModalPositionIndex]?.title || ""}
         />
+      )}
+      {/* Delete Confirmation Modal */}
+      {deletingPositionIndex !== null && post && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
+              Xác nhận xóa
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Bạn có chắc chắn muốn xóa vị trí{" "}
+              <span className="font-bold text-gray-800">
+                {post.positions[deletingPositionIndex]?.title ||
+                  "Vị trí chưa đặt tên"}
+              </span>{" "}
+              không? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeletingPositionIndex(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={performDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition"
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
