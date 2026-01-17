@@ -17,9 +17,17 @@ import {
   FileText,
   Edit2,
   Sparkles,
+  Copy,
 } from "lucide-react";
 import { useState } from "react";
 import AiPostModal from "./AiPostModal";
+
+const generateId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 9);
+};
 
 const getShiftSelectionLabel = (selection: ShiftSelection) => {
   switch (selection) {
@@ -115,7 +123,7 @@ export function RecruitmentDetail({
   const handleAddPosition = () => {
     if (!post) return;
     const newPosition: JobPosition = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateId(),
       title: "Vị trí mới",
       status: RecruitmentStatus.Recruiting,
       employmentTypes: [EmploymentType.FullTime],
@@ -147,6 +155,20 @@ export function RecruitmentDetail({
     updatedPositions[editingPositionIndex] = updatedPosition;
     onUpdate(post.id, { positions: updatedPositions });
     setEditingPositionIndex(null);
+  };
+
+  const handleClonePosition = (index: number) => {
+    if (!post) return;
+    const positionToClone = post.positions[index];
+    const newPosition: JobPosition = {
+      ...positionToClone,
+      id: generateId(),
+      title: `${positionToClone.title} (Copy)`,
+    };
+
+    const newPositions = [...post.positions];
+    newPositions.splice(index + 1, 0, newPosition);
+    onUpdate(post.id, { positions: newPositions });
   };
 
   return (
@@ -251,6 +273,15 @@ export function RecruitmentDetail({
                       title="AI Generate Post"
                     >
                       <Sparkles size={18} className="fill-violet-600" />
+                    </button>
+
+                    {/* Thêm nút Clone ở đây */}
+                    <button
+                      onClick={() => handleClonePosition(idx)}
+                      className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition"
+                      title="Nhân bản vị trí"
+                    >
+                      <Copy size={18} />
                     </button>
 
                     <button
