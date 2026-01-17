@@ -717,11 +717,11 @@ TUYỆT ĐỐI CHỈ NÓI VỀ CÁC CÔNG VIỆC CÓ TRONG DANH SÁCH NÀY.`;
           "content": "Nội dung HTML bám sát các mục (h3+, ul, li, p...), không hashtag",
           "location": "Địa chỉ làm việc",
           "salaryMin": 10000000,
-          "salaryMax": 20000000,
-          "jobType": "skilled",
-          "experienceYears": 1,
+          "salaryMax": 15000000,
+          "jobType": "Kỹ năng làm việc. Mặt định là unskilled nếu không có đề cập tới",
+          "experienceYears": 0,
           "deadline": "ISO String",
-          "skills": ["Tag1", "Tag2"]
+          "tags": ["Tag1", "Tag2"]
         }
       }
 
