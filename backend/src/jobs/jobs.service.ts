@@ -483,13 +483,25 @@ export class JobsService {
 
     const frontendUrl =
       process.env.NEXT_PUBLIC_APP_URL || 'https://timviec.vieclamhr.com';
-    const jobUrl = `${frontendUrl}/jobs/${id}`;
 
-    this.indexingQueueService
-      .enqueue(jobUrl, 'URL_DELETED')
-      .catch((err) =>
-        console.error('Failed to enqueue URL deletion to Indexing Queue:', err),
-      );
+    // Generate URLs for all locales
+    const urlsToDelete = [
+      `${frontendUrl}/jobs/${id}`,
+      `${frontendUrl}/en/jobs/${id}`,
+      `${frontendUrl}/zh/jobs/${id}`,
+    ];
+
+    // Enqueue deletion for all URLs
+    for (const url of urlsToDelete) {
+      this.indexingQueueService
+        .enqueue(url, 'URL_DELETED')
+        .catch((err) =>
+          console.error(
+            `Failed to enqueue URL deletion to Indexing Queue (${url}):`,
+            err,
+          ),
+        );
+    }
     return this.prisma.job.delete({ where: { id } });
   }
 
