@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter } from "next/font/google";
-import "../globals.css";
+import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,7 +10,7 @@ import AiChatBot from "@/components/AiChatBot";
 import JsonLdScript from "@/components/seo/JsonLdScript";
 import OrganizationSchema from "@/components/seo/OrganizationSchema";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, getLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 import { getCompanyInfo } from "@/constants/CompanyConstants";
@@ -23,12 +23,8 @@ const inter = Inter({
   preload: true,
 });
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
   const headerList = await headers();
   const currentPath = headerList.get("x-current-path") || "";
   const companyInfo = getCompanyInfo(locale);
@@ -89,12 +85,10 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({
   children,
-  params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }>) {
-  const { locale } = await params;
+  const locale = await getLocale();
 
   if (!["vi", "en", "zh"].includes(locale)) {
     notFound();

@@ -1,17 +1,21 @@
-import { NextIntlClientProvider } from "next-intl";
+"use client";
+
+import "./globals.css";
 import NotFoundContent from "@/components/NotFoundContent";
+import { Inter } from "next/font/google";
 
-// Default locale for root 404
-const defaultLocale = "vi";
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "600", "700", "900"],
+  display: "swap",
+});
 
-export default async function NotFound() {
-  // Manually fetch messages for the root 404 page
-  // This is architecturally safe as it handles the edge case outside the locale tree
-  const messages = (await import(`../messages/${defaultLocale}.json`)).default;
-
+export default function GlobalNotFound() {
   return (
-    <NextIntlClientProvider locale={defaultLocale} messages={messages}>
+    <div
+      className={`flex flex-col min-h-screen items-center justify-center ${inter.className}`}
+    >
       <NotFoundContent />
-    </NextIntlClientProvider>
+    </div>
   );
 }

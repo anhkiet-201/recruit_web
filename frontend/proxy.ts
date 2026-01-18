@@ -16,7 +16,7 @@ const handleI18nRouting = createMiddleware({
   localeDetection: false,
 });
 
-export default function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Force 'vi' locale (which is now root path) for all admin paths
@@ -27,7 +27,7 @@ export default function middleware(request: NextRequest) {
       // Redirect to /admin (which renders vi under the hood due to defaultLocale)
       const newUrl = new URL(
         pathname.replace(localePattern, "/admin"),
-        request.url
+        request.url,
       );
       return NextResponse.redirect(newUrl);
     }
